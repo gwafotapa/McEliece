@@ -1,39 +1,65 @@
 extern crate rand;
 
-use rand::Rng;
-use std::char;
-use std::fmt;
+use crate::finite_field;
 
-#[derive(Eq, PartialEq)]
-pub struct Mat {
+use finite_field::Zero;
+use finite_field::One;
+use finite_field::Inverse;
+
+use rand::distributions;
+use rand::Rng;
+use std::fmt;
+use std::ops::Add;
+use std::ops::AddAssign;
+use std::ops::Mul;
+use std::ops::Sub;
+
+// Type T must represent an element from a field, meaning all elements except 0 are inversible.
+#[derive(Clone, Eq, PartialEq)]
+pub struct Mat<T> {
     rows: usize,
     cols: usize,
-    data: Vec<u8>,
+    data: Vec<T>,
 }
 
-impl Clone for Mat {
-    fn clone(&self) -> Mat {
-        let mut cln = Mat::new(self.rows, self.cols);
-        cln.data = self.data.clone();
-
-        cln
-    }
-}
-
-impl fmt::Debug for Mat {
+impl<
+        T: Copy
+            + fmt::Display
+            + Eq
+            + Zero
+            + One
+            + Add<Output = T>
+            + Sub<Output = T>
+            + Mul<Output = T>
+            + AddAssign
+            + Inverse,
+    > fmt::Debug for Mat<T>
+{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "\n{}", self.to_str())
     }
 }
 
-impl Mat {
-    pub fn new(n: usize, m: usize) -> Mat {
+impl<
+        T: Copy
+            + fmt::Display
+            + Eq
+            + Zero
+            + One
+            + Add<Output = T>
+            + Sub<Output = T>
+            + Mul<Output = T>
+            + AddAssign
+            + Inverse,
+    > Mat<T>
+{
+    pub fn new(n: usize, m: usize) -> Mat<T> {
         let mut mat = Mat {
             rows: n,
             cols: m,
-            data: Vec::with_capacity(n * m),
+            data: Vec::<T>::with_capacity(n * m),
         };
-        mat.data.resize(n * m, 0);
+        mat.data.resize(n * m, T::zero());
 
         mat
     }
@@ -46,11 +72,15 @@ impl Mat {
         self.cols
     }
 
-    pub fn set(&mut self, row: usize, col: usize, val: u8) {
+    pub fn data(&self) -> Vec<T> {
+        self.data.clone()
+    }
+
+    pub fn set(&mut self, row: usize, col: usize, val: T) {
         self.data[row * self.cols + col] = val;
     }
 
-    pub fn get(&self, row: usize, col: usize) -> u8 {
+    pub fn get(&self, row: usize, col: usize) -> T {
         self.data[row * self.cols + col]
     }
 
@@ -68,27 +98,24 @@ impl Mat {
 
         for i in 0..self.rows {
             for j in 0..self.cols - 1 {
-                match char::from_digit(self.get(i, j) as u32, 10) {
-                    Some(chr) => s.push(chr),
-                    None => panic!("char::from_digit returned None"),
-                }
+                s.push_str(&self.get(i, j).to_string());
                 s.push(' ');
             }
-            match char::from_digit(self.get(i, self.cols - 1) as u32, 10) {
-                Some(chr) => s.push(chr),
-                None => panic!("char::from_digit returned None"),
-            }
+            s.push_str(&self.get(i, self.cols - 1).to_string());
             s.push('\n');
         }
 
         s
     }
 
-    pub fn random(rng: &mut rand::rngs::ThreadRng, n: usize, m: usize) -> Mat {
+    pub fn random(rng: &mut rand::rngs::ThreadRng, n: usize, m: usize) -> Mat<T>
+    where
+        distributions::Standard: distributions::Distribution<T>,
+    {
         let mut mat = Mat::new(n, m);
         for i in 0..n {
             for j in 0..m {
-                mat.set(i, j, rng.gen_range(0, 2));
+                mat.set(i, j, rng.gen::<T>());
             }
         }
 
@@ -105,19 +132,22 @@ impl Mat {
         cols.resize(n, 0);
         for i in 0..n {
             // loop on rows
-            let mut one = false; // true when '1' is found
-            let mut j = 0; // column iterator
-            while !one && j != n {
-                if self.get(i, j) == 1 {
+            let mut has_one = false;
+            for j in 0..n {
+                let val = self.get(i, j);
+                if val == T::zero() {
+                    continue;
+                } else if val == T::one() {
                     if cols[j] == 1 {
                         return false;
                     }
                     cols[j] = 1;
-                    one = true;
+                    has_one = true;
+                } else {
+                    return false;
                 }
-                j += 1;
             }
-            if !one {
+            if !has_one {
                 // row contains zeroes only
                 return false;
             }
@@ -126,7 +156,7 @@ impl Mat {
         true
     }
 
-    pub fn permutation_random(rng: &mut rand::rngs::ThreadRng, n: usize) -> Mat {
+    pub fn permutation_random(rng: &mut rand::rngs::ThreadRng, n: usize) -> Mat<T> {
         let mut mat = Mat::new(n, n);
         let mut cols = Vec::with_capacity(n); // remaining column indices
         for i in 0..n {
@@ -136,7 +166,7 @@ impl Mat {
         for i in 0..n {
             // Draw a random column index j to set the '1' on this row
             let nbr = rng.gen_range(0, n - i);
-            mat.set(i, cols[nbr], 1);
+            mat.set(i, cols[nbr], T::one());
 
             // Remove the index from the list by putting it at the end
             cols.swap(nbr, n - 1 - i);
@@ -145,10 +175,10 @@ impl Mat {
         mat
     }
 
-    pub fn identity(n: usize) -> Mat {
+    pub fn identity(n: usize) -> Mat<T> {
         let mut id = Mat::new(n, n);
         for i in 0..n {
-            id.set(i, i, 1);
+            id.set(i, i, T::one());
         }
 
         id
@@ -159,87 +189,96 @@ impl Mat {
             return false;
         }
 
-        let n = self.rows;
-        let mut mat = self.clone();
-        for j in 0..n {
-            // Find a pivot in column j
-            let mut row_pivot = n;
-            for i in j..n {
-                if mat.get(i, j) == 1 {
-                    row_pivot = i;
-                }
-            }
-            if row_pivot == n {
-                return false;
-            }
+        self.rank() == self.rows
+    }
 
-            // Swap row j with the pivot's row
-            if row_pivot != j {
-                for k in 0..n {
-                    let tmp = mat.get(j, k);
-                    mat.set(j, k, mat.get(row_pivot, k));
-                    mat.set(row_pivot, k, tmp);
-                }
-            }
-
-            // Add line j to remaining lines as needed
-            for i in 0..n {
-                if mat.get(i, j) == 1 && i != j {
-                    for k in 0..n {
-                        mat.set(i, k, mat.get(i, k) ^ mat.get(j, k));
-                    }
-                }
-            }
+    pub fn swap_rows(&mut self, row1: usize, row2: usize) {
+        if row1 == row2 {
+            return;
         }
 
-        true
+        let slice = &mut self.data[row1 * self.cols..(row1 + 1) * self.cols].to_vec();
+        slice.swap_with_slice(&mut self.data[row2 * self.cols..(row2 + 1) * self.cols]);
+        slice.swap_with_slice(&mut self.data[row1 * self.cols..(row1 + 1) * self.cols]);
     }
 
     // Inverse computation via gaussian elimination
     // See https://en.wikipedia.org/wiki/Gaussian_elimination
-    pub fn inverse(&self) -> Option<Mat> {
+    pub fn inverse(&self) -> Option<Mat<T>> {
         if self.rows != self.cols {
             return None;
         }
 
         let n = self.rows;
         let mut mat = self.clone();
-        let mut inv = Mat::identity(n);
-        for j in 0..n {
-            // Find a pivot in column j
-            let mut row_pivot = n;
-            for i in j..n {
-                if mat.get(i, j) == 1 {
-                    row_pivot = i;
-                }
+        let mut inv: Mat<T> = Mat::identity(n);
+        let mut p = 0; // pivot's row and pivot's column
+
+        while p < n {
+            // Find pivot
+            let mut i = p;
+            while i < n && mat.get(i, p) == T::zero() {
+                i += 1;
             }
-            if row_pivot == n {
+            if i == n {
                 return None;
             }
 
-            // Swap row j with the pivot's row
-            if row_pivot != j {
-                for k in 0..n {
-                    let tmp = mat.get(j, k);
-                    mat.set(j, k, mat.get(row_pivot, k));
-                    mat.set(row_pivot, k, tmp);
+            // Swap rows and mimic operation on matrix 'inv'
+            mat.swap_rows(i, p);
+            inv.swap_rows(i, p);
 
-                    // Mimic operation on identity matrix
-                    let tmp = inv.get(j, k);
-                    inv.set(j, k, inv.get(row_pivot, k));
-                    inv.set(row_pivot, k, tmp);
+            // Normalize pivot's row: L(p) = pivot^-1 * L(p)
+            let pivot_inv = mat.get(p, p).inv().unwrap();
+            for j in p + 1..n {
+                // first p+1 columns are zero
+                mat.set(p, j, pivot_inv * mat.get(p, j));
+            }
+            mat.set(p, p, T::one());
+
+            // Mimic normalization on matrix 'inv'
+            for j in 0..n {
+                inv.set(p, j, pivot_inv * inv.get(p, j));
+            }
+
+            // Adjust all rows below pivot's row: L(k) = L(k) - c(k,p) * L(p)
+            // where L(k) is the kth row and c(k,p) is the coefficient [k,p] of our matrix
+            for k in p + 1..n {
+                if mat.get(k, p) == T::zero() {
+                    continue;
+                }
+
+                let lambda = mat.get(k, p);
+
+                mat.set(k, p, T::zero());
+                for l in p + 1..n {
+                    // first p+1 columns are zero
+                    mat.set(k, l, mat.get(k, l) - lambda * mat.get(p, l));
+                }
+
+                // Mimic operation on matrix 'inv'
+                for l in 0..n {
+                    inv.set(k, l, inv.get(k, l) - lambda * inv.get(p, l));
                 }
             }
 
-            // Add line j to remaining lines as needed
-            for i in 0..n {
-                if mat.get(i, j) == 1 && i != j {
-                    for k in 0..n {
-                        mat.set(i, k, mat.get(i, k) ^ mat.get(j, k));
+            p += 1;
+        }
 
-                        // Mimic operation on identity matrix
-                        inv.set(i, k, inv.get(i, k) ^ inv.get(j, k));
-                    }
+        // Matrix 'mat' is now in triangular form
+
+        for j in (0..n).rev() {
+            for i in (0..j).rev() {
+                if mat.get(i, j) == T::zero() {
+                    continue;
+                }
+
+                // Perform the row operation to set c(i, j) to 0:
+                // L(i) = L(i) - c(i, j) * L(j)
+                // We don't actually need to operate on the original matrix here.
+                // Mimic the row operation on matrix 'inv'.
+                for l in 0..n {
+                    inv.set(i, l, inv.get(i, l) - mat.get(i, j) * inv.get(j, l));
                 }
             }
         }
@@ -247,25 +286,19 @@ impl Mat {
         Some(inv)
     }
 
-    pub fn invertible_random(rng: &mut rand::rngs::ThreadRng, n: usize) -> Mat {
+    pub fn invertible_random(rng: &mut rand::rngs::ThreadRng, n: usize) -> Mat<T>
+    where
+        distributions::Standard: distributions::Distribution<T>,
+    {
         let mut mat = Mat::new(n, n);
-        let mut cln = Mat::new(n, n);
         let mut i = 0;
         while i < n {
             // Fill line i at random
             for j in 0..n {
-                mat.set(i, j, rng.gen_range(0, 2));
+                mat.set(i, j, rng.gen::<T>());
             }
 
-            // Copy matrix (remember lines after ith are null)
-            for k in 0..i + 1 {
-                for j in 0..n {
-                    cln.set(k, j, mat.get(k, j));
-                }
-            }
-
-            // Check line i is independant from lines above
-            if cln.gauss() == i + 1 {
+            if mat.rank() == i + 1 {
                 i += 1;
             }
         }
@@ -273,49 +306,105 @@ impl Mat {
         mat
     }
 
-    // Applies gaussian elimination and returns matrix rank
-    pub fn gauss(&mut self) -> usize {
+    pub fn row_echelon_form(&mut self) -> usize {
+        let n = self.rows;
+        let m = self.cols;
         let mut rank = 0;
-        let mut j = 0;
-        loop {
-            // Find a pivot in column j
-            let mut row_pivot = self.rows;
-            for i in j..self.rows {
-                if self.get(i, j) == 1 {
-                    row_pivot = i;
-                }
-            }
-            if row_pivot == self.rows {
-                return rank;
-            }
+        let mut row_pivot = 0;
+        let mut col_pivot = 0;
 
-            // Swap row j with the pivot's row
-            if row_pivot != j {
-                for k in 0..self.cols {
-                    let tmp = self.get(j, k);
-                    self.set(j, k, self.get(row_pivot, k));
-                    self.set(row_pivot, k, tmp);
-                }
+        while row_pivot < self.rows && col_pivot < self.cols {
+            // Find pivot
+            let mut i = row_pivot;
+            while i < n && self.get(i, col_pivot) == T::zero() {
+                i += 1;
             }
-
-            // Add line j to remaining lines as needed
-            for i in 0..self.rows {
-                if self.get(i, j) == 1 && i != j {
-                    for k in 0..self.cols {
-                        self.set(i, k, self.get(i, k) ^ self.get(j, k));
-                    }
-                }
+            if i == n {
+                col_pivot += 1;
+                continue;
             }
-
-            j += 1;
             rank += 1;
-            if rank == self.rows || j == self.cols {
-                return rank;
+
+            // Swap rows
+            // if i != row_pivot {
+            self.swap_rows(i, row_pivot);
+
+            // for j in 0..m {
+            //     let tmp = self.get(row_pivot, j);
+            //     self.set(row_pivot, j, self.get(i, j));
+            //     self.set(i, j, tmp);
+            // }
+            // }
+
+            // Normalize pivot's row
+            let pivot_inv = self.get(row_pivot, col_pivot).inv().unwrap();
+            for j in col_pivot + 1..m {
+                self.set(row_pivot, j, pivot_inv * self.get(row_pivot, j));
             }
+            self.set(row_pivot, col_pivot, T::one());
+
+            // Adjust all rows below pivot's row
+            for k in row_pivot + 1..n {
+                if self.get(k, col_pivot) == T::zero() {
+                    continue;
+                }
+                for l in col_pivot + 1..m {
+                    self.set(
+                        k,
+                        l,
+                        self.get(k, l) - self.get(k, col_pivot) * self.get(row_pivot, l),
+                    );
+                }
+                self.set(k, col_pivot, T::zero());
+            }
+
+            row_pivot += 1;
+            col_pivot += 1;
         }
+
+        rank
     }
 
-    pub fn add(&mut self, mat1: &Mat, mat2: &Mat) {
+    pub fn reduced_row_echelon_form(&mut self) -> usize {
+        let n = self.rows;
+        let m = self.cols;
+        let rank = self.row_echelon_form(); // note that all pivots are 1
+
+        for row_pivot in (0..n).rev() {
+            // Find the pivot on this row if any
+            let mut col_pivot = 0;
+            while col_pivot < m && self.get(row_pivot, col_pivot) == T::zero() {
+                col_pivot += 1;
+            }
+            if col_pivot == m {
+                continue;
+            }
+
+            // Eliminate all non zero elements in the pivot's column
+            for i in (0..row_pivot).rev() {
+                if self.get(i, col_pivot) == T::zero() {
+                    continue;
+                }
+
+                for k in col_pivot..m {
+                    self.set(
+                        i,
+                        k,
+                        self.get(i, k) - self.get(i, col_pivot) * self.get(row_pivot, col_pivot),
+                    );
+                }
+            }
+        }
+
+        rank
+    }
+
+    pub fn rank(&self) -> usize {
+        let mut mat = self.clone();
+        mat.row_echelon_form()
+    }
+
+    pub fn add(&mut self, mat1: &Mat<T>, mat2: &Mat<T>) {
         if self.rows != mat1.rows
             || self.rows != mat2.rows
             || self.cols != mat1.cols
@@ -326,21 +415,21 @@ impl Mat {
 
         for i in 0..self.rows {
             for j in 0..self.cols {
-                self.set(i, j, mat1.get(i, j) ^ mat2.get(i, j));
+                self.set(i, j, mat1.get(i, j) + mat2.get(i, j));
             }
         }
     }
 
-    pub fn mul(&mut self, mat1: &Mat, mat2: &Mat) {
+    pub fn mul(&mut self, mat1: &Mat<T>, mat2: &Mat<T>) {
         if self.rows != mat1.rows || self.cols != mat2.cols || mat1.cols != mat2.rows {
             panic!("Cannot multiply matrices: dimensions don't match");
         }
 
         for i in 0..self.rows {
             for j in 0..self.cols {
-                let mut sum = 0;
+                let mut sum = T::zero();
                 for k in 0..mat1.cols {
-                    sum ^= mat1.get(i, k) & mat2.get(k, j);
+                    sum += mat1.get(i, k) * mat2.get(k, j);
                 }
                 self.set(i, j, sum);
             }
@@ -348,7 +437,10 @@ impl Mat {
     }
 
     // Generates a random row vector of length n and weight t
-    pub fn weighted_vector_random(rng: &mut rand::rngs::ThreadRng, n: usize, t: usize) -> Mat {
+    pub fn weighted_vector_random(rng: &mut rand::rngs::ThreadRng, n: usize, t: usize) -> Mat<T>
+    where
+        distributions::Standard: distributions::Distribution<T>,
+    {
         let mut vec = Mat::new(1, n);
         let mut cols = Vec::with_capacity(n); // remaining column indices
         for i in 0..n {
@@ -358,7 +450,11 @@ impl Mat {
         for i in 0..t {
             // Draw a random column index
             let nbr = rng.gen_range(0, n - i);
-            vec.set(0, cols[nbr], 1);
+            let mut elt = rng.gen::<T>();
+            while elt == T::zero() {
+                elt = rng.gen::<T>();
+            }
+            vec.set(0, cols[nbr], elt);
 
             // Remove the index from the list by putting it at the end
             cols.swap(nbr, n - 1 - i);
@@ -367,14 +463,16 @@ impl Mat {
         vec
     }
 
-    pub fn weight(&self) -> Option<u8> {
+    pub fn weight(&self) -> Option<usize> {
         if self.rows != 1 {
             return None;
         }
 
         let mut cnt = 0;
         for j in 0..self.cols {
-            cnt += self.get(0, j);
+            if self.get(0, j) != T::zero() {
+                cnt += 1;
+            }
         }
 
         Some(cnt)
@@ -383,180 +481,5 @@ impl Mat {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
-    #[test]
-    fn test_new() {
-        let mut mat = Mat::new(3, 4);
-        mat.set(2, 2, 1);
-        mat.set(1, 0, 1);
-        mat.set(2, 3, 1);
-
-        let v: Vec<u8> = vec![0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1];
-
-        assert_eq!(3, mat.rows());
-        assert_eq!(4, mat.cols());
-        assert_eq!(&mat.data, &v);
-    }
-
-    #[test]
-    fn test_is_permutation() {
-        let mut mat = Mat::new(5, 6);
-        mat.set(0, 4, 1);
-        mat.set(1, 2, 1);
-        mat.set(2, 3, 1);
-        mat.set(3, 5, 1);
-        mat.set(4, 0, 1);
-        println!();
-        mat.print();
-        assert!(!mat.is_permutation());
-
-        let mut mat = Mat::new(6, 6);
-        mat.set(0, 4, 1);
-        mat.set(1, 2, 1);
-        mat.set(3, 3, 1);
-        mat.set(3, 5, 1);
-        mat.set(4, 0, 1);
-        mat.set(5, 1, 1);
-        println!();
-        mat.print();
-        assert!(!mat.is_permutation());
-
-        let mut mat = Mat::new(6, 6);
-        mat.set(0, 4, 1);
-        mat.set(1, 3, 1);
-        mat.set(2, 3, 1);
-        mat.set(3, 5, 1);
-        mat.set(4, 0, 1);
-        mat.set(5, 1, 1);
-        println!();
-        mat.print();
-        assert!(!mat.is_permutation());
-
-        let mut mat = Mat::new(6, 6);
-        mat.set(0, 4, 1);
-        mat.set(1, 2, 1);
-        mat.set(2, 3, 1);
-        mat.set(3, 5, 1);
-        mat.set(4, 0, 1);
-        mat.set(5, 1, 1);
-        println!();
-        mat.print();
-        assert!(mat.is_permutation());
-    }
-
-    #[test]
-    fn test_permutation_random() {
-        let mut rng = rand::thread_rng();
-        let mat = Mat::permutation_random(&mut rng, 10);
-        println!();
-        mat.print();
-        assert!(mat.is_permutation());
-    }
-
-    #[test]
-    fn test_is_invertible() {
-        let id = Mat::identity(11);
-        println!();
-        id.print();
-        assert!(id.is_invertible());
-
-        let mut rng = rand::thread_rng();
-        let mat = Mat::permutation_random(&mut rng, 20);
-        println!();
-        mat.print();
-        assert!(mat.is_invertible());
-    }
-
-    #[test]
-    fn test_inverse() {
-        let id = Mat::identity(11);
-        assert_eq!(id.inverse().as_ref(), Some(&id));
-
-        let mut rng = rand::thread_rng();
-        let mat = Mat::permutation_random(&mut rng, 11);
-        assert_eq!(
-            mat.inverse()
-                .expect("Singular permutation matrix")
-                .inverse()
-                .expect("Singular inverse matrix"),
-            mat
-        );
-    }
-
-    #[test]
-    fn test_invertible_random() {
-        let mut rng = rand::thread_rng();
-        let mat = Mat::invertible_random(&mut rng, 15);
-        assert!(mat.is_invertible());
-        assert_eq!(
-            mat.inverse()
-                .expect("Singular permutation matrix")
-                .inverse()
-                .expect("Singular inverse matrix"),
-            mat
-        );
-        let mut prod = Mat::new(15, 15);
-        prod.mul(&mat, &mat.inverse().expect("Singular inverse matrix"));
-        let id = Mat::identity(15);
-        assert_eq!(prod, id);
-    }
-
-    // Check 'a + a = 0' and 'a + 0 = 0 + a = a'
-    #[test]
-    fn test_add_neutral_element() {
-        let mut rng = rand::thread_rng();
-        let mat = Mat::random(&mut rng, 11, 11);
-        let mut sum = Mat::new(11, 11);
-        sum.add(&mat, &mat);
-        let zero = Mat::new(11, 11);
-        assert_eq!(sum, zero);
-
-        sum.add(&mat, &zero);
-        assert_eq!(sum, mat);
-
-        sum.add(&zero, &mat);
-        assert_eq!(sum, mat);
-    }
-
-    #[test]
-    #[should_panic]
-    fn test_mul_wrong_dimensions() {
-        let mut prod = Mat::new(5, 5);
-        let mat1 = Mat::new(5, 4);
-        let mat2 = Mat::new(3, 5);
-        prod.mul(&mat1, &mat2);
-    }
-
-    // Check (ab)c = a(bc)
-    #[test]
-    fn test_mul_associativity() {
-        let mut rng = rand::thread_rng();
-
-        let a = Mat::random(&mut rng, 10, 8);
-        let b = Mat::random(&mut rng, 8, 13);
-        let c = Mat::random(&mut rng, 13, 4);
-
-        let mut ab = Mat::new(10, 13);
-        ab.mul(&a, &b);
-        let mut bc = Mat::new(8, 4);
-        bc.mul(&b, &c);
-
-        let mut abc1 = Mat::new(10, 4);
-        abc1.mul(&ab, &c);
-        let mut abc2 = Mat::new(10, 4);
-        abc2.mul(&a, &bc);
-
-        assert_eq!(abc1, abc2);
-    }
-
-    #[test]
-    fn test_weighted_vector_random() {
-        let mat = Mat::new(3, 4);
-        assert!(mat.weight() == None);
-
-        let mut rng = rand::thread_rng();
-        let vec = Mat::weighted_vector_random(&mut rng, 35, 13);
-        assert!(vec.weight().expect("Cannot compute vector's weight") == 13);
-    }
+    
 }
