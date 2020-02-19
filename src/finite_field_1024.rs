@@ -6,6 +6,7 @@ use std::fmt;
 use std::ops::Add;
 use std::ops::AddAssign;
 use std::ops::Mul;
+use std::ops::MulAssign;
 use std::ops::Sub;
 
 macro_rules! array_init {
@@ -200,6 +201,16 @@ impl Mul for F1024 {
             F1024(0)
         } else {
             exp(modulo(log(self) + log(other)))
+        }
+    }
+}
+
+impl MulAssign for F1024 {
+    fn mul_assign(&mut self, other: F1024) {
+        if *self == F1024(0) || other == F1024(0) {
+            *self = F1024(0);
+        } else {
+            *self = exp(modulo(log(*self) + log(other)));
         }
     }
 }

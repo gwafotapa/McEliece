@@ -1,3 +1,7 @@
+// Rework matrix and polynomial modules to move structures from the heap to the stack.
+// Add a standard form function to the matrix module.
+// Add a transpose function to the matrix module.
+
 // mod matrix;
 // mod goppa;
 // mod finite_field;

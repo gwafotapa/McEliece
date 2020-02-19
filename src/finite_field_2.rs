@@ -6,6 +6,7 @@ use std::fmt;
 use std::ops::Add;
 use std::ops::AddAssign;
 use std::ops::Mul;
+use std::ops::MulAssign;
 use std::ops::Sub;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -86,6 +87,15 @@ impl Mul for F2 {
     }
 }
 
+impl MulAssign for F2 {
+    fn mul_assign(&mut self, other: F2) {
+        *self = match self {
+            F2::Zero => F2::Zero,
+            F2::One => other,
+        };
+    }
+}
+
 impl fmt::Display for F2 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
@@ -111,9 +121,9 @@ impl distributions::Distribution<F2> for distributions::Standard {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::finite_field::Zero;
-    use crate::finite_field::One;
     use crate::finite_field::Inverse;
+    use crate::finite_field::One;
+    use crate::finite_field::Zero;
 
     #[test]
     fn f2_add() {

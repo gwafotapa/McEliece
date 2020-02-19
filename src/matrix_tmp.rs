@@ -1,17 +1,96 @@
+// Same as matrix.rs but implements the matrix data as an array on the stack instead of a vector on the heap.
+// Seems operational but all tests need to be reworked with fixed size matrices as they currently allow for dynamic size matrices.
+
 extern crate rand;
 
-use crate::finite_field::{Inverse, One, Zero};
-use rand::{distributions, Rng};
+use crate::finite_field;
+use rand::distributions;
+use rand::Rng;
 use std::fmt;
-use std::ops::{Add, AddAssign, Mul, Sub};
+use std::ops::Add;
+use std::ops::AddAssign;
+use std::ops::Mul;
+use std::ops::Sub;
+
+use finite_field::Inverse;
+use finite_field::One;
+use finite_field::Zero;
 
 // Type T must represent an element from a field, meaning all elements except 0 are inversible.
-#[derive(Clone, Eq, PartialEq)]
+
+// #[derive(Clone, Eq, PartialEq)]
+// pub struct Mat<T> {
+//     rows: usize,
+//     cols: usize,
+//     data: Vec<T>,
+// }
+
+const N: usize = 10;
+const M: usize = 12;
+
+#[derive(Clone, Copy)]
 pub struct Mat<T> {
     rows: usize,
     cols: usize,
-    data: Vec<T>,
+    data: [T; N * M],
 }
+
+impl<T> std::cmp::Eq for Mat<T> where
+    T: Copy
+        + fmt::Display
+        + Eq
+        + Zero
+        + One
+        + Add<Output = T>
+        + Sub<Output = T>
+        + Mul<Output = T>
+        + AddAssign
+        + Inverse
+{
+}
+
+impl<T> std::cmp::PartialEq for Mat<T>
+where
+    T: Copy
+        + fmt::Display
+        + Eq
+        + Zero
+        + One
+        + Add<Output = T>
+        + Sub<Output = T>
+        + Mul<Output = T>
+        + AddAssign
+        + Inverse,
+{
+    fn eq(&self, other: &Self) -> bool {
+        if self.rows != (*other).rows || self.cols != (*other).cols {
+            return false;
+        }
+
+        for i in 0..N * M {
+            if self.data[i] != (*other).data[i] {
+                return false;
+            }
+        }
+
+        true
+    }
+}
+
+// impl<
+//         T: Copy
+//             + fmt::Display
+//             + Eq
+//             + Zero
+//             + One
+//             + Add<Output = T>
+//             + Sub<Output = T>
+//             + Mul<Output = T>
+//             + AddAssign
+//             + Inverse,
+//     > std::cmp::Eq for Mat<T>
+// {
+// }
 
 impl<T> fmt::Debug for Mat<T>
 where
@@ -44,13 +123,43 @@ where
         + AddAssign
         + Inverse,
 {
+    // pub fn new(n: usize, m: usize) -> Mat<T> {
+    //     let mut mat = Mat {
+    //         rows: n,
+    //         cols: m,
+    //         data: Vec::<T>::with_capacity(n * m),
+    //     };
+    //     mat.data.resize(n * m, T::zero());
+
+    //     mat
+    // }
+
+    // pub fn rows(&self) -> usize {
+    //     self.rows
+    // }
+
+    // pub fn cols(&self) -> usize {
+    //     self.cols
+    // }
+
+    // pub fn data(&self) -> Vec<T> {
+    //     self.data.clone()
+    // }
+
+    // pub fn set(&mut self, row: usize, col: usize, val: T) {
+    //     self.data[row * self.cols + col] = val;
+    // }
+
+    // pub fn get(&self, row: usize, col: usize) -> T {
+    //     self.data[row * self.cols + col]
+    // }
+
     pub fn new(n: usize, m: usize) -> Mat<T> {
-        let mut mat = Mat {
+        let mat = Mat {
             rows: n,
             cols: m,
-            data: Vec::<T>::with_capacity(n * m),
+            data: [T::zero(); N * M],
         };
-        mat.data.resize(n * m, T::zero());
 
         mat
     }
@@ -63,8 +172,8 @@ where
         self.cols
     }
 
-    pub fn data(&self) -> Vec<T> {
-        self.data.clone()
+    pub fn data(&self) -> [T; N * M] {
+        self.data
     }
 
     pub fn set(&mut self, row: usize, col: usize, val: T) {
@@ -469,3 +578,6 @@ where
         Some(cnt)
     }
 }
+
+#[cfg(test)]
+mod tests {}

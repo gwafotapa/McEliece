@@ -6,6 +6,7 @@ use std::fmt;
 use std::ops::Add;
 use std::ops::AddAssign;
 use std::ops::Mul;
+use std::ops::MulAssign;
 use std::ops::Sub;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -87,6 +88,16 @@ impl Mul for F7 {
             F7(0)
         } else {
             exp(modulo(log(self) + log(other)))
+        }
+    }
+}
+
+impl MulAssign for F7 {
+    fn mul_assign(&mut self, other: F7) {
+        if *self == F7(0) || other == F7(0) {
+            *self = F7(0);
+        } else {
+            *self = exp(modulo(log(*self) + log(other)))
         }
     }
 }
