@@ -193,6 +193,24 @@ where
         slice.swap_with_slice(&mut self.data[row1 * self.cols..(row1 + 1) * self.cols]);
     }
 
+    pub fn swap_cols(&mut self, col1: usize, col2: usize) {
+        if col1 == col2 {
+            return;
+        }
+
+        for i in 0..self.rows {
+            let tmp = self.get(i, col1);
+            self.set(i, col1, self.get(i, col2));
+            self.set(i, col2, tmp);
+        }
+    }
+
+    pub fn addassign_row(&mut self, row1: usize, row2: usize) {
+        for j in 0..self.cols {
+            self.set(row1, j, self.get(row1, j) + self.get(row2, j));
+        }
+    }
+
     // Inverse computation via gaussian elimination
     // See https://en.wikipedia.org/wiki/Gaussian_elimination
     pub fn inverse(&self) -> Option<Mat<T>> {
@@ -467,5 +485,83 @@ where
         }
 
         Some(cnt)
+    }
+
+    // Compute, if possible, (U, H, P) with U invertible, H standard form and P permutation
+    // such that self = UHP
+    pub fn standard_form(
+        &self,
+        rng: &mut rand::rngs::ThreadRng,
+    ) -> Option<(Mat<T>, Mat<T>, Mat<T>)> {
+        let n = self.rows;
+        let m = self.cols;
+        let mut U = Mat::identity(n);
+        let mut H = self.clone();
+        let mut P = Mat::identity(m);
+        let mut cols = Vec::with_capacity(n); // list of the columns we haven't yet checked for a pivot
+        cols.resize(n, 0);
+        for i in 0..n {
+            cols[i] = i;
+        }
+        let mut cols_len = n;
+
+        for j in 0..n {
+            // Among the remaining columns, select one with a pivot
+            let mut pivot = false;
+            let mut row_pivot = 0;
+            let mut col_pivot = 0;
+            while !pivot && cols_len > 0 {
+                let k = rng.gen_range(0, cols_len);
+                col_pivot = cols[k];
+
+                for i in j..n {
+                    if H.get(i, col_pivot) != T::zero() {
+                        pivot = true;
+                        row_pivot = i;
+                        break;
+                    }
+                }
+
+                if !pivot {
+                    // Column will never yield a pivot: remove it from the list
+                    cols_len -= 1;
+                    cols[k] = cols[cols_len];
+                }
+            }
+
+            if !pivot {
+                return None;
+            }
+
+            // Remove column 'j' if it wasn't already
+            if cols[j] == j && cols_len >= j + 1 {
+                cols_len -= 1;
+                cols[j] = cols[cols_len];
+            }
+
+            // Put pivot column in the adequate position and update P
+            H.swap_cols(j, col_pivot);
+            P.swap_cols(j, col_pivot);
+
+            // Put pivot row in the adequate position and update U
+            H.swap_rows(j, row_pivot);
+            U.swap_rows(j, row_pivot);
+
+            // Nullify the rest of the column and update matrix U accordingly
+            for i in 0..j {
+                if H.get(i, j) != T::zero() {
+                    H.addassign_row(i, j);
+                    U.addassign_row(i, j);
+                }
+            }
+            for i in j+1..n {
+                if H.get(i, j) != T::zero() {
+                    H.addassign_row(i, j);
+                    U.addassign_row(i, j);
+                }
+            }
+        }
+
+        Some((U, H, P))
     }
 }
