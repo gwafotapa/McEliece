@@ -588,4 +588,14 @@ where
 
         true
     }
+
+    pub fn transpose(&self) -> Mat<T> {
+        let mut t = Mat::new(self.cols, self.rows);
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                t.set(i, j, self.get(j, i));
+            }
+        }
+        t
+    }
 }
