@@ -2,7 +2,7 @@ use crate::finite_field;
 
 use rand::{distributions, Rng};
 use std::fmt;
-use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, Neg};
+use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct F7(usize);
@@ -43,7 +43,7 @@ impl finite_field::One for F7 {
 
 impl Neg for F7 {
     type Output = F7;
-    
+
     fn neg(self) -> F7 {
         match self {
             F7(0) => F7(0),
@@ -183,5 +183,16 @@ mod test {
             assert_eq!(a.inv().unwrap().inv().unwrap(), a);
             assert_eq!(a * a.inv().unwrap(), i);
         }
+    }
+
+    #[test]
+    fn f7_neg() {
+        let mut rng = rand::thread_rng();
+        let a: F7 = rng.gen();
+        let b: F7 = rng.gen();
+        let z = F7::zero();
+        assert_eq!(-z, z);
+        assert_eq!(--a, a);
+        assert_eq!(a + -b, a - b);
     }
 }

@@ -1,5 +1,7 @@
 extern crate mceliece;
 
+use rand::Rng;
+
 use mceliece::finite_field::*;
 use mceliece::finite_field_2::*;
 use mceliece::matrix::*;
@@ -310,4 +312,13 @@ fn matrix_f2_standard_form() {
     let mut uhp = Mat::new(13, 31);
     uhp.mul(&uh, &p);
     assert_eq!(s, uhp);
+}
+
+#[test]
+fn matrix_f2_transpose() {
+    let mut rng = rand::thread_rng();
+    let rows = rng.gen_range(0, 100);
+    let cols = rng.gen_range(0, 100);
+    let mat: Mat<F2> = Mat::random(&mut rng, rows, cols);
+    assert_eq!(mat, mat.transpose().transpose());
 }

@@ -1,6 +1,6 @@
 use crate::finite_field::{Inverse, One, Zero};
-use std::{cmp, fmt};
 use std::ops::{Add, AddAssign, Mul, MulAssign, Sub};
+use std::{cmp, fmt};
 
 #[derive(Clone, Eq, PartialEq)]
 pub struct Poly<T>(Vec<T>);
@@ -45,7 +45,7 @@ where
     }
 
     pub fn x_n(n: usize) -> Poly<T> {
-        let mut v = Vec::with_capacity(n + 1);
+        let mut v = Vec::with_capacity(n);
         v.resize(n, T::zero());
         v.push(T::one());
         Poly(v)
@@ -55,11 +55,11 @@ where
         self.0.len() - 1
     }
 
-    fn get(&self, i: usize) -> T {
+    pub fn get(&self, i: usize) -> T {
         self.0[i]
     }
 
-    fn set(&mut self, i: usize, val: T) {
+    pub fn set(&mut self, i: usize, val: T) {
         self.0[i] = val;
     }
 
@@ -94,9 +94,9 @@ where
     }
 
     pub fn eval(&self, point: T) -> T {
-        let mut eval = T::zero();
-        for i in 0..self.degree() + 1 {
-            let mut x = point;
+        let mut eval = self.get(0);
+        for i in 1..self.degree() + 1 {
+            let mut x = T::one();
             for _j in 0..i {
                 x *= point;
             }

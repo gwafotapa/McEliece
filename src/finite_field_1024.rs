@@ -288,4 +288,11 @@ mod test {
             assert_eq!(a * a.inv().unwrap(), i);
         }
     }
+
+    #[test]
+    fn f1024_neg() {
+        let mut rng = rand::thread_rng();
+        let a: F1024 = rng.gen();
+        assert_eq!(-a, a);
+    }
 }

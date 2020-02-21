@@ -157,4 +157,11 @@ mod tests {
         assert_eq!(F2::zero().inv(), None);
         assert_eq!(F2::one().inv(), Some(F2::one()));
     }
+
+    #[test]
+    fn f2_neg() {
+        let mut rng = rand::thread_rng();
+        let a: F2 = rng.gen();
+        assert_eq!(-a, a);
+    }
 }

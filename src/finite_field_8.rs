@@ -5,7 +5,7 @@ use std::fmt;
 use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, Neg};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct F8(usize);
+pub struct F8(pub usize);
 
 const CARD: usize = 8;
 
@@ -76,7 +76,7 @@ impl Sub for F8 {
 
 impl AddAssign for F8 {
     fn add_assign(&mut self, other: F8) {
-        *self = F8((self.0 + other.0) % CARD);
+        *self = F8(self.0 ^ other.0);
     }
 }
 
@@ -171,5 +171,12 @@ mod test {
             assert_eq!(a.inv().unwrap().inv().unwrap(), a);
             assert_eq!(a * a.inv().unwrap(), i);
         }
+    }
+
+    #[test]
+    fn f8_neg() {
+        let mut rng = rand::thread_rng();
+        let a: F8 = rng.gen();
+        assert_eq!(-a, a);
     }
 }

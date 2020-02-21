@@ -3,7 +3,7 @@ extern crate rand;
 use crate::finite_field::{Inverse, One, Zero};
 use rand::{distributions, Rng};
 use std::fmt;
-use std::ops::{Add, AddAssign, Mul, Sub, Neg};
+use std::ops::{Add, AddAssign, Mul, Neg, Sub};
 
 // Type T must represent an element from a field, meaning all elements except 0 are inversible.
 #[derive(Clone, Eq, PartialEq)]
@@ -23,8 +23,8 @@ where
         + Add<Output = T>
         + Sub<Output = T>
         + Mul<Output = T>
-    + AddAssign
-    + Neg<Output = T>
+        + AddAssign
+        + Neg<Output = T>
         + Inverse,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -42,8 +42,8 @@ where
         + Add<Output = T>
         + Sub<Output = T>
         + Mul<Output = T>
-    + AddAssign
-        + Neg
+        + AddAssign
+        + Neg<Output = T>
         + Inverse,
 {
     pub fn new(n: usize, m: usize) -> Mat<T> {
@@ -539,8 +539,18 @@ where
             U.swap_rows(j + m - n, row_pivot);
 
             // Pivot is now at (j+m-n, j)
+            
+            // Multiply pivot row by pivot^-1 and update U
+            let pivot_inv = H.get(j + m - n, j).inv().unwrap();
+            for k in 0..n {
+                H.set(j + m - n, k, pivot_inv * H.get(j + m - n, k));
+            }
+            for k in 0..m {
+                U.set(j + m - n, k, pivot_inv * U.get(j + m - n, k));
+            }
 
             // Nullify the rest of the column and update matrix U accordingly
+            
             // for i in 0..j + m - n {
             //     if H.get(i, j) != T::zero() {
             //         H.combine_rows(i, H.get(i, j), j + m - n);
@@ -556,7 +566,7 @@ where
 
             for i in 0..m {
                 if H.get(i, j) != T::zero() && i != j + m - n {
-                    let lambda = H.get(i, j);
+                    let lambda = -H.get(i, j);
                     H.combine_rows(i, lambda, j + m - n);
                     U.combine_rows(i, lambda, j + m - n);
                 }
@@ -591,8 +601,8 @@ where
 
     pub fn transpose(&self) -> Mat<T> {
         let mut t = Mat::new(self.cols, self.rows);
-        for i in 0..self.rows {
-            for j in 0..self.cols {
+        for i in 0..t.rows {
+            for j in 0..t.cols {
                 t.set(i, j, self.get(j, i));
             }
         }

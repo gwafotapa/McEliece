@@ -1,5 +1,7 @@
 extern crate mceliece;
 
+use rand::Rng;
+
 use mceliece::finite_field_7::*;
 use mceliece::matrix::*;
 
@@ -191,4 +193,54 @@ fn matrix_f7_weighted_vector_random() {
     let mut rng = rand::thread_rng();
     let vec: Mat<F7> = Mat::weighted_vector_random(&mut rng, 35, 13);
     assert_eq!(vec.weight().expect("Cannot compute vector's weight"), 13);
+}
+
+#[test]
+fn matrix_f7_standard_form() {
+    let mat: Mat<F7> = Mat::identity(19);
+    assert!(mat.is_standard_form());
+
+    let mut rng = rand::thread_rng();
+    let (u, h, p) = mat
+        .standard_form()
+        .expect("Cannot recognize the identity matrix as a standard form");
+    assert!(u.is_permutation());
+    assert_eq!(h, mat);
+    assert!(p.is_permutation());
+
+    let mut h: Mat<F7> = Mat::random(&mut rng, 13, 31);
+    let inv: Mat<F7> = Mat::invertible_random(&mut rng, 13);
+    for i in 0..13 {
+        for j in 0..13 {
+            h.set(i, j, inv.get(i, j));
+        }
+    }
+    let (u, s, p) = h
+        .standard_form()
+        .expect("Failed to put a full rank matrix in standard form");
+
+    u.print();
+    println!();
+    s.print();
+    println!();
+    p.print();
+    println!();
+    
+    assert!(u.is_invertible());
+    assert!(s.is_standard_form());
+    assert!(p.is_permutation());
+    let mut uh = Mat::new(13, 31);
+    uh.mul(&u, &h);
+    let mut uhp = Mat::new(13, 31);
+    uhp.mul(&uh, &p);
+    assert_eq!(s, uhp);
+}
+
+#[test]
+fn matrix_f7_transpose() {
+    let mut rng = rand::thread_rng();
+    let rows = rng.gen_range(0, 100);
+    let cols = rng.gen_range(0, 100);
+    let mat: Mat<F7> = Mat::random(&mut rng, rows, cols);
+    assert_eq!(mat, mat.transpose().transpose());
 }

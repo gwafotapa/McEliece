@@ -2,12 +2,12 @@ use crate::finite_field::{Inverse, One, Zero};
 use crate::matrix::Mat;
 use crate::polynomial::Poly;
 use std::fmt;
-use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, Neg};
+use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub};
 
-const GOPPA_N: usize = 10;
-const GOPPA_T: usize = 12;
+const GOPPA_N: usize = 8;
+const GOPPA_T: usize = 2;
 
-struct Goppa<T> {
+pub struct Goppa<T> {
     poly: Poly<T>,
     list: [T; GOPPA_N],
 }
@@ -23,13 +23,14 @@ where
         + AddAssign
         + Sub<Output = T>
         + Mul<Output = T>
-    + MulAssign
+        + MulAssign
         + Neg<Output = T>
         + Inverse,
 {
     pub fn new(poly: &Poly<T>, list: [T; GOPPA_N]) -> Result<Goppa<T>, &'static str> {
         for i in 0..GOPPA_N {
             if poly.eval(list[i]) == T::zero() {
+                println!("{} is a root of the polynomial", list[i]);
                 return Err("List contains a root of the polynomial");
             }
         }
@@ -47,7 +48,7 @@ where
         self.list.clone()
     }
 
-    fn parity_check_y(&self) -> Mat<T> {
+    pub fn parity_check_y(&self) -> Mat<T> {
         let mut y = Mat::new(GOPPA_T, GOPPA_N);
         for i in 0..GOPPA_N {
             y.set(0, i, T::one());
@@ -55,15 +56,16 @@ where
         for i in 1..GOPPA_T {
             for j in 0..GOPPA_N {
                 let elt = self.list[j];
-                y.set(i, j, elt * y.get(i, j));
+                y.set(i, j, elt * y.get(i - 1, j));
             }
         }
         y
     }
 
-    fn parity_check_z(&self) -> Mat<T> {
+    pub fn parity_check_z(&self) -> Mat<T> {
         let mut z = Mat::new(GOPPA_N, GOPPA_N);
         for i in 0..GOPPA_N {
+            println!("{} {}", self.list[i], self.poly.eval(self.list[i]));
             z.set(i, i, self.poly.eval(self.list[i]).inv().unwrap());
         }
         z
@@ -81,13 +83,17 @@ where
         let h = self.parity_check();
         let m = h.rows();
         let n = h.cols();
-        let mut g = Mat::new(n, m);
-        for i in 0..n {
-            g.set(i, i, T::one());
-            for j in n..m {
-                g.set(i, j, -h.get(j - n, i));
+        let k = n - m;
+        let (_u, hs, p) = h.standard_form().unwrap();
+        let mut gs = Mat::new(k, n);
+        for i in 0..k {
+            gs.set(i, i, T::one());
+            for j in k..n {
+                gs.set(i, j, -hs.get(j - k, i));
             }
         }
+        let mut g = Mat::new(k, n);
+        g.mul(&gs, &p.inverse().unwrap().transpose());
         g
     }
 }
