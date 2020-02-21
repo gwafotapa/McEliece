@@ -3,7 +3,7 @@ extern crate rand;
 use crate::finite_field::{Inverse, One, Zero};
 use rand::{distributions, Rng};
 use std::fmt;
-use std::ops::{Add, AddAssign, Mul, Sub};
+use std::ops::{Add, AddAssign, Mul, Sub, Neg};
 
 // Type T must represent an element from a field, meaning all elements except 0 are inversible.
 #[derive(Clone, Eq, PartialEq)]
@@ -23,7 +23,8 @@ where
         + Add<Output = T>
         + Sub<Output = T>
         + Mul<Output = T>
-        + AddAssign
+    + AddAssign
+    + Neg<Output = T>
         + Inverse,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -41,7 +42,8 @@ where
         + Add<Output = T>
         + Sub<Output = T>
         + Mul<Output = T>
-        + AddAssign
+    + AddAssign
+        + Neg
         + Inverse,
 {
     pub fn new(n: usize, m: usize) -> Mat<T> {
@@ -489,43 +491,38 @@ where
 
     // Compute, if possible, (U, H, P) with U invertible, H standard form and P permutation
     // such that self = UHP
-    pub fn standard_form(
-        &self,
-        rng: &mut rand::rngs::ThreadRng,
-    ) -> Option<(Mat<T>, Mat<T>, Mat<T>)> {
+    pub fn standard_form(&self) -> Option<(Mat<T>, Mat<T>, Mat<T>)> {
         let m = self.rows;
         let n = self.cols;
+        if m > n {
+            return None;
+        }
         let mut U = Mat::identity(m);
         let mut H = self.clone();
         let mut P = Mat::identity(n);
-        let mut cols = Vec::with_capacity(n); // list of the columns we haven't yet checked for a pivot
-        cols.resize(n, 0);
-        for i in 0..n {
-            cols[i] = i;
-        }
-        let mut cols_len = n;
+        let mut col = n; // index of the column to check for a pivot
 
-        for j in 0..m {
+        // j is the index of the column to "standardize":
+        // The first iteration sets a 1 at the last position (m-1) of column n-1.
+        // The second iteration sets a 1 at position m-2 of column n-2.
+        // ...
+        // The last iteration sets a 1 at position 0 of column n-m.
+        for j in (n - m..n).rev() {
             // Among the remaining columns, select one with a pivot
             let mut pivot = false;
             let mut row_pivot = 0;
             let mut col_pivot = 0;
-            while !pivot && cols_len > 0 {
-                let k = rng.gen_range(0, cols_len);
-                col_pivot = cols[k];
+            while !pivot && col != 0 {
+                col -= 1;
 
-                for i in j..m {
-                    if H.get(i, col_pivot) != T::zero() {
+                // Check column 'col' for a pivot
+                for row in (0..j + m - n + 1).rev() {
+                    if H.get(row, col) != T::zero() {
                         pivot = true;
-                        row_pivot = i;
+                        row_pivot = row;
+                        col_pivot = col;
                         break;
                     }
-                }
-
-                if !pivot {
-                    // Column will never yield a pivot: remove it from the list
-                    cols_len -= 1;
-                    cols[k] = cols[cols_len];
                 }
             }
 
@@ -533,31 +530,35 @@ where
                 return None;
             }
 
-            // Remove column 'j' if it wasn't already
-            if cols[j] == j && cols_len >= j + 1 {
-                cols_len -= 1;
-                cols[j] = cols[cols_len];
-            }
-
             // Put pivot column in the adequate position and update P
             H.swap_cols(j, col_pivot);
             P.swap_cols(j, col_pivot);
 
             // Put pivot row in the adequate position and update U
-            H.swap_rows(j, row_pivot);
-            U.swap_rows(j, row_pivot);
+            H.swap_rows(j + m - n, row_pivot);
+            U.swap_rows(j + m - n, row_pivot);
+
+            // Pivot is now at (j+m-n, j)
 
             // Nullify the rest of the column and update matrix U accordingly
-            for i in 0..j {
-                if H.get(i, j) != T::zero() {
-                    H.combine_rows(i, H.get(i, j), j);
-                    U.combine_rows(i, H.get(i, j), j);
-                }
-            }
-            for i in j+1..m {
-                if H.get(i, j) != T::zero() {
-                    H.combine_rows(i, H.get(i, j), j);
-                    U.combine_rows(i, H.get(i, j), j);
+            // for i in 0..j + m - n {
+            //     if H.get(i, j) != T::zero() {
+            //         H.combine_rows(i, H.get(i, j), j + m - n);
+            //         U.combine_rows(i, H.get(i, j), j + m - n);
+            //     }
+            // }
+            // for i in j + m - n + 1..m {
+            //     if H.get(i, j) != T::zero() {
+            //         H.combine_rows(i, H.get(i, j), j + m - n);
+            //         U.combine_rows(i, H.get(i, j), j + m - n);
+            //     }
+            // }
+
+            for i in 0..m {
+                if H.get(i, j) != T::zero() && i != j + m - n {
+                    let lambda = H.get(i, j);
+                    H.combine_rows(i, lambda, j + m - n);
+                    U.combine_rows(i, lambda, j + m - n);
                 }
             }
         }
@@ -572,7 +573,7 @@ where
             return false;
         }
         for i in 0..m {
-            for j in n-m..n {
+            for j in n - m..n {
                 if n + i == m + j {
                     if self.get(i, j) != T::one() {
                         return false;
@@ -584,7 +585,7 @@ where
                 }
             }
         }
-        
+
         true
     }
 }

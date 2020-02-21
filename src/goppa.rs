@@ -2,7 +2,7 @@ use crate::finite_field::{Inverse, One, Zero};
 use crate::matrix::Mat;
 use crate::polynomial::Poly;
 use std::fmt;
-use std::ops::{Add, AddAssign, Mul, MulAssign, Sub};
+use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, Neg};
 
 const GOPPA_N: usize = 10;
 const GOPPA_T: usize = 12;
@@ -23,7 +23,8 @@ where
         + AddAssign
         + Sub<Output = T>
         + Mul<Output = T>
-        + MulAssign
+    + MulAssign
+        + Neg<Output = T>
         + Inverse,
 {
     pub fn new(poly: &Poly<T>, list: [T; GOPPA_N]) -> Result<Goppa<T>, &'static str> {
@@ -74,5 +75,19 @@ where
         let mut h = Mat::new(GOPPA_T, GOPPA_N);
         h.mul(&y, &z);
         h
+    }
+
+    pub fn generator(&self) -> Mat<T> {
+        let h = self.parity_check();
+        let m = h.rows();
+        let n = h.cols();
+        let mut g = Mat::new(n, m);
+        for i in 0..n {
+            g.set(i, i, T::one());
+            for j in n..m {
+                g.set(i, j, -h.get(j - n, i));
+            }
+        }
+        g
     }
 }

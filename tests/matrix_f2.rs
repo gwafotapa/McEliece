@@ -278,31 +278,36 @@ fn matrix_f2_standard_form() {
 
     let mut rng = rand::thread_rng();
     let (u, h, p) = mat
-        .standard_form(&mut rng)
+        .standard_form()
         .expect("Cannot recognize the identity matrix as a standard form");
     assert!(u.is_permutation());
     assert_eq!(h, mat);
     assert!(p.is_permutation());
 
-    let mut mat: Mat<F2> = Mat::random(&mut rng, 13, 31);
+    let mut h: Mat<F2> = Mat::random(&mut rng, 13, 31);
     let inv: Mat<F2> = Mat::invertible_random(&mut rng, 13);
     for i in 0..13 {
         for j in 0..13 {
-            mat.set(i, j, inv.get(i, j));
+            h.set(i, j, inv.get(i, j));
         }
     }
-    let (u, h, p) = mat
-        .standard_form(&mut rng)
+    let (u, s, p) = h
+        .standard_form()
         .expect("Failed to put a full rank matrix in standard form");
 
     u.print();
     println!();
-    h.print();
+    s.print();
     println!();
     p.print();
     println!();
     
     assert!(u.is_invertible());
-    assert!(h.is_standard_form());
+    assert!(s.is_standard_form());
     assert!(p.is_permutation());
+    let mut uh = Mat::new(13, 31);
+    uh.mul(&u, &h);
+    let mut uhp = Mat::new(13, 31);
+    uhp.mul(&uh, &p);
+    assert_eq!(s, uhp);
 }

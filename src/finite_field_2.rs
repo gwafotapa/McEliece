@@ -1,13 +1,8 @@
 use crate::finite_field;
 
-use rand::distributions;
-use rand::Rng;
+use rand::{distributions, Rng};
 use std::fmt;
-use std::ops::Add;
-use std::ops::AddAssign;
-use std::ops::Mul;
-use std::ops::MulAssign;
-use std::ops::Sub;
+use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, Neg};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum F2 {
@@ -24,6 +19,14 @@ impl finite_field::Zero for F2 {
 impl finite_field::One for F2 {
     fn one() -> F2 {
         F2::One
+    }
+}
+
+impl Neg for F2 {
+    type Output = F2;
+    
+    fn neg(self) -> F2 {
+        self
     }
 }
 

@@ -3,11 +3,7 @@ use crate::finite_field;
 use rand::distributions;
 use rand::Rng;
 use std::fmt;
-use std::ops::Add;
-use std::ops::AddAssign;
-use std::ops::Mul;
-use std::ops::MulAssign;
-use std::ops::Sub;
+use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, Neg};
 
 macro_rules! array_init {
     ( $( $x:expr ),+ ) => {
@@ -159,6 +155,14 @@ impl finite_field::Zero for F1024 {
 impl finite_field::One for F1024 {
     fn one() -> F1024 {
         F1024(1)
+    }
+}
+
+impl Neg for F1024 {
+    type Output = F1024;
+    
+    fn neg(self) -> F1024 {
+        self
     }
 }
 

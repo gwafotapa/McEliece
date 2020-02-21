@@ -1,13 +1,8 @@
 use crate::finite_field;
 
-use rand::distributions;
-use rand::Rng;
+use rand::{distributions, Rng};
 use std::fmt;
-use std::ops::Add;
-use std::ops::AddAssign;
-use std::ops::Mul;
-use std::ops::MulAssign;
-use std::ops::Sub;
+use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, Neg};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct F7(usize);
@@ -43,6 +38,23 @@ impl finite_field::Zero for F7 {
 impl finite_field::One for F7 {
     fn one() -> F7 {
         F7(1)
+    }
+}
+
+impl Neg for F7 {
+    type Output = F7;
+    
+    fn neg(self) -> F7 {
+        match self {
+            F7(0) => F7(0),
+            F7(1) => F7(6),
+            F7(2) => F7(5),
+            F7(3) => F7(4),
+            F7(4) => F7(3),
+            F7(5) => F7(2),
+            F7(6) => F7(1),
+            _ => F7(0),
+        }
     }
 }
 
