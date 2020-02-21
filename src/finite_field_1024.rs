@@ -167,10 +167,10 @@ impl Neg for F1024 {
 }
 
 impl finite_field::Inverse for F1024 {
-    fn inv(&self) -> Option<F1024> {
+    fn inv(self) -> Option<F1024> {
         match self {
             F1024(0) => None,
-            _ => Some(exp(CARD - 1 - log(*self))),
+            _ => Some(exp(CARD - 1 - log(self))),
         }
     }
 }

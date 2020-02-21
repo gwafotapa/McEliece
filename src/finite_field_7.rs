@@ -59,10 +59,10 @@ impl Neg for F7 {
 }
 
 impl finite_field::Inverse for F7 {
-    fn inv(&self) -> Option<F7> {
+    fn inv(self) -> Option<F7> {
         match self {
             F7(0) => None,
-            _ => Some(exp(CARD - 1 - log(*self))),
+            _ => Some(exp(CARD - 1 - log(self))),
         }
     }
 }

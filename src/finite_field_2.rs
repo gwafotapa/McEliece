@@ -31,7 +31,7 @@ impl Neg for F2 {
 }
 
 impl finite_field::Inverse for F2 {
-    fn inv(&self) -> Option<F2> {
+    fn inv(self) -> Option<F2> {
         match self {
             F2::Zero => None,
             F2::One => Some(F2::One),
