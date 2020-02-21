@@ -1,4 +1,7 @@
 // Rework matrix and polynomial modules to move structures from the heap to the stack.
+// Is it reasonable ? Aren't matrices huge and so better stored in the heap ?
+// Normalize in standard form algorithm
+// Add a function normalize and incorporate combine_rows where adequate
 // Add a transpose function to the matrix module.
 
 // mod matrix;

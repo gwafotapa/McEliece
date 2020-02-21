@@ -205,9 +205,9 @@ where
         }
     }
 
-    pub fn addassign_row(&mut self, row1: usize, row2: usize) {
+    pub fn combine_rows(&mut self, row1: usize, lambda: T, row2: usize) {
         for j in 0..self.cols {
-            self.set(row1, j, self.get(row1, j) + self.get(row2, j));
+            self.set(row1, j, self.get(row1, j) + lambda * self.get(row2, j));
         }
     }
 
@@ -493,11 +493,11 @@ where
         &self,
         rng: &mut rand::rngs::ThreadRng,
     ) -> Option<(Mat<T>, Mat<T>, Mat<T>)> {
-        let n = self.rows;
-        let m = self.cols;
-        let mut U = Mat::identity(n);
+        let m = self.rows;
+        let n = self.cols;
+        let mut U = Mat::identity(m);
         let mut H = self.clone();
-        let mut P = Mat::identity(m);
+        let mut P = Mat::identity(n);
         let mut cols = Vec::with_capacity(n); // list of the columns we haven't yet checked for a pivot
         cols.resize(n, 0);
         for i in 0..n {
@@ -505,7 +505,7 @@ where
         }
         let mut cols_len = n;
 
-        for j in 0..n {
+        for j in 0..m {
             // Among the remaining columns, select one with a pivot
             let mut pivot = false;
             let mut row_pivot = 0;
@@ -514,7 +514,7 @@ where
                 let k = rng.gen_range(0, cols_len);
                 col_pivot = cols[k];
 
-                for i in j..n {
+                for i in j..m {
                     if H.get(i, col_pivot) != T::zero() {
                         pivot = true;
                         row_pivot = i;
@@ -550,18 +550,41 @@ where
             // Nullify the rest of the column and update matrix U accordingly
             for i in 0..j {
                 if H.get(i, j) != T::zero() {
-                    H.addassign_row(i, j);
-                    U.addassign_row(i, j);
+                    H.combine_rows(i, H.get(i, j), j);
+                    U.combine_rows(i, H.get(i, j), j);
                 }
             }
-            for i in j+1..n {
+            for i in j+1..m {
                 if H.get(i, j) != T::zero() {
-                    H.addassign_row(i, j);
-                    U.addassign_row(i, j);
+                    H.combine_rows(i, H.get(i, j), j);
+                    U.combine_rows(i, H.get(i, j), j);
                 }
             }
         }
 
         Some((U, H, P))
+    }
+
+    pub fn is_standard_form(&self) -> bool {
+        let m = self.rows;
+        let n = self.cols;
+        if m > n {
+            return false;
+        }
+        for i in 0..m {
+            for j in n-m..n {
+                if n + i == m + j {
+                    if self.get(i, j) != T::one() {
+                        return false;
+                    }
+                } else {
+                    if self.get(i, j) != T::zero() {
+                        return false;
+                    }
+                }
+            }
+        }
+        
+        true
     }
 }

@@ -270,3 +270,39 @@ fn matrix_f2_weighted_vector_random() {
     let vec: Mat<F2> = Mat::weighted_vector_random(&mut rng, 35, 13);
     assert_eq!(vec.weight().expect("Cannot compute vector's weight"), 13);
 }
+
+#[test]
+fn matrix_f2_standard_form() {
+    let mat: Mat<F2> = Mat::identity(19);
+    assert!(mat.is_standard_form());
+
+    let mut rng = rand::thread_rng();
+    let (u, h, p) = mat
+        .standard_form(&mut rng)
+        .expect("Cannot recognize the identity matrix as a standard form");
+    assert!(u.is_permutation());
+    assert_eq!(h, mat);
+    assert!(p.is_permutation());
+
+    let mut mat: Mat<F2> = Mat::random(&mut rng, 13, 31);
+    let inv: Mat<F2> = Mat::invertible_random(&mut rng, 13);
+    for i in 0..13 {
+        for j in 0..13 {
+            mat.set(i, j, inv.get(i, j));
+        }
+    }
+    let (u, h, p) = mat
+        .standard_form(&mut rng)
+        .expect("Failed to put a full rank matrix in standard form");
+
+    u.print();
+    println!();
+    h.print();
+    println!();
+    p.print();
+    println!();
+    
+    assert!(u.is_invertible());
+    assert!(h.is_standard_form());
+    assert!(p.is_permutation());
+}
