@@ -2,14 +2,12 @@ use crate::finite_field::{Inverse, One, Zero};
 use crate::matrix::Mat;
 use crate::polynomial::Poly;
 use std::fmt;
-use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub};
-
-const GOPPA_N: usize = 8;
-const GOPPA_T: usize = 2;
+use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub};
 
 pub struct Goppa<T> {
+    len: usize,
     poly: Poly<T>,
-    list: [T; GOPPA_N],
+    set: Vec<T>,
 }
 
 impl<T> Goppa<T>
@@ -20,53 +18,63 @@ where
         + Zero
         + One
         + Add<Output = T>
-        + AddAssign
         + Sub<Output = T>
         + Mul<Output = T>
-        + MulAssign
         + Neg<Output = T>
-        + Inverse,
+        + Inverse
+        + AddAssign
+        + MulAssign,
 {
-    pub fn new(poly: &Poly<T>, list: [T; GOPPA_N]) -> Result<Goppa<T>, &'static str> {
-        for i in 0..GOPPA_N {
-            if poly.eval(list[i]) == T::zero() {
-                println!("{} is a root of the polynomial", list[i]);
-                return Err("List contains a root of the polynomial");
+    pub fn new(poly: Poly<T>, set: Vec<T>) -> Result<Goppa<T>, &'static str> {
+        for i in 0..set.len() {
+            if poly.eval(set[i]) == T::zero() {
+                println!("{} is a root of the polynomial", set[i]);
+                return Err("Set contains a root of the polynomial");
             }
         }
         Ok(Goppa::<T> {
-            poly: poly.clone(),
-            list,
+            len: set.len(),
+            poly,
+            set,
         })
     }
 
-    pub fn poly(&self) -> Poly<T> {
-        self.poly.clone()
+    pub fn len(&self) -> usize {
+        self.len
     }
 
-    pub fn list(&self) -> [T; GOPPA_N] {
-        self.list.clone()
+    pub fn poly(&self) -> &Poly<T> {
+        &self.poly
+    }
+
+    pub fn set(&self) -> &Vec<T> {
+        &self.set
     }
 
     pub fn parity_check_y(&self) -> Mat<T> {
-        let mut y = Mat::new(GOPPA_T, GOPPA_N);
-        for i in 0..GOPPA_N {
-            y.set(0, i, T::one());
+        let n = self.len();
+        let t = self.poly.degree();
+
+        let mut y = Mat::new(t, n);
+        for i in 0..n {
+            y[(0, i)] = T::one();
         }
-        for i in 1..GOPPA_T {
-            for j in 0..GOPPA_N {
-                let elt = self.list[j];
-                y.set(i, j, elt * y.get(i - 1, j));
+        for i in 1..t {
+            for j in 0..n {
+                let elt = self.set[j];
+                y[(i, j)] = elt * y[(i - 1, j)];
             }
         }
         y
     }
 
     pub fn parity_check_z(&self) -> Mat<T> {
-        let mut z = Mat::new(GOPPA_N, GOPPA_N);
-        for i in 0..GOPPA_N {
-            println!("{} {}", self.list[i], self.poly.eval(self.list[i]));
-            z.set(i, i, self.poly.eval(self.list[i]).inv().unwrap());
+        let n = self.len();
+
+        let mut z = Mat::new(n, n);
+        for i in 0..n {
+            println!("{} {}", self.set[i], self.poly.eval(self.set[i]));
+            z.set(i, i, self.poly.eval(self.set[i]).inv().unwrap());
         }
         z
     }
@@ -74,7 +82,7 @@ where
     pub fn parity_check(&self) -> Mat<T> {
         let y = self.parity_check_y();
         let z = self.parity_check_z();
-        let mut h = Mat::new(GOPPA_T, GOPPA_N);
+        let mut h = Mat::new(self.poly.degree(), self.len);
         h.mul(&y, &z);
         h
     }
@@ -87,9 +95,9 @@ where
         let (_u, hs, p) = h.standard_form().unwrap();
         let mut gs = Mat::new(k, n);
         for i in 0..k {
-            gs.set(i, i, T::one());
+            gs[(i, i)] = T::one();
             for j in k..n {
-                gs.set(i, j, -hs.get(j - k, i));
+                gs[(i, j)] = -hs[(j - k, i)];
             }
         }
         let mut g = Mat::new(k, n);

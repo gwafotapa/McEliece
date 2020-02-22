@@ -3,7 +3,7 @@ extern crate rand;
 use crate::finite_field::{Inverse, One, Zero};
 use rand::{distributions, Rng};
 use std::fmt;
-use std::ops::{Add, AddAssign, Mul, Neg, Sub, Index};
+use std::ops::{Add, AddAssign, Index, IndexMut, Mul, Neg, Sub, MulAssign};
 
 // Type T must represent an element from a field, meaning all elements except 0 are inversible.
 #[derive(Clone, Eq, PartialEq)]
@@ -23,14 +23,35 @@ where
         + Add<Output = T>
         + Sub<Output = T>
         + Mul<Output = T>
-        + AddAssign
         + Neg<Output = T>
-        + Inverse,
-    {
+        + Inverse
+        + AddAssign
+        + MulAssign,
+{
     type Output = T;
-    
+
     fn index(&self, index: (usize, usize)) -> &Self::Output {
-        &self.data[index.0 * self.cols +  index.1]
+        &self.data[index.0 * self.cols + index.1]
+    }
+}
+
+impl<T> IndexMut<(usize, usize)> for Mat<T>
+where
+    T: Copy
+        + fmt::Display
+        + Eq
+        + Zero
+        + One
+        + Add<Output = T>
+        + Sub<Output = T>
+        + Mul<Output = T>
+        + Neg<Output = T>
+        + Inverse
+        + AddAssign
+        + MulAssign,
+{
+    fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {
+        &mut self.data[index.0 * self.cols + index.1]
     }
 }
 
@@ -44,9 +65,10 @@ where
         + Add<Output = T>
         + Sub<Output = T>
         + Mul<Output = T>
-        + AddAssign
         + Neg<Output = T>
-        + Inverse,
+        + Inverse
+        + AddAssign
+        + MulAssign,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "\n{}", self.to_str())
@@ -63,9 +85,10 @@ where
         + Add<Output = T>
         + Sub<Output = T>
         + Mul<Output = T>
-        + AddAssign
         + Neg<Output = T>
-        + Inverse,
+        + Inverse
+        + AddAssign
+        + MulAssign,
 {
     pub fn new(n: usize, m: usize) -> Mat<T> {
         let mut mat = Mat {
@@ -99,7 +122,7 @@ where
 
     pub fn get(&self, row: usize, col: usize) -> T {
         // self.data[row * self.cols + col]
-            self[(row, col)]
+        self[(row, col)]
     }
 
     pub fn print(&self) {

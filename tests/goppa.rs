@@ -2,9 +2,9 @@ extern crate mceliece;
 
 use mceliece::finite_field::*;
 use mceliece::finite_field_8::*;
-use mceliece::polynomial::*;
 use mceliece::goppa::*;
 use mceliece::matrix::*;
+use mceliece::polynomial::*;
 
 #[test]
 fn goppa_f8() {
@@ -12,7 +12,11 @@ fn goppa_f8() {
     p.set(0, F8::one());
     p.set(1, F8::one());
     println!("{}\n", p.to_str());
-    let c: Goppa<F8> = Goppa::new(&p, [F8(0), F8(1), F8(2), F8(3), F8(4), F8(5), F8(6), F8(7)]).unwrap();
+    let c: Goppa<F8> = Goppa::new(
+        p,
+        [F8(0), F8(1), F8(2), F8(3), F8(4), F8(5), F8(6), F8(7)].to_vec(),
+    )
+    .unwrap();
     let y = c.parity_check_y();
     y.print();
     println!();
