@@ -1,9 +1,49 @@
 use crate::finite_field::{Inverse, One, Zero};
-use std::ops::{Add, AddAssign, Mul, MulAssign, Sub};
+use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Sub};
 use std::{cmp, fmt};
 
 #[derive(Clone, Eq, PartialEq)]
 pub struct Poly<T>(Vec<T>);
+
+impl<T> Index<usize> for Poly<T>
+where
+    T: Copy
+        + fmt::Display
+        + Eq
+        + Zero
+        + One
+        + Add<Output = T>
+        + Sub<Output = T>
+        + Mul<Output = T>
+        + AddAssign
+        + MulAssign
+        + Inverse,
+{
+    type Output = T;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.0[index]
+    }
+}
+
+impl<T> IndexMut<usize> for Poly<T>
+where
+    T: Copy
+        + fmt::Display
+        + Eq
+        + Zero
+        + One
+        + Add<Output = T>
+        + Sub<Output = T>
+        + Mul<Output = T>
+        + AddAssign
+        + MulAssign
+        + Inverse,
+{
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.0[index]
+    }
+}
 
 impl<T> fmt::Debug for Poly<T>
 where
@@ -38,9 +78,9 @@ where
         + MulAssign
         + Inverse,
 {
-    pub fn new() -> Poly<T> {
-        let mut v = Vec::new();
-        v.push(T::zero());
+    pub fn new(n: usize) -> Poly<T> {
+        let mut v = Vec::with_capacity(n);
+        v.resize(n, T::zero());
         Poly(v)
     }
 
@@ -56,11 +96,12 @@ where
     }
 
     pub fn get(&self, i: usize) -> T {
-        self.0[i]
+        // self.0[i]
+        self[i]
     }
 
     pub fn set(&mut self, i: usize, val: T) {
-        self.0[i] = val;
+        self[i] = val;
     }
 
     pub fn to_str(&self) -> String {
@@ -106,18 +147,22 @@ where
         eval
     }
 
-    pub fn add(&mut self, p: &Poly<T>, q: &Poly<T>) {
-        self.0
-            .resize(1 + cmp::max(p.degree(), q.degree()), T::zero());
+    // TODO
+    // Rename add function to sum
+    // Add a add function mutating the original polynomial
 
-        for i in 0..self.degree() + 1 {
-            self.set(i, p.get(i) + q.get(i));
-        }
+    // pub fn add(&mut self, p: &Poly<T>, q: &Poly<T>) {
+    //     self.0
+    //         .resize(1 + cmp::max(p.degree(), q.degree()), T::zero());
 
-        while self.get(self.degree()) == T::zero() {
-            self.0.pop();
-        }
-    }
+    //     for i in 0..self.degree() + 1 {
+    //         self.set(i, p.get(i) + q.get(i));
+    //     }
+
+    //     while self.get(self.degree()) == T::zero() {
+    //         self.0.pop();
+    //     }
+    // }
 }
 
 #[cfg(test)]
@@ -127,17 +172,17 @@ mod tests {
 
     #[test]
     fn print() {
-        let mut p: Poly<F2> = Poly::new();
-        p.0.push(F2::one());
-        p.0.push(F2::zero());
-        p.0.push(F2::zero());
-        p.0.push(F2::zero());
-        p.0.push(F2::one());
-        p.0.push(F2::one());
+        let mut p: Poly<F2> = Poly::new(6);
+        p[0] = F2::one();
+        p[1] = F2::zero();
+        p[2] = F2::zero();
+        p[3] = F2::zero();
+        p[4] = F2::one();
+        p[5] = F2::one();
         println!("{}", p.to_str());
 
         let mut q: Poly<F2> = Poly::x_n(3);
-        q.set(2, F2::one());
+        q[2] = F2::one();
         println!("{}", q.to_str());
     }
 }

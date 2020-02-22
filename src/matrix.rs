@@ -3,7 +3,7 @@ extern crate rand;
 use crate::finite_field::{Inverse, One, Zero};
 use rand::{distributions, Rng};
 use std::fmt;
-use std::ops::{Add, AddAssign, Mul, Neg, Sub};
+use std::ops::{Add, AddAssign, Mul, Neg, Sub, Index};
 
 // Type T must represent an element from a field, meaning all elements except 0 are inversible.
 #[derive(Clone, Eq, PartialEq)]
@@ -11,6 +11,27 @@ pub struct Mat<T> {
     rows: usize,
     cols: usize,
     data: Vec<T>,
+}
+
+impl<T> Index<(usize, usize)> for Mat<T>
+where
+    T: Copy
+        + fmt::Display
+        + Eq
+        + Zero
+        + One
+        + Add<Output = T>
+        + Sub<Output = T>
+        + Mul<Output = T>
+        + AddAssign
+        + Neg<Output = T>
+        + Inverse,
+    {
+    type Output = T;
+    
+    fn index(&self, index: (usize, usize)) -> &Self::Output {
+        &self.data[index.0 * self.cols +  index.1]
+    }
 }
 
 impl<T> fmt::Debug for Mat<T>
@@ -69,12 +90,16 @@ where
         self.data.clone()
     }
 
+    // TODO
+    // Need to implement trait IndexMut here
+    // How come I don't need to add the trait Index for Mat<T> in other .rs ?
     pub fn set(&mut self, row: usize, col: usize, val: T) {
         self.data[row * self.cols + col] = val;
     }
 
     pub fn get(&self, row: usize, col: usize) -> T {
-        self.data[row * self.cols + col]
+        // self.data[row * self.cols + col]
+            self[(row, col)]
     }
 
     pub fn print(&self) {
@@ -539,7 +564,7 @@ where
             U.swap_rows(j + m - n, row_pivot);
 
             // Pivot is now at (j+m-n, j)
-            
+
             // Multiply pivot row by pivot^-1 and update U
             let pivot_inv = H.get(j + m - n, j).inv().unwrap();
             for k in 0..n {
@@ -550,7 +575,7 @@ where
             }
 
             // Nullify the rest of the column and update matrix U accordingly
-            
+
             // for i in 0..j + m - n {
             //     if H.get(i, j) != T::zero() {
             //         H.combine_rows(i, H.get(i, j), j + m - n);
