@@ -3,7 +3,7 @@ use crate::finite_field;
 use rand::distributions;
 use rand::Rng;
 use std::fmt;
-use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, Neg};
+use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, Neg, SubAssign};
 
 macro_rules! array_init {
     ( $( $x:expr ),+ ) => {
@@ -194,6 +194,12 @@ impl Sub for F1024 {
 impl AddAssign for F1024 {
     fn add_assign(&mut self, other: F1024) {
         *self = F1024(self.0 ^ other.0);
+    }
+}
+
+impl SubAssign for F1024 {
+    fn sub_assign(&mut self, other: F1024) {
+        *self += other;
     }
 }
 

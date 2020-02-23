@@ -2,7 +2,7 @@ use crate::finite_field;
 
 use rand::{distributions, Rng};
 use std::fmt;
-use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, Neg};
+use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, Neg, SubAssign};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum F2 {
@@ -76,6 +76,19 @@ impl AddAssign for F2 {
                 F2::One => F2::Zero,
             },
         };
+    }
+}
+
+impl SubAssign for F2 {
+    fn sub_assign(&mut self, other: F2) {
+        // *self = match self {
+        //     F2::Zero => other,
+        //     F2::One => match other {
+        //         F2::Zero => F2::One,
+        //         F2::One => F2::Zero,
+        //     },
+        // };
+        *self += other;
     }
 }
 

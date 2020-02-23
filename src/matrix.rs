@@ -3,7 +3,7 @@ extern crate rand;
 use crate::finite_field::{Inverse, One, Zero};
 use rand::{distributions, Rng};
 use std::fmt;
-use std::ops::{Add, AddAssign, Index, IndexMut, Mul, Neg, Sub, MulAssign};
+use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign};
 
 // Type T must represent an element from a field, meaning all elements except 0 are inversible.
 #[derive(Clone, Eq, PartialEq)]
@@ -14,19 +14,20 @@ pub struct Mat<T> {
 }
 
 impl<T> Index<(usize, usize)> for Mat<T>
-where
-    T: Copy
-        + fmt::Display
-        + Eq
-        + Zero
-        + One
-        + Add<Output = T>
-        + Sub<Output = T>
-        + Mul<Output = T>
-        + Neg<Output = T>
-        + Inverse
-        + AddAssign
-        + MulAssign,
+// where
+//     T: Copy
+//         + fmt::Display
+//         + Eq
+//         + Zero
+//         + One
+//         + Add<Output = T>
+//         + Sub<Output = T>
+//         + Mul<Output = T>
+//         + Neg<Output = T>
+//         + Inverse
+//         + AddAssign
+//         + SubAssign
+//         + MulAssign,
 {
     type Output = T;
 
@@ -36,19 +37,20 @@ where
 }
 
 impl<T> IndexMut<(usize, usize)> for Mat<T>
-where
-    T: Copy
-        + fmt::Display
-        + Eq
-        + Zero
-        + One
-        + Add<Output = T>
-        + Sub<Output = T>
-        + Mul<Output = T>
-        + Neg<Output = T>
-        + Inverse
-        + AddAssign
-        + MulAssign,
+// where
+//     T: Copy
+//         + fmt::Display
+//         + Eq
+//         + Zero
+//         + One
+//         + Add<Output = T>
+//         + Sub<Output = T>
+//         + Mul<Output = T>
+//         + Neg<Output = T>
+//         + Inverse
+//         + AddAssign
+//         + SubAssign
+//         + MulAssign,
 {
     fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {
         &mut self.data[index.0 * self.cols + index.1]
@@ -68,6 +70,7 @@ where
         + Neg<Output = T>
         + Inverse
         + AddAssign
+        + SubAssign
         + MulAssign,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -88,6 +91,7 @@ where
         + Neg<Output = T>
         + Inverse
         + AddAssign
+        + SubAssign
         + MulAssign,
 {
     pub fn new(n: usize, m: usize) -> Mat<T> {
@@ -463,7 +467,13 @@ where
         mat.row_echelon_form()
     }
 
-    pub fn add(&mut self, mat1: &Mat<T>, mat2: &Mat<T>) {
+    pub fn sum(mat1: &Mat<T>, mat2: &Mat<T>) -> Mat<T> {
+        let mut sum = Mat::new(mat1.rows, mat1.cols);
+        sum.as_sum(mat1, mat2);
+        sum
+    }
+
+    pub fn as_sum(&mut self, mat1: &Mat<T>, mat2: &Mat<T>) {
         if self.rows != mat1.rows
             || self.rows != mat2.rows
             || self.cols != mat1.cols
@@ -479,7 +489,7 @@ where
         }
     }
 
-    pub fn mul(&mut self, mat1: &Mat<T>, mat2: &Mat<T>) {
+    pub fn as_prod(&mut self, mat1: &Mat<T>, mat2: &Mat<T>) {
         if self.rows != mat1.rows || self.cols != mat2.cols || mat1.cols != mat2.rows {
             panic!("Cannot multiply matrices: dimensions don't match");
         }
@@ -655,5 +665,11 @@ where
             }
         }
         t
+    }
+
+    pub fn prod(a: &Mat<T>, b: &Mat<T>) -> Mat<T> {
+        let mut p = Mat::new(a.rows, b.cols);
+        p.as_prod(a, b);
+        p
     }
 }

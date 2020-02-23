@@ -2,7 +2,7 @@ use crate::finite_field::{Inverse, One, Zero};
 use crate::matrix::Mat;
 use crate::polynomial::Poly;
 use std::fmt;
-use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub};
+use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 pub struct Goppa<T> {
     len: usize,
@@ -23,6 +23,7 @@ where
         + Neg<Output = T>
         + Inverse
         + AddAssign
+        + SubAssign
         + MulAssign,
 {
     pub fn new(poly: Poly<T>, set: Vec<T>) -> Result<Goppa<T>, &'static str> {
@@ -51,7 +52,7 @@ where
         &self.set
     }
 
-    pub fn parity_check_y(&self) -> Mat<T> {
+    pub fn parity_check_matrix_y(&self) -> Mat<T> {
         let n = self.len();
         let t = self.poly.degree();
 
@@ -68,7 +69,7 @@ where
         y
     }
 
-    pub fn parity_check_z(&self) -> Mat<T> {
+    pub fn parity_check_matrix_z(&self) -> Mat<T> {
         let n = self.len();
 
         let mut z = Mat::new(n, n);
@@ -79,16 +80,16 @@ where
         z
     }
 
-    pub fn parity_check(&self) -> Mat<T> {
-        let y = self.parity_check_y();
-        let z = self.parity_check_z();
+    pub fn parity_check_matrix(&self) -> Mat<T> {
+        let y = self.parity_check_matrix_y();
+        let z = self.parity_check_matrix_z();
         let mut h = Mat::new(self.poly.degree(), self.len);
-        h.mul(&y, &z);
+        h.as_prod(&y, &z);
         h
     }
 
-    pub fn generator(&self) -> Mat<T> {
-        let h = self.parity_check();
+    pub fn generator_matrix(&self) -> Mat<T> {
+        let h = self.parity_check_matrix();
         let m = h.rows();
         let n = h.cols();
         let k = n - m;
@@ -101,7 +102,24 @@ where
             }
         }
         let mut g = Mat::new(k, n);
-        g.mul(&gs, &p.inverse().unwrap().transpose());
+        g.as_prod(&gs, &p.inverse().unwrap().transpose());
         g
+    }
+
+    pub fn encode(&self, msg: &Mat<T>) -> Mat<T> {
+        let g = self.generator_matrix();
+        let cpt = Mat::prod(msg, &g.transpose());
+        cpt
+    }
+
+    pub fn decode(&self, rcv: &Mat<T>) -> Mat<T> {
+        let h = self.parity_check_matrix();
+        let syndrome = Mat::prod(&h, &rcv.transpose());
+        let zero = Mat::new(1, syndrome.cols());
+        if syndrome == zero {
+            return rcv.clone();
+        }
+
+        Mat::new(1, 1)
     }
 }

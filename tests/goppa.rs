@@ -17,22 +17,22 @@ fn goppa_f8() {
         [F8(0), F8(1), F8(2), F8(3), F8(4), F8(5), F8(6), F8(7)].to_vec(),
     )
     .unwrap();
-    let y = c.parity_check_y();
+    let y = c.parity_check_matrix_y();
     y.print();
     println!();
-    let z = c.parity_check_z();
+    let z = c.parity_check_matrix_z();
     z.print();
     println!();
-    let h = c.parity_check();
+    let h = c.parity_check_matrix();
     h.print();
     println!();
 
-    let g = c.generator();
+    let g = c.generator_matrix();
     g.print();
     println!();
 
     let z = Mat::new(h.rows(), g.rows());
     let mut m = Mat::new(h.rows(), g.rows());
-    m.mul(&h, &g.transpose());
+    m.as_prod(&h, &g.transpose());
     assert_eq!(m, z);
 }

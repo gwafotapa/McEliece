@@ -2,7 +2,7 @@ use crate::finite_field;
 
 use rand::{distributions, Rng};
 use std::fmt;
-use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub};
+use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct F7(usize);
@@ -88,7 +88,14 @@ impl Sub for F7 {
 
 impl AddAssign for F7 {
     fn add_assign(&mut self, other: F7) {
-        *self = F7((self.0 + other.0) % CARD);
+        // *self = F7((self.0 + other.0) % CARD);
+        *self = *self + other;
+    }
+}
+
+impl SubAssign for F7 {
+    fn sub_assign(&mut self, other: F7) {
+        *self =  *self - other;
     }
 }
 
