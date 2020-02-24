@@ -8,21 +8,7 @@ use std::{cmp, fmt};
 #[derive(Clone, Eq, PartialEq)]
 pub struct Poly<T>(Vec<T>);
 
-impl<T> Index<usize> for Poly<T>
-// where
-//     T: Copy
-        // + fmt::Display
-        // + Eq
-        // + Zero
-        // + One
-        // + Add<Output = T>
-        // + Sub<Output = T>
-        // + Mul<Output = T>
-        // + AddAssign
-        // + SubAssign
-        // + MulAssign
-        // + Inverse,
-{
+impl<T> Index<usize> for Poly<T> {
     type Output = T;
 
     fn index(&self, index: usize) -> &Self::Output {
@@ -30,21 +16,7 @@ impl<T> Index<usize> for Poly<T>
     }
 }
 
-impl<T> IndexMut<usize> for Poly<T>
-where
-    T: Copy
-        + fmt::Display
-        + Eq
-        + Zero
-        + One
-        + Add<Output = T>
-        + Sub<Output = T>
-        + Mul<Output = T>
-        + AddAssign
-        + SubAssign
-        + MulAssign
-        + Inverse,
-{
+impl<T> IndexMut<usize> for Poly<T> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.0[index]
     }
@@ -59,8 +31,8 @@ where
         + One
         + Add<Output = T>
         + Sub<Output = T>
-    + Mul<Output = T>
-            + Neg<Output = T>
+        + Mul<Output = T>
+        + Neg<Output = T>
         + AddAssign
         + SubAssign
         + MulAssign

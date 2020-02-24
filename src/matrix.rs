@@ -13,22 +13,7 @@ pub struct Mat<T> {
     data: Vec<T>,
 }
 
-impl<T> Index<(usize, usize)> for Mat<T>
-// where
-//     T: Copy
-//         + fmt::Display
-//         + Eq
-//         + Zero
-//         + One
-//         + Add<Output = T>
-//         + Sub<Output = T>
-//         + Mul<Output = T>
-//         + Neg<Output = T>
-//         + Inverse
-//         + AddAssign
-//         + SubAssign
-//         + MulAssign,
-{
+impl<T> Index<(usize, usize)> for Mat<T> {
     type Output = T;
 
     fn index(&self, index: (usize, usize)) -> &Self::Output {
@@ -36,22 +21,7 @@ impl<T> Index<(usize, usize)> for Mat<T>
     }
 }
 
-impl<T> IndexMut<(usize, usize)> for Mat<T>
-// where
-//     T: Copy
-//         + fmt::Display
-//         + Eq
-//         + Zero
-//         + One
-//         + Add<Output = T>
-//         + Sub<Output = T>
-//         + Mul<Output = T>
-//         + Neg<Output = T>
-//         + Inverse
-//         + AddAssign
-//         + SubAssign
-//         + MulAssign,
-{
+impl<T> IndexMut<(usize, usize)> for Mat<T> {
     fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {
         &mut self.data[index.0 * self.cols + index.1]
     }
@@ -59,29 +29,28 @@ impl<T> IndexMut<(usize, usize)> for Mat<T>
 
 impl<T> fmt::Debug for Mat<T>
 where
-    T: Copy
-        + fmt::Display
-        + Eq
-        + Zero
-        + One
-        + Add<Output = T>
-        + Sub<Output = T>
-        + Mul<Output = T>
-        + Neg<Output = T>
-        + Inverse
-        + AddAssign
-        + SubAssign
-        + MulAssign,
+    T: fmt::Display,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "\n{}", self.to_str())
+        let mut s = String::new();
+
+        for i in 0..self.rows {
+            for j in 0..self.cols - 1 {
+                s.push_str(&self[(i, j)].to_string());
+                s.push(' ');
+            }
+            s.push_str(&self[(i, self.cols - 1)].to_string());
+            s.push('\n');
+        }
+
+        write!(f, "\n{}", s)
     }
 }
 
 impl<T> Mat<T>
 where
-    T: Copy
-        + fmt::Display
+    T: fmt::Display
+        + Copy
         + Eq
         + Zero
         + One
@@ -117,41 +86,24 @@ where
         self.data.clone()
     }
 
-    // TODO
-    // Need to implement trait IndexMut here
-    // How come I don't need to add the trait Index for Mat<T> in other .rs ?
-    pub fn set(&mut self, row: usize, col: usize, val: T) {
-        self.data[row * self.cols + col] = val;
-    }
+    // pub fn set(&mut self, row: usize, col: usize, val: T) {
+    //     self[(row, col)] = val;
+    // }
 
-    pub fn get(&self, row: usize, col: usize) -> T {
-        // self.data[row * self.cols + col]
-        self[(row, col)]
-    }
+    // pub fn get(&self, row: usize, col: usize) -> T {
+    //     self[(row, col)]
+    // }
 
-    pub fn print(&self) {
-        for i in 0..self.rows {
-            for j in 0..self.cols - 1 {
-                print!("{} ", self.get(i, j));
-            }
-            println!("{}", self.get(i, self.cols - 1));
-        }
-    }
-
-    pub fn to_str(&self) -> String {
-        let mut s = String::new();
-
-        for i in 0..self.rows {
-            for j in 0..self.cols - 1 {
-                s.push_str(&self.get(i, j).to_string());
-                s.push(' ');
-            }
-            s.push_str(&self.get(i, self.cols - 1).to_string());
-            s.push('\n');
-        }
-
-        s
-    }
+    // pub fn print(&self) {
+    //     for i in 0..self.rows {
+    //         for j in 0..self.cols - 1 {
+    //             print!("{} ", self[(i, j)]);
+    //         }
+    //         println!("{}", self[(i, self.cols - 1)]);
+    //     }
+    
+    // //   println!("{:?}", self);
+    // }
 
     pub fn random(rng: &mut rand::rngs::ThreadRng, n: usize, m: usize) -> Mat<T>
     where
@@ -160,7 +112,7 @@ where
         let mut mat = Mat::new(n, m);
         for i in 0..n {
             for j in 0..m {
-                mat.set(i, j, rng.gen::<T>());
+                mat[(i, j)] = rng.gen::<T>();
             }
         }
 
@@ -179,7 +131,7 @@ where
             // loop on rows
             let mut has_one = false;
             for j in 0..n {
-                let val = self.get(i, j);
+                let val = self[(i, j)];
                 if val == T::zero() {
                     continue;
                 } else if val == T::one() {
@@ -211,7 +163,7 @@ where
         for i in 0..n {
             // Draw a random column index j to set the '1' on this row
             let nbr = rng.gen_range(0, n - i);
-            mat.set(i, cols[nbr], T::one());
+            mat[(i, cols[nbr])] = T::one();
 
             // Remove the index from the list by putting it at the end
             cols.swap(nbr, n - 1 - i);
@@ -223,7 +175,7 @@ where
     pub fn identity(n: usize) -> Mat<T> {
         let mut id = Mat::new(n, n);
         for i in 0..n {
-            id.set(i, i, T::one());
+            id[(i, i)] = T::one();
         }
 
         id
@@ -253,15 +205,15 @@ where
         }
 
         for i in 0..self.rows {
-            let tmp = self.get(i, col1);
-            self.set(i, col1, self.get(i, col2));
-            self.set(i, col2, tmp);
+            let tmp = self[(i, col1)];
+            self[(i, col1)] = self[(i, col2)];
+            self[(i, col2)] = tmp;
         }
     }
 
     pub fn combine_rows(&mut self, row1: usize, lambda: T, row2: usize) {
         for j in 0..self.cols {
-            self.set(row1, j, self.get(row1, j) + lambda * self.get(row2, j));
+            self[(row1, j)] = self[(row1, j)] + lambda * self[(row2, j)];
         }
     }
 
@@ -280,7 +232,7 @@ where
         while p < n {
             // Find pivot
             let mut i = p;
-            while i < n && mat.get(i, p) == T::zero() {
+            while i < n && mat[(i, p)] == T::zero() {
                 i += 1;
             }
             if i == n {
@@ -292,36 +244,36 @@ where
             inv.swap_rows(i, p);
 
             // Normalize pivot's row: L(p) = pivot^-1 * L(p)
-            let pivot_inv = mat.get(p, p).inv().unwrap();
+            let pivot_inv = mat[(p, p)].inv().unwrap();
             for j in p + 1..n {
                 // first p+1 columns are zero
-                mat.set(p, j, pivot_inv * mat.get(p, j));
+                mat[(p, j)] = pivot_inv * mat[(p, j)];
             }
-            mat.set(p, p, T::one());
+            mat[(p, p)] = T::one();
 
             // Mimic normalization on matrix 'inv'
             for j in 0..n {
-                inv.set(p, j, pivot_inv * inv.get(p, j));
+                inv[(p, j)] = pivot_inv * inv[(p, j)];
             }
 
             // Adjust all rows below pivot's row: L(k) = L(k) - c(k,p) * L(p)
             // where L(k) is the kth row and c(k,p) is the coefficient [k,p] of our matrix
             for k in p + 1..n {
-                if mat.get(k, p) == T::zero() {
+                if mat[(k, p)] == T::zero() {
                     continue;
                 }
 
-                let lambda = mat.get(k, p);
+                let lambda = mat[(k, p)];
 
-                mat.set(k, p, T::zero());
+                mat[(k, p)] = T::zero();
                 for l in p + 1..n {
                     // first p+1 columns are zero
-                    mat.set(k, l, mat.get(k, l) - lambda * mat.get(p, l));
+                    mat[(k, l)] = mat[(k, l)] - lambda * mat[(p, l)];
                 }
 
                 // Mimic operation on matrix 'inv'
                 for l in 0..n {
-                    inv.set(k, l, inv.get(k, l) - lambda * inv.get(p, l));
+                    inv[(k, l)] = inv[(k, l)] - lambda * inv[(p, l)];
                 }
             }
 
@@ -332,7 +284,7 @@ where
 
         for j in (0..n).rev() {
             for i in (0..j).rev() {
-                if mat.get(i, j) == T::zero() {
+                if mat[(i, j)] == T::zero() {
                     continue;
                 }
 
@@ -341,7 +293,7 @@ where
                 // We don't actually need to operate on the original matrix here.
                 // Mimic the row operation on matrix 'inv'.
                 for l in 0..n {
-                    inv.set(i, l, inv.get(i, l) - mat.get(i, j) * inv.get(j, l));
+                    inv[(i, l)] = inv[(i, l)] - mat[(i, j)] * inv[(j, l)];
                 }
             }
         }
@@ -358,7 +310,7 @@ where
         while i < n {
             // Fill line i at random
             for j in 0..n {
-                mat.set(i, j, rng.gen::<T>());
+                mat[(i, j)] = rng.gen::<T>();
             }
 
             if mat.rank() == i + 1 {
@@ -379,7 +331,7 @@ where
         while row_pivot < self.rows && col_pivot < self.cols {
             // Find pivot
             let mut i = row_pivot;
-            while i < n && self.get(i, col_pivot) == T::zero() {
+            while i < n && self[(i, col_pivot)] == T::zero() {
                 i += 1;
             }
             if i == n {
@@ -400,25 +352,21 @@ where
             // }
 
             // Normalize pivot's row
-            let pivot_inv = self.get(row_pivot, col_pivot).inv().unwrap();
+            let pivot_inv = self[(row_pivot, col_pivot)].inv().unwrap();
             for j in col_pivot + 1..m {
-                self.set(row_pivot, j, pivot_inv * self.get(row_pivot, j));
+                self[(row_pivot, j)] = pivot_inv * self[(row_pivot, j)];
             }
-            self.set(row_pivot, col_pivot, T::one());
+            self[(row_pivot, col_pivot)] = T::one();
 
             // Adjust all rows below pivot's row
             for k in row_pivot + 1..n {
-                if self.get(k, col_pivot) == T::zero() {
+                if self[(k, col_pivot)] == T::zero() {
                     continue;
                 }
                 for l in col_pivot + 1..m {
-                    self.set(
-                        k,
-                        l,
-                        self.get(k, l) - self.get(k, col_pivot) * self.get(row_pivot, l),
-                    );
+                    self[(k, l)] = self[(k, l)] - self[(k, col_pivot)] * self[(row_pivot, l)];
                 }
-                self.set(k, col_pivot, T::zero());
+                self[(k, col_pivot)] = T::zero();
             }
 
             row_pivot += 1;
@@ -436,7 +384,7 @@ where
         for row_pivot in (0..n).rev() {
             // Find the pivot on this row if any
             let mut col_pivot = 0;
-            while col_pivot < m && self.get(row_pivot, col_pivot) == T::zero() {
+            while col_pivot < m && self[(row_pivot, col_pivot)] == T::zero() {
                 col_pivot += 1;
             }
             if col_pivot == m {
@@ -445,16 +393,13 @@ where
 
             // Eliminate all non zero elements in the pivot's column
             for i in (0..row_pivot).rev() {
-                if self.get(i, col_pivot) == T::zero() {
+                if self[(i, col_pivot)] == T::zero() {
                     continue;
                 }
 
                 for k in col_pivot..m {
-                    self.set(
-                        i,
-                        k,
-                        self.get(i, k) - self.get(i, col_pivot) * self.get(row_pivot, col_pivot),
-                    );
+                    self[(i, k)] =
+                        self[(i, k)] - self[(i, col_pivot)] * self[(row_pivot, col_pivot)];
                 }
             }
         }
@@ -484,7 +429,7 @@ where
 
         for i in 0..self.rows {
             for j in 0..self.cols {
-                self.set(i, j, mat1.get(i, j) + mat2.get(i, j));
+                self[(i, j)] = mat1[(i, j)] + mat2[(i, j)];
             }
         }
     }
@@ -498,9 +443,9 @@ where
             for j in 0..self.cols {
                 let mut sum = T::zero();
                 for k in 0..mat1.cols {
-                    sum += mat1.get(i, k) * mat2.get(k, j);
+                    sum += mat1[(i, k)] * mat2[(k, j)];
                 }
-                self.set(i, j, sum);
+                self[(i, j)] = sum;
             }
         }
     }
@@ -523,7 +468,7 @@ where
             while elt == T::zero() {
                 elt = rng.gen::<T>();
             }
-            vec.set(0, cols[nbr], elt);
+            vec[(0, cols[nbr])] = elt;
 
             // Remove the index from the list by putting it at the end
             cols.swap(nbr, n - 1 - i);
@@ -539,7 +484,7 @@ where
 
         let mut cnt = 0;
         for j in 0..self.cols {
-            if self.get(0, j) != T::zero() {
+            if self[(0, j)] != T::zero() {
                 cnt += 1;
             }
         }
@@ -575,7 +520,7 @@ where
 
                 // Check column 'col' for a pivot
                 for row in (0..j + m - n + 1).rev() {
-                    if H.get(row, col) != T::zero() {
+                    if H[(row, col)] != T::zero() {
                         pivot = true;
                         row_pivot = row;
                         col_pivot = col;
@@ -599,12 +544,12 @@ where
             // Pivot is now at (j+m-n, j)
 
             // Multiply pivot row by pivot^-1 and update U
-            let pivot_inv = H.get(j + m - n, j).inv().unwrap();
+            let pivot_inv = H[(j + m - n, j)].inv().unwrap();
             for k in 0..n {
-                H.set(j + m - n, k, pivot_inv * H.get(j + m - n, k));
+                H[(j + m - n, k)] = pivot_inv * H[(j + m - n, k)];
             }
             for k in 0..m {
-                U.set(j + m - n, k, pivot_inv * U.get(j + m - n, k));
+                U[(j + m - n, k)] = pivot_inv * U[(j + m - n, k)];
             }
 
             // Nullify the rest of the column and update matrix U accordingly
@@ -623,8 +568,8 @@ where
             // }
 
             for i in 0..m {
-                if H.get(i, j) != T::zero() && i != j + m - n {
-                    let lambda = -H.get(i, j);
+                if H[(i, j)] != T::zero() && i != j + m - n {
+                    let lambda = -H[(i, j)];
                     H.combine_rows(i, lambda, j + m - n);
                     U.combine_rows(i, lambda, j + m - n);
                 }
@@ -643,11 +588,11 @@ where
         for i in 0..m {
             for j in n - m..n {
                 if n + i == m + j {
-                    if self.get(i, j) != T::one() {
+                    if self[(i, j)] != T::one() {
                         return false;
                     }
                 } else {
-                    if self.get(i, j) != T::zero() {
+                    if self[(i, j)] != T::zero() {
                         return false;
                     }
                 }
@@ -661,7 +606,7 @@ where
         let mut t = Mat::new(self.cols, self.rows);
         for i in 0..t.rows {
             for j in 0..t.cols {
-                t.set(i, j, self.get(j, i));
+                t[(i, j)] = self[(j, i)];
             }
         }
         t

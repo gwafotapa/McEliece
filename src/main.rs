@@ -1,8 +1,8 @@
-// Rework matrix and polynomial modules to move structures from the heap to the stack.
-// Is it reasonable ? Aren't matrices huge and so better stored in the heap ?
-// Normalize in standard form algorithm
-// Add a function normalize and incorporate combine_rows where adequate
-// Add a transpose function to the matrix module.
+// Remove the unnecessary trait bounds on type T and adjust println! calls with {:?} format specifier
+// Try the log crate
+// Add functions for rows and columns operations on matrices
+// Try rr
+// a_summary_of... page 14 for the decoding algo of binary irreducible goppa codes to implement
 
 // mod matrix;
 // mod goppa;

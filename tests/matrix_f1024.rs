@@ -9,22 +9,19 @@ use mceliece::matrix::*;
 fn matrix_f1024_permutation_random() {
     let mut rng = rand::thread_rng();
     let mat: Mat<F1024> = Mat::permutation_random(&mut rng, 10);
-    println!();
-    mat.print();
+    println!("{:?}", mat);
     assert!(mat.is_permutation());
 }
 
 #[test]
 fn matrix_f1024_is_invertible() {
     let id: Mat<F1024> = Mat::identity(11);
-    println!();
-    id.print();
+    println!("{:?}", id);
     assert!(id.is_invertible());
 
     let mut rng = rand::thread_rng();
     let mat: Mat<F1024> = Mat::permutation_random(&mut rng, 20);
-    println!();
-    mat.print();
+    println!("{:?}", mat);
     assert!(mat.is_invertible());
 }
 
@@ -75,7 +72,7 @@ fn matrix_f1024_as_sum() {
     let c: Mat<F1024> = Mat::random(&mut rng, 11, 11);
     let z = Mat::new(11, 11);
     let mut s = Mat::new(11, 11);
-    a.print();
+    println!("{:?}", a);
 
     // Associativity
     let mut ab = Mat::new(11, 11);
@@ -216,19 +213,16 @@ fn matrix_f1024_standard_form() {
     let inv: Mat<F1024> = Mat::invertible_random(&mut rng, 13);
     for i in 0..13 {
         for j in 0..13 {
-            h.set(i, j, inv.get(i, j));
+            h[(i, j)] = inv[(i, j)];
         }
     }
     let (u, s, p) = h
         .standard_form()
         .expect("Failed to put a full rank matrix in standard form");
 
-    u.print();
-    println!();
-    s.print();
-    println!();
-    p.print();
-    println!();
+    println!("{:?}", u);
+    println!("{:?}", s);
+    println!("{:?}", p);
     
     assert!(u.is_invertible());
     assert!(s.is_standard_form());

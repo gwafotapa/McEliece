@@ -9,9 +9,9 @@ use mceliece::matrix::*;
 #[test]
 fn matrix_f2_new() {
     let mut mat = Mat::new(3, 4);
-    mat.set(2, 2, F2::one());
-    mat.set(1, 0, F2::one());
-    mat.set(2, 3, F2::one());
+    mat[(2, 2)] = F2::one();
+    mat[(1, 0)] = F2::one();
+    mat[(2, 3)] = F2::one();
 
     let v: Vec<F2> = vec![
         F2::zero(),
@@ -36,46 +36,42 @@ fn matrix_f2_new() {
 #[test]
 fn matrix_f2_is_permutation() {
     let mut mat = Mat::new(5, 6);
-    mat.set(0, 4, F2::one());
-    mat.set(1, 2, F2::one());
-    mat.set(2, 3, F2::one());
-    mat.set(3, 5, F2::one());
-    mat.set(4, 0, F2::one());
-    println!();
-    mat.print();
+    mat[(0, 4)] = F2::one();
+    mat[(1, 2)] = F2::one();
+    mat[(2, 3)] = F2::one();
+    mat[(3, 5)] = F2::one();
+    mat[(4, 0)] = F2::one();
+    println!("{:?}", mat);
     assert!(!mat.is_permutation());
 
     let mut mat = Mat::new(6, 6);
-    mat.set(0, 4, F2::one());
-    mat.set(1, 2, F2::one());
-    mat.set(3, 3, F2::one());
-    mat.set(3, 5, F2::one());
-    mat.set(4, 0, F2::one());
-    mat.set(5, 1, F2::one());
-    println!();
-    mat.print();
+    mat[(0, 4)] = F2::one();
+    mat[(1, 2)] = F2::one();
+    mat[(3, 3)] = F2::one();
+    mat[(3, 5)] = F2::one();
+    mat[(4, 0)] = F2::one();
+    mat[(5, 1)] = F2::one();
+    println!("{:?}", mat);
     assert!(!mat.is_permutation());
 
     let mut mat = Mat::new(6, 6);
-    mat.set(0, 4, F2::one());
-    mat.set(1, 3, F2::one());
-    mat.set(2, 3, F2::one());
-    mat.set(3, 5, F2::one());
-    mat.set(4, 0, F2::one());
-    mat.set(5, 1, F2::one());
-    println!();
-    mat.print();
+    mat[(0, 4)] = F2::one();
+    mat[(1, 3)] = F2::one();
+    mat[(2, 3)] = F2::one();
+    mat[(3, 5)] = F2::one();
+    mat[(4, 0)] = F2::one();
+    mat[(5, 1)] = F2::one();
+    println!("{:?}", mat);
     assert!(!mat.is_permutation());
 
     let mut mat = Mat::new(6, 6);
-    mat.set(0, 4, F2::one());
-    mat.set(1, 2, F2::one());
-    mat.set(2, 3, F2::one());
-    mat.set(3, 5, F2::one());
-    mat.set(4, 0, F2::one());
-    mat.set(5, 1, F2::one());
-    println!();
-    mat.print();
+    mat[(0, 4)] = F2::one();
+    mat[(1, 2)] = F2::one();
+    mat[(2, 3)] = F2::one();
+    mat[(3, 5)] = F2::one();
+    mat[(4, 0)] = F2::one();
+    mat[(5, 1)] = F2::one();
+    println!("{:?}", mat);
     assert!(mat.is_permutation());
 }
 
@@ -83,22 +79,19 @@ fn matrix_f2_is_permutation() {
 fn matrix_f2_permutation_random() {
     let mut rng = rand::thread_rng();
     let mat: Mat<F2> = Mat::permutation_random(&mut rng, 10);
-    println!();
-    mat.print();
+    println!("{:?}", mat);
     assert!(mat.is_permutation());
 }
 
 #[test]
 fn matrix_f2_is_invertible() {
     let id: Mat<F2> = Mat::identity(11);
-    println!();
-    id.print();
+    println!("{:?}", id);
     assert!(id.is_invertible());
 
     let mut rng = rand::thread_rng();
     let mat: Mat<F2> = Mat::permutation_random(&mut rng, 20);
-    println!();
-    mat.print();
+    println!("{:?}", mat);
     assert!(mat.is_invertible());
 }
 
@@ -149,7 +142,7 @@ fn matrix_f2_as_sum() {
     let c: Mat<F2> = Mat::random(&mut rng, 11, 11);
     let z = Mat::new(11, 11);
     let mut s = Mat::new(11, 11);
-    a.print();
+    println!("{:?}", a);
 
     // Associativity
     let mut ab = Mat::new(11, 11);
@@ -290,19 +283,16 @@ fn matrix_f2_standard_form() {
     let inv: Mat<F2> = Mat::invertible_random(&mut rng, 13);
     for i in 0..13 {
         for j in 0..13 {
-            h.set(i, j, inv.get(i, j));
+            h[(i, j)] = inv[(i, j)];
         }
     }
     let (u, s, p) = h
         .standard_form()
         .expect("Failed to put a full rank matrix in standard form");
 
-    u.print();
-    println!();
-    s.print();
-    println!();
-    p.print();
-    println!();
+    println!("{:?}", u);
+    println!("{:?}", s);
+    println!("{:?}", p);
     
     assert!(u.is_invertible());
     assert!(s.is_standard_form());

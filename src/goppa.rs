@@ -75,7 +75,7 @@ where
         let mut z = Mat::new(n, n);
         for i in 0..n {
             println!("{} {}", self.set[i], self.poly.eval(self.set[i]));
-            z.set(i, i, self.poly.eval(self.set[i]).inv().unwrap());
+            z[(i, i)] = self.poly.eval(self.set[i]).inv().unwrap();
         }
         z
     }
