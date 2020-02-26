@@ -1,10 +1,10 @@
 extern crate mceliece;
 
-use rand::Rng;
 use mceliece::finite_field::*;
+use mceliece::finite_field_1024::*;
 use mceliece::finite_field_2::*;
 use mceliece::finite_field_7::*;
-use mceliece::finite_field_1024::*;
+use rand::Rng;
 // use mceliece::goppa::*;
 // use mceliece::matrix::*;
 use mceliece::polynomial::*;
@@ -74,7 +74,7 @@ fn polynomial_f2_extended_gcd() {
     // assert_eq!(a, Poly::prod(&d, &a1));
     // assert_eq!(b, Poly::prod(&d, &b1));
     // assert_eq!(d, Poly::sum(&Poly::prod(&a, &u), &Poly::prod(&b, &v)));
-    
+
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(0, 100);
     let a: Poly<F2> = Poly::random(&mut rng, deg_a);
@@ -94,7 +94,7 @@ fn polynomial_f2_extended_gcd() {
 }
 
 #[test]
-fn polynomial_f7_extended_gcd() {   
+fn polynomial_f7_extended_gcd() {
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(0, 100);
     let a: Poly<F7> = Poly::random(&mut rng, deg_a);
@@ -114,7 +114,7 @@ fn polynomial_f7_extended_gcd() {
 }
 
 #[test]
-fn polynomial_f1024_extended_gcd() {   
+fn polynomial_f1024_extended_gcd() {
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(0, 100);
     let a: Poly<F1024> = Poly::random(&mut rng, deg_a);
@@ -184,4 +184,27 @@ fn polynomial_f1024_sq_root_mod() {
     let s = aa.square_root_modulo(&g);
     println!("s(x) = {:?}\n", s);
     assert_eq!(s, a);
+}
+
+#[test]
+fn polynomial_f1024_inverse_mod() {
+    // let mut g = Poly::new(11);
+    let mut g = Poly::new(4);
+    // g[10] = F2::one();
+    g[3] = F2::one();
+    g[0] = F2::one();
+    g[1] = F2::one();
+
+    let mut rng = rand::thread_rng();
+    let deg_a = rng.gen_range(0, 9);
+    let mut a: Poly<F2> = Poly::random(&mut rng, deg_a);
+    // a.modulo(&g);
+    println!("a(x) = {:?}\n", a);
+
+    let inv = a.inverse_modulo(&g);
+    println!("a^-1(x) = {:?}\n", inv);
+    let mut p = Poly::prod(&a, &inv);
+    p.modulo(&g);
+    let id = Poly::x_n(0);
+    assert_eq!(p, id);
 }

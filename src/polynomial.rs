@@ -215,9 +215,10 @@ where
     }
 
     pub fn mul(&mut self, a: &Poly<T>) {
+        let tmp = self.clone();
+        self.0.iter_mut().map(|x| *x = T::zero()).count();
         self.0.resize(self.degree() + a.degree() + 1, T::zero());
 
-        let tmp = self.clone();
         for i in 0..tmp.degree() + 1 {
             for j in 0..a.degree() + 1 {
                 self[i + j] += tmp[i] * a[j];
@@ -345,6 +346,29 @@ where
             println!("Square {}: {:?}\n", _i, res);
             res.modulo(modulus);
             println!("Modulo {}: {:?}\n", _i, res);
+        }
+        res
+    }
+
+    // TODO
+    // Need to take care of the null polynom case
+    pub fn inverse_modulo(&self, modulus: &Poly<T>) -> Poly<T> {
+        if T::one() + T::one() != T::zero() {
+            panic!("Square root is only supported for characteristic 2");
+        }
+
+        let mut res = self.clone();
+        res.square();
+        let mut tmp = res.clone();
+        for i in 0..3 - 2 {
+            tmp.square();
+            println!("tmp.square() = {:?}\n", tmp);
+            tmp.modulo(&modulus);
+            println!("tmp.modulo() = {:?}\n", tmp);
+            res.mul(&tmp);
+            println!("res.mul(&tmp) = {:?}\n", res);
+            res.modulo(&modulus);
+            println!("res.modulo(&modulus) = {:?}\n", res);
         }
         res
     }
