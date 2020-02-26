@@ -1,9 +1,11 @@
 use crate::finite_field;
+use finite_field::Exp;
+use finite_field::Log;
 
 use rand::distributions;
 use rand::Rng;
 use std::fmt;
-use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, Neg, SubAssign};
+use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 macro_rules! array_init {
     ( $( $x:expr ),+ ) => {
@@ -138,13 +140,13 @@ fn modulo(a: usize) -> usize {
     }
 }
 
-pub fn log(a: F1024) -> usize {
-    LOG[a.0 as usize]
-}
+// pub fn log(a: F1024) -> usize {
+//     LOG[a.0 as usize]
+// }
 
-pub fn exp(i: usize) -> F1024 {
-    EXP[i]
-}
+// pub fn exp(i: usize) -> F1024 {
+//     EXP[i]
+// }
 
 impl finite_field::Zero for F1024 {
     fn zero() -> F1024 {
@@ -158,19 +160,35 @@ impl finite_field::One for F1024 {
     }
 }
 
+impl finite_field::Exp for F1024 {
+    fn exp(i: usize) -> F1024 {
+        EXP[i]
+    }
+}
+
+impl finite_field::Log for F1024 {
+    fn log(self) -> Option<usize> {
+        if self == F1024(0) {
+            None
+        } else {
+            Some(LOG[self.0 as usize])
+        }
+    }
+}
+
 impl Neg for F1024 {
     type Output = F1024;
-    
+
     fn neg(self) -> F1024 {
         self
     }
 }
 
-impl finite_field::Inverse for F1024 {
+impl finite_field::Inv for F1024 {
     fn inv(self) -> Option<F1024> {
         match self {
             F1024(0) => None,
-            _ => Some(exp(CARD - 1 - log(self))),
+            _ => Some(F1024::exp(CARD - 1 - F1024::log(self).unwrap())),
         }
     }
 }
@@ -210,7 +228,9 @@ impl Mul for F1024 {
         if self == F1024(0) || other == F1024(0) {
             F1024(0)
         } else {
-            exp(modulo(log(self) + log(other)))
+            F1024::exp(modulo(
+                F1024::log(self).unwrap() + F1024::log(other).unwrap(),
+            ))
         }
     }
 }
@@ -220,7 +240,9 @@ impl MulAssign for F1024 {
         if *self == F1024(0) || other == F1024(0) {
             *self = F1024(0);
         } else {
-            *self = exp(modulo(log(*self) + log(other)));
+            *self = F1024::exp(modulo(
+                F1024::log(*self).unwrap() + F1024::log(other).unwrap(),
+            ));
         }
     }
 }
@@ -240,9 +262,9 @@ impl distributions::Distribution<F1024> for distributions::Standard {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::finite_field::Zero;
+    use crate::finite_field::Inv;
     use crate::finite_field::One;
-    use crate::finite_field::Inverse;
+    use crate::finite_field::Zero;
 
     #[test]
     fn f1024_add() {

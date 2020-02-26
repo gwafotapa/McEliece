@@ -1,4 +1,6 @@
-// Remove the unnecessary trait bounds on type T and adjust println! calls with {:?} format specifier
+// Is there a way to maintain the integrity of a polynomial (i.e. to ensure that the leading coefficient is not zero) ?
+// test polynomial_f7_extended_gcd sometimes fails
+// Adjust println! calls with {:?} format specifier
 // Try the log crate
 // Add functions for rows and columns operations on matrices
 // Try rr

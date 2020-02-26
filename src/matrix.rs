@@ -1,6 +1,6 @@
 extern crate rand;
 
-use crate::finite_field::{Inverse, One, Zero};
+use crate::finite_field::{Inv, One, Zero};
 use rand::{distributions, Rng};
 use std::fmt;
 use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign};
@@ -58,7 +58,7 @@ where
         + Sub<Output = T>
         + Mul<Output = T>
         + Neg<Output = T>
-        + Inverse
+        + Inv
         + AddAssign
         + SubAssign
         + MulAssign,
@@ -217,7 +217,7 @@ where
         }
     }
 
-    // Inverse computation via gaussian elimination
+    // Inv computation via gaussian elimination
     // See https://en.wikipedia.org/wiki/Gaussian_elimination
     pub fn inverse(&self) -> Option<Mat<T>> {
         if self.rows != self.cols {
@@ -500,9 +500,9 @@ where
         if m > n {
             return None;
         }
-        let mut U = Mat::identity(m);
-        let mut H = self.clone();
-        let mut P = Mat::identity(n);
+        let mut u = Mat::identity(m);
+        let mut h = self.clone();
+        let mut p = Mat::identity(n);
         let mut col = n; // index of the column to check for a pivot
 
         // j is the index of the column to "standardize":
@@ -520,7 +520,7 @@ where
 
                 // Check column 'col' for a pivot
                 for row in (0..j + m - n + 1).rev() {
-                    if H[(row, col)] != T::zero() {
+                    if h[(row, col)] != T::zero() {
                         pivot = true;
                         row_pivot = row;
                         col_pivot = col;
@@ -534,49 +534,49 @@ where
             }
 
             // Put pivot column in the adequate position and update P
-            H.swap_cols(j, col_pivot);
-            P.swap_cols(j, col_pivot);
+            h.swap_cols(j, col_pivot);
+            p.swap_cols(j, col_pivot);
 
             // Put pivot row in the adequate position and update U
-            H.swap_rows(j + m - n, row_pivot);
-            U.swap_rows(j + m - n, row_pivot);
+            h.swap_rows(j + m - n, row_pivot);
+            u.swap_rows(j + m - n, row_pivot);
 
             // Pivot is now at (j+m-n, j)
 
             // Multiply pivot row by pivot^-1 and update U
-            let pivot_inv = H[(j + m - n, j)].inv().unwrap();
+            let pivot_inv = h[(j + m - n, j)].inv().unwrap();
             for k in 0..n {
-                H[(j + m - n, k)] = pivot_inv * H[(j + m - n, k)];
+                h[(j + m - n, k)] = pivot_inv * h[(j + m - n, k)];
             }
             for k in 0..m {
-                U[(j + m - n, k)] = pivot_inv * U[(j + m - n, k)];
+                u[(j + m - n, k)] = pivot_inv * u[(j + m - n, k)];
             }
 
             // Nullify the rest of the column and update matrix U accordingly
 
             // for i in 0..j + m - n {
-            //     if H.get(i, j) != T::zero() {
-            //         H.combine_rows(i, H.get(i, j), j + m - n);
-            //         U.combine_rows(i, H.get(i, j), j + m - n);
+            //     if h.get(i, j) != T::zero() {
+            //         h.combine_rows(i, h.get(i, j), j + m - n);
+            //         u.combine_rows(i, h.get(i, j), j + m - n);
             //     }
             // }
             // for i in j + m - n + 1..m {
-            //     if H.get(i, j) != T::zero() {
-            //         H.combine_rows(i, H.get(i, j), j + m - n);
-            //         U.combine_rows(i, H.get(i, j), j + m - n);
+            //     if h.get(i, j) != T::zero() {
+            //         h.combine_rows(i, h.get(i, j), j + m - n);
+            //         u.combine_rows(i, h.get(i, j), j + m - n);
             //     }
             // }
 
             for i in 0..m {
-                if H[(i, j)] != T::zero() && i != j + m - n {
-                    let lambda = -H[(i, j)];
-                    H.combine_rows(i, lambda, j + m - n);
-                    U.combine_rows(i, lambda, j + m - n);
+                if h[(i, j)] != T::zero() && i != j + m - n {
+                    let lambda = -h[(i, j)];
+                    h.combine_rows(i, lambda, j + m - n);
+                    u.combine_rows(i, lambda, j + m - n);
                 }
             }
         }
 
-        Some((U, H, P))
+        Some((u, h, p))
     }
 
     pub fn is_standard_form(&self) -> bool {

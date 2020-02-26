@@ -1,4 +1,6 @@
 use crate::finite_field;
+use finite_field::Exp;
+use finite_field::Log;
 
 use rand::{distributions, Rng};
 use std::fmt;
@@ -21,13 +23,13 @@ fn modulo(a: usize) -> usize {
     }
 }
 
-pub fn log(a: F7) -> usize {
-    LOG[a.0 as usize]
-}
+// pub fn log(a: F7) -> usize {
+//     LOG[a.0 as usize]
+// }
 
-pub fn exp(i: usize) -> F7 {
-    EXP[i]
-}
+// pub fn exp(i: usize) -> F7 {
+//     EXP[i]
+// }
 
 impl finite_field::Zero for F7 {
     fn zero() -> F7 {
@@ -38,6 +40,22 @@ impl finite_field::Zero for F7 {
 impl finite_field::One for F7 {
     fn one() -> F7 {
         F7(1)
+    }
+}
+
+impl finite_field::Exp for F7 {
+    fn exp(i: usize) -> F7 {
+        EXP[i]
+    }
+}
+
+impl finite_field::Log for F7 {
+    fn log(self) -> Option<usize> {
+        if self.0 == 0 {
+            None
+        } else {
+            Some(LOG[self.0 as usize])
+        }
     }
 }
 
@@ -58,11 +76,11 @@ impl Neg for F7 {
     }
 }
 
-impl finite_field::Inverse for F7 {
+impl finite_field::Inv for F7 {
     fn inv(self) -> Option<F7> {
         match self {
             F7(0) => None,
-            _ => Some(exp(CARD - 1 - log(self))),
+            _ => Some(F7::exp(CARD - 1 - F7::log(self).unwrap())),
         }
     }
 }
@@ -95,7 +113,7 @@ impl AddAssign for F7 {
 
 impl SubAssign for F7 {
     fn sub_assign(&mut self, other: F7) {
-        *self =  *self - other;
+        *self = *self - other;
     }
 }
 
@@ -106,7 +124,7 @@ impl Mul for F7 {
         if self == F7(0) || other == F7(0) {
             F7(0)
         } else {
-            exp(modulo(log(self) + log(other)))
+            F7::exp(modulo(F7::log(self).unwrap() + F7::log(other).unwrap()))
         }
     }
 }
@@ -116,7 +134,7 @@ impl MulAssign for F7 {
         if *self == F7(0) || other == F7(0) {
             *self = F7(0);
         } else {
-            *self = exp(modulo(log(*self) + log(other)))
+            *self = F7::exp(modulo(F7::log(*self).unwrap() + F7::log(other).unwrap()))
         }
     }
 }
@@ -136,7 +154,7 @@ impl distributions::Distribution<F7> for distributions::Standard {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::finite_field::Inverse;
+    use crate::finite_field::Inv;
     use crate::finite_field::One;
     use crate::finite_field::Zero;
 

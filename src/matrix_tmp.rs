@@ -12,7 +12,7 @@ use std::ops::AddAssign;
 use std::ops::Mul;
 use std::ops::Sub;
 
-use finite_field::Inverse;
+use finite_field::Inv;
 use finite_field::One;
 use finite_field::Zero;
 
@@ -45,7 +45,7 @@ impl<T> std::cmp::Eq for Mat<T> where
         + Sub<Output = T>
         + Mul<Output = T>
         + AddAssign
-        + Inverse
+        + Inv
 {
 }
 
@@ -60,7 +60,7 @@ where
         + Sub<Output = T>
         + Mul<Output = T>
         + AddAssign
-        + Inverse,
+        + Inv,
 {
     fn eq(&self, other: &Self) -> bool {
         if self.rows != (*other).rows || self.cols != (*other).cols {
@@ -87,7 +87,7 @@ where
 //             + Sub<Output = T>
 //             + Mul<Output = T>
 //             + AddAssign
-//             + Inverse,
+//             + Inv,
 //     > std::cmp::Eq for Mat<T>
 // {
 // }
@@ -103,7 +103,7 @@ where
         + Sub<Output = T>
         + Mul<Output = T>
         + AddAssign
-        + Inverse,
+        + Inv,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "\n{}", self.to_str())
@@ -121,7 +121,7 @@ where
         + Sub<Output = T>
         + Mul<Output = T>
         + AddAssign
-        + Inverse,
+        + Inv,
 {
     // pub fn new(n: usize, m: usize) -> Mat<T> {
     //     let mut mat = Mat {
@@ -302,7 +302,7 @@ where
         slice.swap_with_slice(&mut self.data[row1 * self.cols..(row1 + 1) * self.cols]);
     }
 
-    // Inverse computation via gaussian elimination
+    // Inv computation via gaussian elimination
     // See https://en.wikipedia.org/wiki/Gaussian_elimination
     pub fn inverse(&self) -> Option<Mat<T>> {
         if self.rows != self.cols {

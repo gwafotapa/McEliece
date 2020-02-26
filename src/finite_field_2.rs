@@ -22,6 +22,21 @@ impl finite_field::One for F2 {
     }
 }
 
+impl finite_field::Exp for F2 {
+    fn exp(_i: usize) -> Self {
+        F2::One
+    }
+}
+
+impl finite_field::Log for F2 {
+    fn log(self) -> Option<usize> {
+        match self {
+            F2::Zero => None,
+            F2::One => Some(0),
+        }
+    }
+}
+
 impl Neg for F2 {
     type Output = F2;
     
@@ -30,7 +45,7 @@ impl Neg for F2 {
     }
 }
 
-impl finite_field::Inverse for F2 {
+impl finite_field::Inv for F2 {
     fn inv(self) -> Option<F2> {
         match self {
             F2::Zero => None,
@@ -137,7 +152,7 @@ impl distributions::Distribution<F2> for distributions::Standard {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::finite_field::Inverse;
+    use crate::finite_field::Inv;
     use crate::finite_field::One;
     use crate::finite_field::Zero;
 

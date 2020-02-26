@@ -1,4 +1,6 @@
 use crate::finite_field;
+use finite_field::Exp;
+use finite_field::Log;
 
 use rand::{distributions, Rng};
 use std::fmt;
@@ -21,13 +23,13 @@ fn modulo(a: usize) -> usize {
     }
 }
 
-pub fn log(a: F8) -> usize {
-    LOG[a.0 as usize]
-}
+// pub fn log(a: F8) -> usize {
+//     LOG[a.0 as usize]
+// }
 
-pub fn exp(i: usize) -> F8 {
-    EXP[i]
-}
+// pub fn exp(i: usize) -> F8 {
+//     EXP[i]
+// }
 
 impl finite_field::Zero for F8 {
     fn zero() -> F8 {
@@ -41,6 +43,22 @@ impl finite_field::One for F8 {
     }
 }
 
+impl finite_field::Exp for F8 {
+    fn exp(i: usize) -> F8 {
+        EXP[i]
+    }
+}
+
+impl finite_field::Log for F8 {
+    fn log(self) -> Option<usize> {
+        if self.0 == 0 {
+            None
+        } else {
+            Some(LOG[self.0 as usize])
+        }
+    }
+}
+
 impl Neg for F8 {
     type Output = F8;
     
@@ -49,11 +67,11 @@ impl Neg for F8 {
     }
 }
 
-impl finite_field::Inverse for F8 {
+impl finite_field::Inv for F8 {
     fn inv(self) -> Option<F8> {
         match self {
             F8(0) => None,
-            _ => Some(exp(CARD - 1 - log(self))),
+            _ => Some(F8::exp(CARD - 1 - F8::log(self).unwrap())),
         }
     }
 }
@@ -93,7 +111,7 @@ impl Mul for F8 {
         if self == F8(0) || other == F8(0) {
             F8(0)
         } else {
-            exp(modulo(log(self) + log(other)))
+            F8::exp(modulo(F8::log(self).unwrap() + F8::log(other).unwrap()))
         }
     }
 }
@@ -103,7 +121,7 @@ impl MulAssign for F8 {
         if *self == F8(0) || other == F8(0) {
             *self = F8(0);
         } else {
-            *self = exp(modulo(log(*self) + log(other)))
+            *self = F8::exp(modulo(F8::log(*self).unwrap() + F8::log(other).unwrap()))
         }
     }
 }
@@ -123,7 +141,7 @@ impl distributions::Distribution<F8> for distributions::Standard {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::finite_field::Inverse;
+    use crate::finite_field::Inv;
     use crate::finite_field::One;
     use crate::finite_field::Zero;
 

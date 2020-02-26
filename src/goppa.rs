@@ -1,4 +1,4 @@
-use crate::finite_field::{Inverse, One, Zero};
+use crate::finite_field::{Inv, One, Zero};
 use crate::matrix::Mat;
 use crate::polynomial::Poly;
 use std::fmt;
@@ -21,7 +21,7 @@ where
         + Sub<Output = T>
         + Mul<Output = T>
         + Neg<Output = T>
-        + Inverse
+        + Inv
         + AddAssign
         + SubAssign
         + MulAssign,

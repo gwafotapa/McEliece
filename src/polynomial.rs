@@ -1,6 +1,6 @@
 // extern crate rand;
 
-use crate::finite_field::{Inverse, One, Zero};
+use crate::finite_field::{Inv, One, Zero};
 use rand::{distributions, Rng};
 use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign};
 use std::{cmp, fmt};
@@ -36,7 +36,7 @@ where
         + AddAssign
         + SubAssign
         + MulAssign
-        + Inverse,
+        + Inv,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "\n{}", self.to_str())
@@ -57,7 +57,7 @@ where
         + AddAssign
         + SubAssign
         + MulAssign
-        + Inverse,
+        + Inv,
 {
     pub fn new(n: usize) -> Poly<T> {
         let mut v = Vec::with_capacity(n);
@@ -214,6 +214,35 @@ where
         c
     }
 
+    pub fn mul(&mut self, a: &Poly<T>) {
+        self.0.resize(self.degree() + a.degree() + 1, T::zero());
+
+        let tmp = self.clone();
+        for i in 0..tmp.degree() + 1 {
+            for j in 0..a.degree() + 1 {
+                self[i + j] += tmp[i] * a[j];
+            }
+        }
+
+        while self.degree() != 0 && self[self.degree()] == T::zero() {
+            self.0.pop();
+        }
+    }
+
+    pub fn square(&mut self) {
+        if T::one() + T::one() != T::zero() {
+            panic!("Square root is only supported for characteristic 2");
+        }
+        let t = self.degree();
+        self.0.resize(2 * t + 1, T::zero());
+
+        for i in (1..t + 1).rev() {
+            self[2 * i] = self[i] * self[i];
+            self[2 * i - 1] = T::zero();
+        }
+        self[0] = self[0] * self[0];
+    }
+
     // https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor
     // Case b = 0 ? Add a result type ?
     pub fn euclidean_division(a: &Poly<T>, b: &Poly<T>) -> (Poly<T>, Poly<T>) {
@@ -228,6 +257,22 @@ where
             r.sub(&Poly::prod(&s, &b));
         }
         (q, r)
+    }
+
+    pub fn modulo(&mut self, modulus: &Poly<T>) {
+        let mut q = Poly::new(1);
+        let d = modulus.degree();
+        let c = modulus[d];
+        while self.degree() >= d && (self.degree() != 0 || self[0] != T::zero()) {
+            let mut s = Poly::x_n(self.degree() - d);
+            s[self.degree() - d] = self[self.degree()] * c.inv().unwrap();
+            q.add(&s);
+            self.sub(&Poly::prod(&s, modulus));
+        }
+
+        while self.degree() != 0 && self[self.degree()] == T::zero() {
+            self.0.pop();
+        }
     }
 
     pub fn gcd(a: &Poly<T>, b: &Poly<T>) -> Poly<T> {
@@ -284,6 +329,25 @@ where
 
         (g, u, v, a1, b1)
     }
+
+    // characteristic 2 only
+    pub fn square_root_modulo(&self, modulus: &Poly<T>) -> Poly<T>
+// where
+    //     T: Exp + Log,
+    {
+        if T::one() + T::one() != T::zero() {
+            panic!("Square root is only supported for characteristic 2");
+        }
+
+        let mut res = self.clone();
+        for _i in 0..10 * self.degree() - 1 {
+            res.square();
+            println!("Square {}: {:?}\n", _i, res);
+            res.modulo(modulus);
+            println!("Modulo {}: {:?}\n", _i, res);
+        }
+        res
+    }
 }
 
 #[cfg(test)]
@@ -300,10 +364,10 @@ mod tests {
         p[3] = F2::zero();
         p[4] = F2::one();
         p[5] = F2::one();
-        println!("{}", p.to_str());
+        println!("{:?}", p);
 
         let mut q: Poly<F2> = Poly::x_n(3);
         q[2] = F2::one();
-        println!("{}", q.to_str());
+        println!("{:?}", q);
     }
 }
