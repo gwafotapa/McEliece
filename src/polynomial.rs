@@ -332,7 +332,8 @@ where
     }
 
     // characteristic 2 only
-    pub fn square_root_modulo(&self, modulus: &Poly<T>) -> Poly<T>
+    // finite field order is 2^m
+    pub fn square_root_modulo(&self, m: usize, modulus: &Poly<T>) -> Poly<T>
 // where
     //     T: Exp + Log,
     {
@@ -341,7 +342,7 @@ where
         }
 
         let mut res = self.clone();
-        for _i in 0..10 * self.degree() - 1 {
+        for _i in 0..m * modulus.degree() - 1 {
             res.square();
             println!("Square {}: {:?}\n", _i, res);
             res.modulo(modulus);
@@ -350,9 +351,13 @@ where
         res
     }
 
-    // TODO
-    // Need to take care of the null polynom case
-    pub fn inverse_modulo(&self, modulus: &Poly<T>) -> Poly<T> {
+    // characteristic 2 only
+    // finite field order is 2^m
+    pub fn inverse_modulo(&self, m: usize, modulus: &Poly<T>) -> Poly<T> {
+        if self.degree() == 0 && self[0] == T::zero() {
+            panic!("The null polynom has no inverse");
+        }
+
         if T::one() + T::one() != T::zero() {
             panic!("Square root is only supported for characteristic 2");
         }
@@ -360,7 +365,7 @@ where
         let mut res = self.clone();
         res.square();
         let mut tmp = res.clone();
-        for i in 0..3 - 2 {
+        for _i in 0..m * modulus.degree() - 2 {
             tmp.square();
             println!("tmp.square() = {:?}\n", tmp);
             tmp.modulo(&modulus);
@@ -372,6 +377,8 @@ where
         }
         res
     }
+
+    
 }
 
 #[cfg(test)]

@@ -169,19 +169,19 @@ fn polynomial_f1024_modulo() {
 #[test]
 fn polynomial_f1024_sq_root_mod() {
     let mut rng = rand::thread_rng();
-    let deg_a = rng.gen_range(0, 10);
+    let deg_a = rng.gen_range(0, 11);
     let a: Poly<F1024> = Poly::random(&mut rng, deg_a);
     println!("a(x) = {:?}\n", a);
     let aa = Poly::prod(&a, &a);
     println!("a^2(x) = {:?}\n", aa);
     // let deg_g = rng.gen_range(0, 10);
     // let g = Poly::random(&mut rng, deg_g);
-    let mut g = Poly::new(11);
-    g[10] = F1024::one();
-    g[3] = F1024::one();
+    let mut g = Poly::new(12);
+    g[11] = F1024::one();
+    g[2] = F1024::one();
     g[0] = F1024::one();
     // let s = aa.square_root_modulo(&Poly::x_n(100));
-    let s = aa.square_root_modulo(&g);
+    let s = aa.square_root_modulo(10, &g);
     println!("s(x) = {:?}\n", s);
     assert_eq!(s, a);
 }
@@ -189,19 +189,19 @@ fn polynomial_f1024_sq_root_mod() {
 #[test]
 fn polynomial_f1024_inverse_mod() {
     // let mut g = Poly::new(11);
-    let mut g = Poly::new(4);
+    let mut g = Poly::new(12);
     // g[10] = F2::one();
-    g[3] = F2::one();
-    g[0] = F2::one();
-    g[1] = F2::one();
+    g[11] = F1024::one();
+    g[2] = F1024::one();
+    g[0] = F1024::one();
 
     let mut rng = rand::thread_rng();
-    let deg_a = rng.gen_range(0, 9);
-    let mut a: Poly<F2> = Poly::random(&mut rng, deg_a);
+    let deg_a = rng.gen_range(0, 11);
+    let a: Poly<F1024> = Poly::random(&mut rng, deg_a);
     // a.modulo(&g);
     println!("a(x) = {:?}\n", a);
 
-    let inv = a.inverse_modulo(&g);
+    let inv = a.inverse_modulo(10, &g);
     println!("a^-1(x) = {:?}\n", inv);
     let mut p = Poly::prod(&a, &inv);
     p.modulo(&g);
