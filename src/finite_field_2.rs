@@ -37,6 +37,15 @@ impl finite_field::Log for F2 {
     }
 }
 
+impl finite_field::AsU32 for F2 {
+    fn as_u32(self) -> u32 {
+        match self {
+            F2::Zero => 0,
+            F2::One => 1,
+        }
+    }
+}
+
 impl Neg for F2 {
     type Output = F2;
     

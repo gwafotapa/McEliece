@@ -1,8 +1,11 @@
-use crate::finite_field::{Inv, One, Zero};
+use crate::finite_field::{Inv, One, Zero, AsU32};
+// use crate::finite_field_2::F2;
 use crate::matrix::Mat;
 use crate::polynomial::Poly;
 use std::fmt;
 use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+
+const M: u32 = 10;
 
 pub struct Goppa<T> {
     len: usize,
@@ -24,7 +27,8 @@ where
         + Inv
         + AddAssign
         + SubAssign
-        + MulAssign,
+    + MulAssign
+    + AsU32
 {
     pub fn new(poly: Poly<T>, set: Vec<T>) -> Result<Goppa<T>, &'static str> {
         for i in 0..set.len() {
@@ -74,7 +78,7 @@ where
 
         let mut z = Mat::new(n, n);
         for i in 0..n {
-            println!("{} {}", self.set[i], self.poly.eval(self.set[i]));
+            // println!("{} {}", self.set[i], self.poly.eval(self.set[i]));
             z[(i, i)] = self.poly.eval(self.set[i]).inv().unwrap();
         }
         z
@@ -120,6 +124,34 @@ where
             return rcv.clone();
         }
 
-        Mat::new(1, 1)
+        let mut s_x = Poly::new(syndrome.cols());
+        for i in 0..syndrome.cols() {
+            s_x[i] = syndrome[(1, i)];
+        }
+
+        let mut t = s_x.inverse_modulo(M, &self.poly);
+        t.add(&Poly::x_n(1));
+        t.square_root_modulo(M, &self.poly);
+        let (mut a, mut b, _, _, _) = Poly::extended_gcd(&t, &self.poly);
+        a.square();
+        b.square();
+        b.mul(&Poly::x_n(1));
+        let n = self.set.len();
+        // let aa = Mat::new(1, n);
+        // for i in 0..a.degree() {
+        //     aa[(1, i)] = a[i];
+        // }
+        // let bb = Mat::new(1, n);
+        // for i in 0..b.degree() {
+        //     bb[(1, i)] = b[i];
+        // }
+        let sigma = Poly::sum(&a, &b);
+        let mut err = Mat::new(1, n);
+        for i in 0..n { // use iterator and map ?
+            err[(1, i)] = if sigma.eval(self.set[i]) == T::zero() { T::one() } else { T::zero() };
+        }
+
+        let msg = Mat::sum(&rcv, &err);
+        msg
     }
 }

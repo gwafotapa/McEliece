@@ -1,6 +1,7 @@
 extern crate rand;
 
-use crate::finite_field::{Inv, One, Zero};
+use crate::finite_field::{Inv, One, Zero, AsU32};
+use crate::finite_field_2::F2;
 use rand::{distributions, Rng};
 use std::fmt;
 use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign};
@@ -61,8 +62,8 @@ where
         + Inv
         + AddAssign
         + SubAssign
-        + MulAssign,
-{
+    + MulAssign
++ AsU32 {
     pub fn new(n: usize, m: usize) -> Mat<T> {
         let mut mat = Mat {
             rows: n,
@@ -616,5 +617,21 @@ where
         let mut p = Mat::new(a.rows, b.cols);
         p.as_prod(a, b);
         p
+    }
+
+    pub fn binary_form(&self, m: u32) -> Mat<F2> {
+        let mut bin = Mat::new(m as usize * self.rows, self.cols);
+        for j in 0..self.cols {
+            for i in 0..self.rows {
+                for k in 0..m as usize {
+                    bin[(m as usize * i + k, j)] = match (self[(i, j)].as_u32() >> k) & 1 {
+                        0 => F2::zero(),
+                        1 => F2::one(),
+                        _ => panic!("!!!"),
+                    }
+                }
+            }
+        }
+        bin
     }
 }

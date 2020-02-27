@@ -317,8 +317,8 @@ where
             // println!("{}\n", r[i].to_str());
         }
 
-        let mut a1 = t.remove(i); // add (-1)^(i-1)
-        let mut b1 = s.remove(i); // add (-1)^i
+        let mut a1 = t.remove(i);
+        let mut b1 = s.remove(i);
         if i % 2 == 0 {
             a1.neg();
         } else {
@@ -333,7 +333,7 @@ where
 
     // characteristic 2 only
     // finite field order is 2^m
-    pub fn square_root_modulo(&self, m: usize, modulus: &Poly<T>) -> Poly<T>
+    pub fn square_root_modulo(&self, m: u32, modulus: &Poly<T>) -> Poly<T>
 // where
     //     T: Exp + Log,
     {
@@ -342,7 +342,7 @@ where
         }
 
         let mut res = self.clone();
-        for _i in 0..m * modulus.degree() - 1 {
+        for _i in 0..m as usize * modulus.degree() - 1 {
             res.square();
             println!("Square {}: {:?}\n", _i, res);
             res.modulo(modulus);
@@ -353,7 +353,7 @@ where
 
     // characteristic 2 only
     // finite field order is 2^m
-    pub fn inverse_modulo(&self, m: usize, modulus: &Poly<T>) -> Poly<T> {
+    pub fn inverse_modulo(&self, m: u32, modulus: &Poly<T>) -> Poly<T> {
         if self.degree() == 0 && self[0] == T::zero() {
             panic!("The null polynom has no inverse");
         }
@@ -365,7 +365,7 @@ where
         let mut res = self.clone();
         res.square();
         let mut tmp = res.clone();
-        for _i in 0..m * modulus.degree() - 2 {
+        for _i in 0..m as usize * modulus.degree() - 2 {
             tmp.square();
             println!("tmp.square() = {:?}\n", tmp);
             tmp.modulo(&modulus);

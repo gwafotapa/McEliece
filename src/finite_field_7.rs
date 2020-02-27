@@ -59,6 +59,12 @@ impl finite_field::Log for F7 {
     }
 }
 
+impl finite_field::AsU32 for F7 {
+    fn as_u32(self) -> u32 {
+        self.0 as u32
+    }
+}
+
 impl Neg for F7 {
     type Output = F7;
 

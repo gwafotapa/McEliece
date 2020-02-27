@@ -23,6 +23,10 @@ pub trait Log {
     fn log(self) -> Option<usize>;
 }
 
+pub trait AsU32 {
+    fn as_u32(self) -> u32;
+}
+
 // // Finite field element
 // struct FFElt(u32);
 
