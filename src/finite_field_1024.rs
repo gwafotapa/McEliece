@@ -1,6 +1,5 @@
 use crate::finite_field;
-use finite_field::Exp;
-use finite_field::Log;
+use finite_field::FiniteFieldElement;
 
 use rand::distributions;
 use rand::Rng;
@@ -14,11 +13,11 @@ macro_rules! array_init {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct F1024(u16);
+pub struct F1024(u32);
 
-const CARD: usize = 1024;
+const CARD: u32 = 1024;
 
-const EXP: [F1024; CARD] = array_init![
+const EXP: [F1024; CARD as usize] = array_init![
     1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 9, 18, 36, 72, 144, 288, 576, 137, 274, 548, 65, 130,
     260, 520, 25, 50, 100, 200, 400, 800, 585, 155, 310, 620, 209, 418, 836, 641, 267, 534, 37, 74,
     148, 296, 592, 169, 338, 676, 321, 642, 269, 538, 61, 122, 244, 488, 976, 937, 859, 703, 375,
@@ -75,7 +74,7 @@ const EXP: [F1024; CARD] = array_init![
     147, 294, 588, 145, 290, 580, 129, 258, 516, 1
 ];
 
-const LOG: [usize; CARD] = [
+const LOG: [u32; CARD as usize] = [
     CARD, 0, 1, 77, 2, 154, 78, 956, 3, 10, 155, 325, 79, 618, 957, 231, 4, 308, 11, 200, 156, 889,
     326, 695, 80, 24, 619, 87, 958, 402, 232, 436, 5, 513, 309, 551, 12, 40, 201, 479, 157, 518,
     890, 101, 327, 164, 696, 860, 81, 258, 25, 385, 620, 277, 88, 577, 959, 772, 403, 680, 233, 52,
@@ -132,7 +131,7 @@ const LOG: [usize; CARD] = [
     946, 947, 879, 948, 541, 880, 248, 949,
 ];
 
-fn modulo(a: usize) -> usize {
+fn modulo(a: u32) -> u32 {
     if a >= CARD {
         a - (CARD - 1)
     } else {
@@ -148,106 +147,104 @@ fn modulo(a: usize) -> usize {
 //     EXP[i]
 // }
 
-impl finite_field::Zero for F1024 {
-    fn zero() -> F1024 {
-        F1024(0)
-    }
-}
+impl finite_field::CharacteristicTwo for F1024 {}
 
-impl finite_field::One for F1024 {
-    fn one() -> F1024 {
-        F1024(1)
+impl finite_field::FiniteFieldElement for F1024 {
+    fn finite_field_q() -> u32 {
+        2
     }
-}
 
-impl finite_field::Exp for F1024 {
-    fn exp(i: usize) -> F1024 {
-        EXP[i]
+    fn finite_field_m() -> u32 {
+        10
     }
-}
 
-impl finite_field::Log for F1024 {
-    fn log(self) -> Option<usize> {
-        if self == F1024(0) {
+    fn zero() -> Self {
+        Self(0)
+    }
+
+    fn one() -> Self {
+        Self(1)
+    }
+
+    fn exp(i: u32) -> Self {
+        EXP[i as usize]
+    }
+
+    fn log(self) -> Option<u32> {
+        if self == Self(0) {
             None
         } else {
             Some(LOG[self.0 as usize])
         }
     }
-}
 
-impl finite_field::AsU32 for F1024 {
-    fn as_u32(self) -> u32 {
-        self.0 as u32
+    fn to_u32(self) -> u32 {
+        self.0
     }
-}
 
-impl Neg for F1024 {
-    type Output = F1024;
-
-    fn neg(self) -> F1024 {
-        self
-    }
-}
-
-impl finite_field::Inv for F1024 {
-    fn inv(self) -> Option<F1024> {
+    fn inv(self) -> Option<Self> {
         match self {
-            F1024(0) => None,
-            _ => Some(F1024::exp(CARD - 1 - F1024::log(self).unwrap())),
+            Self(0) => None,
+            _ => Some(Self::exp(CARD - 1 - Self::log(self).unwrap())),
         }
     }
 }
 
-impl Add for F1024 {
-    type Output = F1024;
+impl Neg for F1024 {
+    type Output = Self;
 
-    fn add(self, other: F1024) -> F1024 {
-        F1024(self.0 ^ other.0)
+    fn neg(self) -> Self {
+        self
+    }
+}
+
+impl Add for F1024 {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        Self(self.0 ^ other.0)
     }
 }
 
 impl Sub for F1024 {
-    type Output = F1024;
+    type Output = Self;
 
-    fn sub(self, other: F1024) -> F1024 {
-        F1024(self.0 ^ other.0)
+    fn sub(self, other: Self) -> Self {
+        Self(self.0 ^ other.0)
     }
 }
 
 impl AddAssign for F1024 {
-    fn add_assign(&mut self, other: F1024) {
-        *self = F1024(self.0 ^ other.0);
+    fn add_assign(&mut self, other: Self) {
+        *self = Self(self.0 ^ other.0);
     }
 }
 
 impl SubAssign for F1024 {
-    fn sub_assign(&mut self, other: F1024) {
+    fn sub_assign(&mut self, other: Self) {
         *self += other;
     }
 }
 
 impl Mul for F1024 {
-    type Output = F1024;
+    type Output = Self;
 
-    fn mul(self, other: F1024) -> F1024 {
-        if self == F1024(0) || other == F1024(0) {
-            F1024(0)
+    fn mul(self, other: Self) -> Self {
+        if self == Self(0) || other == Self(0) {
+            Self(0)
         } else {
-            F1024::exp(modulo(
-                F1024::log(self).unwrap() + F1024::log(other).unwrap(),
-            ))
+            Self::exp(modulo(Self::log(self).unwrap() + Self::log(other).unwrap()))
         }
     }
 }
 
 impl MulAssign for F1024 {
-    fn mul_assign(&mut self, other: F1024) {
-        if *self == F1024(0) || other == F1024(0) {
-            *self = F1024(0);
+    fn mul_assign(&mut self, other: Self) {
+        if *self == Self(0) || other == Self(0) {
+            *self = Self(0);
         } else {
-            *self = F1024::exp(modulo(
-                F1024::log(*self).unwrap() + F1024::log(other).unwrap(),
+            *self = Self::exp(modulo(
+                Self::log(*self).unwrap() + Self::log(other).unwrap(),
             ));
         }
     }
@@ -261,16 +258,14 @@ impl fmt::Display for F1024 {
 
 impl distributions::Distribution<F1024> for distributions::Standard {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> F1024 {
-        F1024(rng.gen_range(0, CARD) as u16)
+        F1024(rng.gen_range(0, CARD) as u32)
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::finite_field::Inv;
-    use crate::finite_field::One;
-    use crate::finite_field::Zero;
+    use crate::finite_field::FiniteFieldElement;
 
     #[test]
     fn f1024_add() {

@@ -1,11 +1,9 @@
-use crate::finite_field::{Inv, One, Zero, AsU32};
-// use crate::finite_field_2::F2;
+use crate::finite_field::CharacteristicTwo;
+use crate::finite_field::FiniteFieldElement;
+use crate::finite_field_2::F2;
 use crate::matrix::Mat;
 use crate::polynomial::Poly;
 use std::fmt;
-use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
-
-const M: u32 = 10;
 
 pub struct Goppa<T> {
     len: usize,
@@ -13,22 +11,19 @@ pub struct Goppa<T> {
     set: Vec<T>,
 }
 
+// trait BinaryCode<T> {
+//     pub fn encode(g: &Mat<T>, msg: &Mat<T>) -> Mat<T> {
+//         Mat::prod(msg, &g)
+//     }
+
+//     pub fn decode(&self, rcv: &Mat<F2>) -> Mat<F2>
+//     where
+//         T: CharacteristicTwo,
+// }
+
 impl<T> Goppa<T>
 where
-    T: Copy
-        + fmt::Display
-        + Eq
-        + Zero
-        + One
-        + Add<Output = T>
-        + Sub<Output = T>
-        + Mul<Output = T>
-        + Neg<Output = T>
-        + Inv
-        + AddAssign
-        + SubAssign
-    + MulAssign
-    + AsU32
+    T: Copy + fmt::Display + FiniteFieldElement,
 {
     pub fn new(poly: Poly<T>, set: Vec<T>) -> Result<Goppa<T>, &'static str> {
         for i in 0..set.len() {
@@ -54,6 +49,17 @@ where
 
     pub fn set(&self) -> &Vec<T> {
         &self.set
+    }
+
+    pub fn parity_check_matrix_x(&self) -> Mat<T> {
+        let t = self.poly.degree();
+        let mut x = Mat::new(t, t);
+        for i in 0..t {
+            for j in 0..i + 1 {
+                x[(i, j)] = self.poly[t - i + j];
+            }
+        }
+        x
     }
 
     pub fn parity_check_matrix_y(&self) -> Mat<T> {
@@ -85,15 +91,16 @@ where
     }
 
     pub fn parity_check_matrix(&self) -> Mat<T> {
+        let x = self.parity_check_matrix_x();
         let y = self.parity_check_matrix_y();
         let z = self.parity_check_matrix_z();
-        let mut h = Mat::new(self.poly.degree(), self.len);
-        h.as_prod(&y, &z);
-        h
+        let xy = Mat::prod(&x, &y);
+        Mat::prod(&xy, &z)
+        // Mat::prod(&y, &z)
     }
 
-    pub fn generator_matrix(&self) -> Mat<T> {
-        let h = self.parity_check_matrix();
+    pub fn generator_matrix(h: &Mat<T>) -> Mat<T> {
+        // Check that h is a parity check matrix
         let m = h.rows();
         let n = h.cols();
         let k = n - m;
@@ -109,34 +116,62 @@ where
         g.as_prod(&gs, &p.inverse().unwrap().transpose());
         g
     }
+}
 
-    pub fn encode(&self, msg: &Mat<T>) -> Mat<T> {
-        let g = self.generator_matrix();
-        let cpt = Mat::prod(msg, &g.transpose());
-        cpt
+pub trait BinaryIrreducible {
+    fn encode(&self, msg: &Mat<F2>) -> Mat<F2>;
+    fn decode(&self, rcv: &Mat<F2>) -> Mat<F2>;
+}
+
+impl<T> BinaryIrreducible for Goppa<T>
+where
+    T: Copy + fmt::Display + FiniteFieldElement + CharacteristicTwo,
+{
+    fn encode(&self, msg: &Mat<F2>) -> Mat<F2> {
+        let h = self.parity_check_matrix();
+        let hb = h.binary_form();
+        let g = Goppa::generator_matrix(&hb);
+        Mat::prod(msg, &g)
     }
 
-    pub fn decode(&self, rcv: &Mat<T>) -> Mat<T> {
+    fn decode(&self, rcv: &Mat<F2>) -> Mat<F2> {
         let h = self.parity_check_matrix();
-        let syndrome = Mat::prod(&h, &rcv.transpose());
-        let zero = Mat::new(1, syndrome.cols());
+        let rcv_fq = Mat::from(rcv);
+        let syndrome = Mat::prod(&h, &rcv_fq.transpose());
+        let zero = Mat::new(syndrome.rows(), 1);
         if syndrome == zero {
             return rcv.clone();
         }
 
-        let mut s_x = Poly::new(syndrome.cols());
-        for i in 0..syndrome.cols() {
-            s_x[i] = syndrome[(1, i)];
+        println!("syndrome: {:?}", syndrome);
+        let mut deg_s_x = syndrome.rows() - 1;
+        for i in 0..syndrome.rows() - 1 {
+            if syndrome[(i, 0)] != T::zero() {
+                break;
+            }
+            deg_s_x -= 1;
         }
+        let mut s_x = Poly::new(deg_s_x + 1);
+        for i in 0..deg_s_x + 1 {
+            s_x[i] = syndrome[(deg_s_x - i, 0)];
+            // s_x[i] = syndrome[(i, 0)];
+        }
+        println!("s_x: {:?}", s_x);
+        // debug!("this is a debug {}", "message");
+        // error!("this is printed by default");
 
-        let mut t = s_x.inverse_modulo(M, &self.poly);
+        let mut t = s_x.inverse_modulo(&self.poly);
+        println!("T(x) = s(x)^-1 : {:?}", t);
         t.add(&Poly::x_n(1));
-        t.square_root_modulo(M, &self.poly);
-        let (mut a, mut b, _, _, _) = Poly::extended_gcd(&t, &self.poly);
+        let s = t.square_root_modulo(&self.poly);
+        println!("square root t(x) of T(x) + x: {:?}", s);
+        // let (mut a, mut b, _, _, _) = Poly::extended_gcd(&s, &self.poly);
+        let (mut a, mut b) = Poly::goppa_extended_gcd(&self.poly, &s);
+        println!("a(x): {:?}", a);
+        println!("b(x): {:?}", b);
         a.square();
         b.square();
         b.mul(&Poly::x_n(1));
-        let n = self.set.len();
         // let aa = Mat::new(1, n);
         // for i in 0..a.degree() {
         //     aa[(1, i)] = a[i];
@@ -145,13 +180,20 @@ where
         // for i in 0..b.degree() {
         //     bb[(1, i)] = b[i];
         // }
-        let sigma = Poly::sum(&a, &b);
+        let sigma = Poly::sum(&a, &b); // not necessarily monic
+        println!("sigma(x): {:?}", sigma);
+        let n = self.set.len();
         let mut err = Mat::new(1, n);
-        for i in 0..n { // use iterator and map ?
-            err[(1, i)] = if sigma.eval(self.set[i]) == T::zero() { T::one() } else { T::zero() };
+        for i in 0..n {
+            // use iterator and map ?
+            err[(0, i)] = if sigma.eval(self.set[i]) == T::zero() {
+                F2::one()
+            } else {
+                F2::zero()
+            };
         }
 
-        let msg = Mat::sum(&rcv, &err);
-        msg
+        let cdw = Mat::sum(rcv, &err);
+        cdw
     }
 }

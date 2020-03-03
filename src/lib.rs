@@ -1,3 +1,5 @@
+#[macro_use] extern crate log;
+
 pub mod finite_field;
 pub mod finite_field_1024;
 pub mod finite_field_2;

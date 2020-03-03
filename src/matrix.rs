@@ -1,10 +1,11 @@
 extern crate rand;
 
-use crate::finite_field::{Inv, One, Zero, AsU32};
+use crate::finite_field::FiniteFieldElement;
+use crate::finite_field::CharacteristicTwo;
 use crate::finite_field_2::F2;
 use rand::{distributions, Rng};
 use std::fmt;
-use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign};
+use std::ops::{Index, IndexMut};
 
 // Type T must represent an element from a field, meaning all elements except 0 are inversible.
 #[derive(Clone, Eq, PartialEq)]
@@ -50,20 +51,8 @@ where
 
 impl<T> Mat<T>
 where
-    T: fmt::Display
-        + Copy
-        + Eq
-        + Zero
-        + One
-        + Add<Output = T>
-        + Sub<Output = T>
-        + Mul<Output = T>
-        + Neg<Output = T>
-        + Inv
-        + AddAssign
-        + SubAssign
-    + MulAssign
-+ AsU32 {
+    T: Copy + FiniteFieldElement,
+{
     pub fn new(n: usize, m: usize) -> Mat<T> {
         let mut mat = Mat {
             rows: n,
@@ -102,7 +91,7 @@ where
     //         }
     //         println!("{}", self[(i, self.cols - 1)]);
     //     }
-    
+
     // //   println!("{:?}", self);
     // }
 
@@ -619,12 +608,13 @@ where
         p
     }
 
-    pub fn binary_form(&self, m: u32) -> Mat<F2> {
+    pub fn binary_form(&self) -> Mat<F2> {
+        let m = T::finite_field_m();
         let mut bin = Mat::new(m as usize * self.rows, self.cols);
         for j in 0..self.cols {
             for i in 0..self.rows {
                 for k in 0..m as usize {
-                    bin[(m as usize * i + k, j)] = match (self[(i, j)].as_u32() >> k) & 1 {
+                    bin[(m as usize * i + k, j)] = match (self[(i, j)].to_u32() >> k) & 1 {
                         0 => F2::zero(),
                         1 => F2::one(),
                         _ => panic!("!!!"),
@@ -633,5 +623,16 @@ where
             }
         }
         bin
+    }
+
+    pub fn from(a: &Mat<F2>) -> Mat<T>
+    where T: CharacteristicTwo {
+        let mut b = Mat::new(a.rows(), a.cols());
+        for i in 0..a.rows() {
+            for j in 0..a.cols() {
+                b[(i, j)] = CharacteristicTwo::from(a[(i, j)]);
+            }
+        }
+        b
     }
 }

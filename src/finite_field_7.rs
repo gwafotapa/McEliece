@@ -1,21 +1,20 @@
 use crate::finite_field;
-use finite_field::Exp;
-use finite_field::Log;
+use finite_field::FiniteFieldElement;
 
 use rand::{distributions, Rng};
 use std::fmt;
 use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct F7(usize);
+pub struct F7(u32);
 
-const CARD: usize = 7;
+const CARD: u32 = 7;
 
-const EXP: [F7; CARD] = [F7(1), F7(3), F7(2), F7(6), F7(4), F7(5), F7(1)];
+const EXP: [F7; CARD as usize] = [F7(1), F7(3), F7(2), F7(6), F7(4), F7(5), F7(1)];
 
-const LOG: [usize; CARD] = [CARD, 0, 2, 1, 4, 5, 3];
+const LOG: [u32; CARD as usize] = [CARD as u32, 0, 2, 1, 4, 5, 3];
 
-fn modulo(a: usize) -> usize {
+fn modulo(a: u32) -> u32 {
     if a >= CARD {
         a - (CARD - 1)
     } else {
@@ -31,116 +30,116 @@ fn modulo(a: usize) -> usize {
 //     EXP[i]
 // }
 
-impl finite_field::Zero for F7 {
-    fn zero() -> F7 {
-        F7(0)
+impl finite_field::FiniteFieldElement for F7 {
+    fn finite_field_q() -> u32 {
+        7
     }
-}
 
-impl finite_field::One for F7 {
-    fn one() -> F7 {
-        F7(1)
+    fn finite_field_m() -> u32 {
+        1
     }
-}
 
-impl finite_field::Exp for F7 {
-    fn exp(i: usize) -> F7 {
-        EXP[i]
+    fn zero() -> Self {
+        Self(0)
     }
-}
 
-impl finite_field::Log for F7 {
-    fn log(self) -> Option<usize> {
+    fn one() -> Self {
+        Self(1)
+    }
+
+    fn exp(i: u32) -> Self {
+        EXP[i as usize]
+    }
+
+    fn log(self) -> Option<u32> {
         if self.0 == 0 {
             None
         } else {
             Some(LOG[self.0 as usize])
         }
     }
-}
 
-impl finite_field::AsU32 for F7 {
-    fn as_u32(self) -> u32 {
-        self.0 as u32
+    fn to_u32(self) -> u32 {
+        self.0
     }
-}
 
-impl Neg for F7 {
-    type Output = F7;
-
-    fn neg(self) -> F7 {
+    fn inv(self) -> Option<Self> {
         match self {
-            F7(0) => F7(0),
-            F7(1) => F7(6),
-            F7(2) => F7(5),
-            F7(3) => F7(4),
-            F7(4) => F7(3),
-            F7(5) => F7(2),
-            F7(6) => F7(1),
-            _ => F7(0),
+            Self(0) => None,
+            _ => Some(Self::exp(CARD - 1 - Self::log(self).unwrap())),
         }
     }
 }
 
-impl finite_field::Inv for F7 {
-    fn inv(self) -> Option<F7> {
+impl Neg for F7 {
+    type Output = Self;
+
+    fn neg(self) -> Self {
         match self {
-            F7(0) => None,
-            _ => Some(F7::exp(CARD - 1 - F7::log(self).unwrap())),
+            Self(0) => Self(0),
+            Self(1) => Self(6),
+            Self(2) => Self(5),
+            Self(3) => Self(4),
+            Self(4) => Self(3),
+            Self(5) => Self(2),
+            Self(6) => Self(1),
+            _ => Self(0),
         }
     }
 }
 
 impl Add for F7 {
-    type Output = F7;
+    type Output = Self;
 
-    fn add(self, other: F7) -> F7 {
-        F7((self.0 + other.0) % CARD)
+    fn add(self, other: Self) -> Self {
+        Self((self.0 + other.0) % CARD)
     }
 }
 
 impl Sub for F7 {
-    type Output = F7;
+    type Output = Self;
 
-    fn sub(self, other: F7) -> F7 {
-        F7(
+    fn sub(self, other: Self) -> Self {
+        Self(
             ((((self.0 as isize - other.0 as isize) % CARD as isize) + CARD as isize)
-                % CARD as isize) as usize,
+                % CARD as isize) as u32,
         )
     }
 }
 
 impl AddAssign for F7 {
-    fn add_assign(&mut self, other: F7) {
-        // *self = F7((self.0 + other.0) % CARD);
+    fn add_assign(&mut self, other: Self) {
+        // *self = Self((self.0 + other.0) % CARD);
         *self = *self + other;
     }
 }
 
 impl SubAssign for F7 {
-    fn sub_assign(&mut self, other: F7) {
+    fn sub_assign(&mut self, other: Self) {
         *self = *self - other;
     }
 }
 
 impl Mul for F7 {
-    type Output = F7;
+    type Output = Self;
 
-    fn mul(self, other: F7) -> F7 {
-        if self == F7(0) || other == F7(0) {
-            F7(0)
+    fn mul(self, other: Self) -> Self {
+        if self == Self(0) || other == Self(0) {
+            Self(0)
         } else {
-            F7::exp(modulo(F7::log(self).unwrap() + F7::log(other).unwrap()))
+            Self::exp(modulo(Self::log(self).unwrap() + Self::log(other).unwrap()))
         }
     }
 }
 
 impl MulAssign for F7 {
-    fn mul_assign(&mut self, other: F7) {
-        if *self == F7(0) || other == F7(0) {
-            *self = F7(0);
+    fn mul_assign(&mut self, other: Self) {
+        if *self == Self(0) || other == Self(0) {
+            *self = Self(0);
         } else {
-            *self = F7::exp(modulo(F7::log(*self).unwrap() + F7::log(other).unwrap()))
+            *self = Self::exp(modulo(
+                Self::log(*self).unwrap() + Self::log(other).unwrap(),
+            ))
         }
     }
 }
@@ -153,16 +152,14 @@ impl fmt::Display for F7 {
 
 impl distributions::Distribution<F7> for distributions::Standard {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> F7 {
-        F7(rng.gen_range(0, CARD) as usize)
+        F7(rng.gen_range(0, CARD) as u32)
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::finite_field::Inv;
-    use crate::finite_field::One;
-    use crate::finite_field::Zero;
+    use crate::finite_field::FiniteFieldElement;
 
     #[test]
     fn f7_add() {

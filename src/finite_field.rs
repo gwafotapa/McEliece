@@ -1,31 +1,66 @@
-// use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+use crate::finite_field_2;
+
+use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 // use std::fmt;
 
-pub trait Zero {
+pub trait FiniteFieldElement:
+    Add<Output = Self>
+    + AddAssign
+    + Eq
+    + Mul<Output = Self>
+    + MulAssign
+    + Neg<Output = Self>
+    + Sized
+    + Sub<Output = Self>
+    + SubAssign
+{
     fn zero() -> Self;
-}
-
-pub trait One {
     fn one() -> Self;
+    fn inv(self) -> Option<Self>;
+    fn exp(n: u32) -> Self;
+    fn log(self) -> Option<u32>;
+    fn to_u32(self) -> u32;
+    fn finite_field_q() -> u32;
+    fn finite_field_m() -> u32;
+    fn finite_field_order() -> u32 {
+        Self::finite_field_q().pow(Self::finite_field_m())
+    }
 }
 
-pub trait Inv {
-    fn inv(self) -> Option<Self>
-    where
-        Self: Sized;
+pub trait CharacteristicTwo: FiniteFieldElement {
+    fn from(elt: finite_field_2::F2) -> Self {
+        match elt {
+            finite_field_2::F2::Zero => Self::zero(),
+            finite_field_2::F2::One => Self::one(),
+        }
+    }
 }
 
-pub trait Exp {
-    fn exp(n: usize) -> Self;
-}
+// pub trait Zero {
+//     fn zero() -> Self;
+// }
 
-pub trait Log {
-    fn log(self) -> Option<usize>;
-}
+// pub trait One {
+//     fn one() -> Self;
+// }
 
-pub trait AsU32 {
-    fn as_u32(self) -> u32;
-}
+// pub trait Inv {
+//     fn inv(self) -> Option<Self>
+//     where
+//         Self: Sized;
+// }
+
+// pub trait Exp {
+//     fn exp(n: usize) -> Self;
+// }
+
+// pub trait Log {
+//     fn log(self) -> Option<usize>;
+// }
+
+// pub trait AsU32 {
+//     fn as_u32(self) -> u32;
+// }
 
 // // Finite field element
 // struct FFElt(u32);
