@@ -2,6 +2,7 @@
 
 use crate::finite_field::CharacteristicTwo;
 use crate::finite_field::FiniteFieldElement;
+// use crate::finite_field;
 
 use rand::{distributions, Rng};
 use std::ops::{Index, IndexMut};
@@ -99,6 +100,23 @@ where
         }
         while p[degree] == T::zero() {
             p[degree] = rng.gen();
+        }
+        p
+    }
+
+    pub fn random_irreducible(rng: &mut rand::rngs::ThreadRng, degree: usize) -> Poly<T>
+    where
+        distributions::Standard: distributions::Distribution<T>,
+        T: std::fmt::Debug + CharacteristicTwo,
+    {
+        let mut p = Poly::new(degree + 1);
+        while !p.is_irreducible() {
+            for i in 0..degree {
+                p[i] = rng.gen();
+            }
+            while p[degree] == T::zero() {
+                p[degree] = rng.gen();
+            }
         }
         p
     }
@@ -204,13 +222,14 @@ where
         }
     }
 
+    // TODO: remove the characteristic 2 bound and modify function accordingly
     pub fn square(&mut self)
     where
         T: CharacteristicTwo,
     {
-        if T::one() + T::one() != T::zero() {
-            panic!("Square root is only supported for characteristic 2");
-        }
+        // if T::one() + T::one() != T::zero() {
+        //     panic!("Square root is only supported for characteristic 2");
+        // }
         let t = self.degree();
         self.0.resize(2 * t + 1, T::zero());
 
@@ -313,7 +332,7 @@ where
 
     pub fn goppa_extended_gcd(g: &Poly<T>, t: &Poly<T>) -> (Poly<T>, Poly<T>) {
         let mut i = 1;
-        
+
         let mut a: Vec<Poly<T>> = Vec::new();
         let mut b: Vec<Poly<T>> = Vec::new();
         a.push(g.clone());
@@ -322,7 +341,7 @@ where
         let b1 = Poly::x_n(0);
         b.push(b0);
         b.push(b1);
-        
+
         while a[i].degree() >= (g.degree() + 1) / 2 {
             i += 1;
             let (q, r) = Poly::euclidean_division(&a[i - 2], &a[i - 1]);
@@ -356,6 +375,7 @@ where
         res
     }
 
+    // TODO: shouldn't I simply use euclid algo that also works for odd characteristics
     // characteristic 2 only
     // finite field order is 2^m
     pub fn inverse_modulo(&self, modulus: &Poly<T>) -> Poly<T>
@@ -386,11 +406,124 @@ where
         }
         res
     }
+
+    // Computes p^n mod (modulus)
+    pub fn pow_modulo(&mut self, mut n: u32, modulus: &Poly<T>)
+    where
+        T: CharacteristicTwo,
+    {
+        let mut tmp = self.clone();
+        tmp.modulo(modulus);
+        self.0.truncate(1);
+        self[0] = T::one();
+        if n & 1 == 1 {
+            self.mul(&tmp)
+        }
+        n >>= 1;
+        while n != 0 {
+            tmp.square();
+            tmp.modulo(modulus);
+            if n & 1 == 1 {
+                self.mul(&tmp);
+                self.modulo(modulus);
+            }
+            n >>= 1;
+        }
+    }
+
+    pub fn is_irreducible(&self) -> bool
+    where
+        T: std::fmt::Debug + CharacteristicTwo,
+    {
+        let n = self.degree() as u32;
+        if n == 0 {
+            return false;
+        }
+
+        // let q = T::finite_field_q();
+        // let m = T::finite_field_m();
+        let qm = T::finite_field_order();
+        let mut n_prime_factors = trial_division(n);
+        n_prime_factors.dedup();
+        info!("decomposition of n in prime factors: {:?}", n_prime_factors);
+
+        let k = n_prime_factors.len();
+        let mut n_div_primes = Vec::new();
+        for i in 0..k {
+            n_div_primes.push(n / n_prime_factors[i]);
+        }
+        info!(
+            "list of n/p where p is a prime factor of n: {:?}",
+            n_div_primes
+        );
+
+        for i in 0..k {
+            // let mut xqn_x = Poly::x_n(q.pow(n_div_primes[i]) as usize);
+            let mut h = Poly::x_n(1);
+            for _j in 0..n_div_primes[i] {
+                h.pow_modulo(qm, self);
+            }
+            h.sub(&Self::x_n(1));
+            let g = Poly::gcd(self, &h);
+            if g.degree() != 0 {
+                // info!("{:?}", g);
+                return false;
+            }
+        }
+        let mut g = Poly::x_n(1);
+        info!("{:?}", g);
+        for _i in 0..n {
+            g.pow_modulo(qm, self);
+            info!("{:?}", g);
+        }
+        g.sub(&Poly::x_n(1));
+        info!("{:?}", g);
+        g.modulo(self);
+        info!("{:?}", g);
+        // info!("{}", g.degree());
+        // info!("{:?}", g[0]);
+        g.degree() == 0 && g[0] == T::zero()
+    }
+}
+
+/// Computes the prime factors of (non zero) integer n by trial division
+/// https://en.wikipedia.org/wiki/Trial_division
+/// ```
+/// # use mceliece::polynomial::trial_division;
+/// assert_eq!(trial_division(1), vec![]);
+/// assert_eq!(trial_division(19), vec![19]);
+/// assert_eq!(trial_division(77), vec![7, 11]);
+/// assert_eq!(trial_division(12), vec![2, 2, 3]);
+/// ```
+pub fn trial_division(mut n: u32) -> Vec<u32> {
+    if n == 0 {
+        panic!("0 is an invalid input for trial division");
+    }
+
+    let mut prime_factors = Vec::new();
+    while n % 2 == 0 {
+        prime_factors.push(2);
+        n /= 2;
+    }
+    let mut f = 3;
+    while f * f <= n {
+        if n % f == 0 {
+            prime_factors.push(f);
+            n /= f;
+        } else {
+            f += 2;
+        }
+    }
+    if n != 1 {
+        prime_factors.push(n);
+    }
+    prime_factors
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::finite_field_1024::F1024;
     use crate::finite_field_2::F2;
 
     #[test]
@@ -407,5 +540,46 @@ mod tests {
         let mut q: Poly<F2> = Poly::x_n(3);
         q[2] = F2::one();
         println!("{:?}", q);
+    }
+
+    #[test]
+    fn is_irreducible() {
+        env_logger::init();
+
+        let zero: Poly<F2> = Poly::new(1);
+        assert!(!zero.is_irreducible());
+
+        let mut constant_poly: Poly<F1024> = Poly::new(1);
+        constant_poly[0] = F1024::exp(533);
+        assert!(!constant_poly.is_irreducible());
+
+        let mut p: Poly<F2> = Poly::new(3);
+        p[0] = F2::one();
+        p[1] = F2::one();
+        p[2] = F2::one();
+        assert!(p.is_irreducible());
+
+        let mut p: Poly<F2> = Poly::new(3);
+        p[0] = F2::one();
+        p[2] = F2::one();
+        assert!(!p.is_irreducible());
+
+        let mut p: Poly<F1024> = Poly::new(12);
+        p[0] = F1024::one();
+        p[2] = F1024::one();
+        p[11] = F1024::one();
+        assert!(p.is_irreducible());
+
+        let mut p: Poly<F2> = Poly::new(11);
+        p[0] = F2::one();
+        p[3] = F2::one();
+        p[10] = F2::one();
+        assert!(p.is_irreducible());
+
+        let mut p: Poly<F1024> = Poly::new(11);
+        p[0] = F1024::one();
+        p[3] = F1024::one();
+        p[10] = F1024::one();
+        assert!(!p.is_irreducible());
     }
 }
