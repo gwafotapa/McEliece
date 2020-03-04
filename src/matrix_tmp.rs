@@ -212,7 +212,7 @@ where
     where
         distributions::Standard: distributions::Distribution<T>,
     {
-        let mut mat = Mat::new(n, m);
+        let mut mat = Mat::zero(n, m);
         for i in 0..n {
             for j in 0..m {
                 mat.set(i, j, rng.gen::<T>());
@@ -257,7 +257,7 @@ where
     }
 
     pub fn permutation_random(rng: &mut rand::rngs::ThreadRng, n: usize) -> Mat<T> {
-        let mut mat = Mat::new(n, n);
+        let mut mat = Mat::zero(n, n);
         let mut cols = Vec::with_capacity(n); // remaining column indices
         for i in 0..n {
             cols.push(i);
@@ -276,7 +276,7 @@ where
     }
 
     pub fn identity(n: usize) -> Mat<T> {
-        let mut id = Mat::new(n, n);
+        let mut id = Mat::zero(n, n);
         for i in 0..n {
             id.set(i, i, T::one());
         }
@@ -390,7 +390,7 @@ where
     where
         distributions::Standard: distributions::Distribution<T>,
     {
-        let mut mat = Mat::new(n, n);
+        let mut mat = Mat::zero(n, n);
         let mut i = 0;
         while i < n {
             // Fill line i at random
@@ -541,7 +541,7 @@ where
     where
         distributions::Standard: distributions::Distribution<T>,
     {
-        let mut vec = Mat::new(1, n);
+        let mut vec = Mat::zero(1, n);
         let mut cols = Vec::with_capacity(n); // remaining column indices
         for i in 0..n {
             cols.push(i);

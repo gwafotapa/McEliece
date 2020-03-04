@@ -5,10 +5,16 @@ use rand::{distributions, Rng};
 use std::fmt;
 use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub enum F2 {
     Zero,
     One,
+}
+
+impl fmt::Debug for F2 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", *self as u32)
+    }
 }
 
 impl finite_field::CharacteristicTwo for F2 {}

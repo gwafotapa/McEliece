@@ -53,14 +53,20 @@ impl<T> Mat<T>
 where
     T: Copy + FiniteFieldElement,
 {
-    pub fn new(n: usize, m: usize) -> Mat<T> {
-        let mut mat = Mat {
-            rows: n,
-            cols: m,
-            data: Vec::<T>::with_capacity(n * m),
-        };
-        mat.data.resize(n * m, T::zero());
+    pub fn new(rows: usize, cols: usize, data: Vec<T>) -> Mat<T> {
+        if data.len() != rows * cols {
+            panic!("Wrong dimensions");
+        }
+        Mat { rows, cols, data }
+    }
 
+    pub fn zero(rows: usize, cols: usize) -> Mat<T> {
+        let mut mat = Mat {
+            rows,
+            cols,
+            data: Vec::<T>::with_capacity(rows * cols),
+        };
+        mat.data.resize(rows * cols, T::zero());
         mat
     }
 
@@ -99,7 +105,7 @@ where
     where
         distributions::Standard: distributions::Distribution<T>,
     {
-        let mut mat = Mat::new(n, m);
+        let mut mat = Mat::zero(n, m);
         for i in 0..n {
             for j in 0..m {
                 mat[(i, j)] = rng.gen::<T>();
@@ -144,7 +150,7 @@ where
     }
 
     pub fn permutation_random(rng: &mut rand::rngs::ThreadRng, n: usize) -> Mat<T> {
-        let mut mat = Mat::new(n, n);
+        let mut mat = Mat::zero(n, n);
         let mut cols = Vec::with_capacity(n); // remaining column indices
         for i in 0..n {
             cols.push(i);
@@ -163,7 +169,7 @@ where
     }
 
     pub fn identity(n: usize) -> Mat<T> {
-        let mut id = Mat::new(n, n);
+        let mut id = Mat::zero(n, n);
         for i in 0..n {
             id[(i, i)] = T::one();
         }
@@ -295,7 +301,7 @@ where
     where
         distributions::Standard: distributions::Distribution<T>,
     {
-        let mut mat = Mat::new(n, n);
+        let mut mat = Mat::zero(n, n);
         let mut i = 0;
         while i < n {
             // Fill line i at random
@@ -403,7 +409,7 @@ where
     }
 
     pub fn sum(mat1: &Mat<T>, mat2: &Mat<T>) -> Mat<T> {
-        let mut sum = Mat::new(mat1.rows, mat1.cols);
+        let mut sum = Mat::zero(mat1.rows, mat1.cols);
         sum.as_sum(mat1, mat2);
         sum
     }
@@ -445,7 +451,7 @@ where
     where
         distributions::Standard: distributions::Distribution<T>,
     {
-        let mut vec = Mat::new(1, n);
+        let mut vec = Mat::zero(1, n);
         let mut cols = Vec::with_capacity(n); // remaining column indices
         for i in 0..n {
             cols.push(i);
@@ -593,7 +599,7 @@ where
     }
 
     pub fn transpose(&self) -> Mat<T> {
-        let mut t = Mat::new(self.cols, self.rows);
+        let mut t = Mat::zero(self.cols, self.rows);
         for i in 0..t.rows {
             for j in 0..t.cols {
                 t[(i, j)] = self[(j, i)];
@@ -603,14 +609,14 @@ where
     }
 
     pub fn prod(a: &Mat<T>, b: &Mat<T>) -> Mat<T> {
-        let mut p = Mat::new(a.rows, b.cols);
+        let mut p = Mat::zero(a.rows, b.cols);
         p.as_prod(a, b);
         p
     }
 
     pub fn binary_form(&self) -> Mat<F2> {
         let m = T::finite_field_m();
-        let mut bin = Mat::new(m as usize * self.rows, self.cols);
+        let mut bin = Mat::zero(m as usize * self.rows, self.cols);
         for j in 0..self.cols {
             for i in 0..self.rows {
                 for k in 0..m as usize {
@@ -627,7 +633,7 @@ where
 
     pub fn from(a: &Mat<F2>) -> Mat<T>
     where T: CharacteristicTwo {
-        let mut b = Mat::new(a.rows(), a.cols());
+        let mut b = Mat::zero(a.rows(), a.cols());
         for i in 0..a.rows() {
             for j in 0..a.cols() {
                 b[(i, j)] = CharacteristicTwo::from(a[(i, j)]);

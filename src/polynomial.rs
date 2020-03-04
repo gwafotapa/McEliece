@@ -31,7 +31,7 @@ where
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.degree() == 0 && self[0] == T::zero() {
-            return write!(f, "\n0");
+            return write!(f, "0");
         }
 
         let mut s = String::new();
@@ -56,7 +56,7 @@ where
             i += 1;
         }
 
-        write!(f, "\n{}", s)
+        write!(f, "{}", s)
     }
 }
 
@@ -110,6 +110,12 @@ where
         T: std::fmt::Debug + CharacteristicTwo,
     {
         let mut p = Poly::new(degree + 1);
+        for i in 0..degree {
+            p[i] = rng.gen();
+        }
+        while p[degree] == T::zero() {
+            p[degree] = rng.gen();
+        }
         while !p.is_irreducible() {
             for i in 0..degree {
                 p[i] = rng.gen();
@@ -342,13 +348,17 @@ where
         b.push(b0);
         b.push(b1);
 
-        while a[i].degree() >= (g.degree() + 1) / 2 {
+        while a[i].degree() > g.degree() / 2 {
             i += 1;
             let (q, r) = Poly::euclidean_division(&a[i - 2], &a[i - 1]);
             // println!("{}\n", q.to_str());
             b.push(Poly::sum(&b[i - 2], &Poly::prod(&q, &b[i - 1])));
             a.push(r);
             // println!("{}\n", r[i].to_str());
+
+            // if (Poly::prod(&b[i], &t).modulo(&g) != a[i].modulo(&g)) {
+            //     panic!("Broken loop invariant between a, b, t and g");
+            // }
         }
 
         (a.remove(i), b.remove(i))

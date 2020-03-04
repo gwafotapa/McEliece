@@ -51,7 +51,7 @@ mod tests {
 
     #[test]
     fn test_new() {
-        let mut mat = Mat::new(3, 4);
+        let mut mat = Mat::zero(3, 4);
         mat.set(2, 2, 1);
         mat.set(1, 0, 1);
         mat.set(2, 3, 1);

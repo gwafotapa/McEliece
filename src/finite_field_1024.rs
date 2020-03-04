@@ -12,7 +12,7 @@ macro_rules! array_init {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub struct F1024(u32);
 
 const CARD: u32 = 1024;
@@ -146,6 +146,12 @@ fn modulo(a: u32) -> u32 {
 // pub fn exp(i: usize) -> F1024 {
 //     EXP[i]
 // }
+
+impl fmt::Debug for F1024 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 impl finite_field::CharacteristicTwo for F1024 {}
 

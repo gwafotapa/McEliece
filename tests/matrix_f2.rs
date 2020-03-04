@@ -8,7 +8,7 @@ use mceliece::matrix::*;
 
 #[test]
 fn matrix_f2_new() {
-    let mut mat = Mat::new(3, 4);
+    let mut mat = Mat::zero(3, 4);
     mat[(2, 2)] = F2::one();
     mat[(1, 0)] = F2::one();
     mat[(2, 3)] = F2::one();
@@ -35,7 +35,7 @@ fn matrix_f2_new() {
 
 #[test]
 fn matrix_f2_is_permutation() {
-    let mut mat = Mat::new(5, 6);
+    let mut mat = Mat::zero(5, 6);
     mat[(0, 4)] = F2::one();
     mat[(1, 2)] = F2::one();
     mat[(2, 3)] = F2::one();
@@ -44,7 +44,7 @@ fn matrix_f2_is_permutation() {
     println!("{:?}", mat);
     assert!(!mat.is_permutation());
 
-    let mut mat = Mat::new(6, 6);
+    let mut mat = Mat::zero(6, 6);
     mat[(0, 4)] = F2::one();
     mat[(1, 2)] = F2::one();
     mat[(3, 3)] = F2::one();
@@ -54,7 +54,7 @@ fn matrix_f2_is_permutation() {
     println!("{:?}", mat);
     assert!(!mat.is_permutation());
 
-    let mut mat = Mat::new(6, 6);
+    let mut mat = Mat::zero(6, 6);
     mat[(0, 4)] = F2::one();
     mat[(1, 3)] = F2::one();
     mat[(2, 3)] = F2::one();
@@ -64,7 +64,7 @@ fn matrix_f2_is_permutation() {
     println!("{:?}", mat);
     assert!(!mat.is_permutation());
 
-    let mut mat = Mat::new(6, 6);
+    let mut mat = Mat::zero(6, 6);
     mat[(0, 4)] = F2::one();
     mat[(1, 2)] = F2::one();
     mat[(2, 3)] = F2::one();
@@ -125,7 +125,7 @@ fn matrix_f2_invertible_random() {
         mat
     );
 
-    let mut prod = Mat::new(15, 15);
+    let mut prod = Mat::zero(15, 15);
     prod.as_prod(
         &mat,
         &mat.inverse().expect("Cannot inverse invertible matrix"),
@@ -140,23 +140,23 @@ fn matrix_f2_as_sum() {
     let a: Mat<F2> = Mat::random(&mut rng, 11, 11);
     let b: Mat<F2> = Mat::random(&mut rng, 11, 11);
     let c: Mat<F2> = Mat::random(&mut rng, 11, 11);
-    let z = Mat::new(11, 11);
-    let mut s = Mat::new(11, 11);
+    let z = Mat::zero(11, 11);
+    let mut s = Mat::zero(11, 11);
     println!("{:?}", a);
 
     // Associativity
-    let mut ab = Mat::new(11, 11);
+    let mut ab = Mat::zero(11, 11);
     ab.as_sum(&a, &b);
-    let mut abc1 = Mat::new(11, 11);
+    let mut abc1 = Mat::zero(11, 11);
     abc1.as_sum(&ab, &c);
-    let mut bc = Mat::new(11, 11);
+    let mut bc = Mat::zero(11, 11);
     bc.as_sum(&b, &c);
-    let mut abc2 = Mat::new(11, 11);
+    let mut abc2 = Mat::zero(11, 11);
     abc2.as_sum(&a, &bc);
     assert_eq!(abc1, abc2);
 
     // Commutativity
-    let mut ba = Mat::new(11, 11);
+    let mut ba = Mat::zero(11, 11);
     ba.as_sum(&b, &a);
     assert_eq!(ab, ba);
 
@@ -172,9 +172,9 @@ fn matrix_f2_as_sum() {
 #[test]
 #[should_panic]
 fn matrix_f2_as_prod_wrong_dimensions() {
-    let mut prod: Mat<F2> = Mat::new(5, 5);
-    let mat1 = Mat::new(5, 4);
-    let mat2 = Mat::new(3, 5);
+    let mut prod: Mat<F2> = Mat::zero(5, 5);
+    let mat1 = Mat::zero(5, 4);
+    let mat2 = Mat::zero(3, 5);
     prod.as_prod(&mat1, &mat2);
 }
 
@@ -186,13 +186,13 @@ fn matrix_f2_as_prod() {
     let c: Mat<F2> = Mat::random(&mut rng, 13, 4);
 
     // Associativity
-    let mut ab = Mat::new(10, 13);
+    let mut ab = Mat::zero(10, 13);
     ab.as_prod(&a, &b);
-    let mut abc1 = Mat::new(10, 4);
+    let mut abc1 = Mat::zero(10, 4);
     abc1.as_prod(&ab, &c);
-    let mut bc = Mat::new(8, 4);
+    let mut bc = Mat::zero(8, 4);
     bc.as_prod(&b, &c);
-    let mut abc2 = Mat::new(10, 4);
+    let mut abc2 = Mat::zero(10, 4);
     abc2.as_prod(&a, &bc);
     assert_eq!(abc1, abc2);
 
@@ -206,9 +206,9 @@ fn matrix_f2_as_prod() {
     assert_eq!(p, a);
 
     // Zero case
-    let z8 = Mat::new(8, 8);
-    let z10 = Mat::new(10, 10);
-    let z10_8 = Mat::new(10, 8);
+    let z8 = Mat::zero(8, 8);
+    let z10 = Mat::zero(10, 10);
+    let z10_8 = Mat::zero(10, 8);
     p.as_prod(&a, &z8);
     assert_eq!(p, z10_8);
     p.as_prod(&z10, &a);
@@ -245,7 +245,7 @@ fn matrix_f2_as_prod() {
 
 #[test]
 fn matrix_f2_rank() {
-    let mat: Mat<F2> = Mat::new(23, 4);
+    let mat: Mat<F2> = Mat::zero(23, 4);
     assert_eq!(mat.rank(), 0);
 
     let mat: Mat<F2> = Mat::identity(19);
@@ -258,7 +258,7 @@ fn matrix_f2_rank() {
 
 #[test]
 fn matrix_f2_weighted_vector_random() {
-    let mat: Mat<F2> = Mat::new(3, 4);
+    let mat: Mat<F2> = Mat::zero(3, 4);
     assert!(mat.weight() == None);
 
     let mut rng = rand::thread_rng();
@@ -297,9 +297,9 @@ fn matrix_f2_standard_form() {
     assert!(u.is_invertible());
     assert!(s.is_standard_form());
     assert!(p.is_permutation());
-    let mut uh = Mat::new(13, 31);
+    let mut uh = Mat::zero(13, 31);
     uh.as_prod(&u, &h);
-    let mut uhp = Mat::new(13, 31);
+    let mut uhp = Mat::zero(13, 31);
     uhp.as_prod(&uh, &p);
     assert_eq!(s, uhp);
 }

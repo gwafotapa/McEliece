@@ -3,6 +3,8 @@ use crate::finite_field::FiniteFieldElement;
 use crate::finite_field_2::F2;
 use crate::matrix::Mat;
 use crate::polynomial::Poly;
+
+use rand::{distributions, Rng};
 use std::fmt;
 
 pub struct Goppa<T> {
@@ -23,20 +25,54 @@ pub struct Goppa<T> {
 
 impl<T> Goppa<T>
 where
-    T: Copy + fmt::Display + FiniteFieldElement,
+    T: Copy + fmt::Display + FiniteFieldElement + CharacteristicTwo,
 {
-    pub fn new(poly: Poly<T>, set: Vec<T>) -> Result<Goppa<T>, &'static str> {
-        for i in 0..set.len() {
-            if poly.eval(set[i]) == T::zero() {
-                println!("{} is a root of the polynomial", set[i]);
-                return Err("Set contains a root of the polynomial");
-            }
+    pub fn new(poly: Poly<T>, set: Vec<T>) -> Result<Goppa<T>, &'static str>
+    where
+        T: std::fmt::Debug,
+    {
+        if !poly.is_irreducible() {
+            return Err("Goppa polynomial is not irreducible");
         }
+        // for i in 0..set.len() {
+        //     if poly.eval(set[i]) == T::zero() {
+        //         println!("{} is a root of the polynomial", set[i]);
+        //         return Err("Set contains a root of the polynomial");
+        //     }
+        // }
         Ok(Goppa::<T> {
             len: set.len(),
             poly,
             set,
         })
+    }
+
+    pub fn random(
+        rng: &mut rand::rngs::ThreadRng,
+        len: usize,
+        t: usize,
+    ) -> Goppa<T>
+    where
+        distributions::Standard: distributions::Distribution<T>,
+        T: std::fmt::Debug,
+    {
+        let qm = T::finite_field_order();
+        let poly = Poly::random_irreducible(rng, t);
+        let mut set = Vec::new();
+        let mut list = Vec::new();
+        for i in 0..qm {
+            list.push(i);
+        }
+        for _i in 0..len {
+            let j = list.swap_remove(rng.gen_range(0, list.len()));
+            let elt = if j == qm - 1 {
+                T::zero()
+            } else {
+                FiniteFieldElement::exp(j)
+            };
+            set.push(elt);
+        }
+        Goppa { len, poly, set }
     }
 
     pub fn len(&self) -> usize {
@@ -53,7 +89,7 @@ where
 
     pub fn parity_check_matrix_x(&self) -> Mat<T> {
         let t = self.poly.degree();
-        let mut x = Mat::new(t, t);
+        let mut x = Mat::zero(t, t);
         for i in 0..t {
             for j in 0..i + 1 {
                 x[(i, j)] = self.poly[t - i + j];
@@ -66,7 +102,7 @@ where
         let n = self.len();
         let t = self.poly.degree();
 
-        let mut y = Mat::new(t, n);
+        let mut y = Mat::zero(t, n);
         for i in 0..n {
             y[(0, i)] = T::one();
         }
@@ -82,7 +118,7 @@ where
     pub fn parity_check_matrix_z(&self) -> Mat<T> {
         let n = self.len();
 
-        let mut z = Mat::new(n, n);
+        let mut z = Mat::zero(n, n);
         for i in 0..n {
             // println!("{} {}", self.set[i], self.poly.eval(self.set[i]));
             z[(i, i)] = self.poly.eval(self.set[i]).inv().unwrap();
@@ -99,51 +135,52 @@ where
         // Mat::prod(&y, &z)
     }
 
+    // pub fn syndrome(&self, h: Option<&Mat<T>>, x: &RowVec<T>) -> ColVec<T> {}
+
+    // pub fn syndrome_poly(&self, h: Option<&Mat<T>>, x: &RowVec<T>) -> Poly<T> {}
+    
+    // TODO: should be changed because elements of the generator live in Fq and not in Fqm
     pub fn generator_matrix(h: &Mat<T>) -> Mat<T> {
         // Check that h is a parity check matrix
         let m = h.rows();
         let n = h.cols();
         let k = n - m;
         let (_u, hs, p) = h.standard_form().unwrap();
-        let mut gs = Mat::new(k, n);
+        let mut gs = Mat::zero(k, n);
         for i in 0..k {
             gs[(i, i)] = T::one();
             for j in k..n {
                 gs[(i, j)] = -hs[(j - k, i)];
             }
         }
-        let mut g = Mat::new(k, n);
-        g.as_prod(&gs, &p.inverse().unwrap().transpose());
-        g
+        // let mut g = Mat::zero(k, n);
+        // g.as_prod(&gs, &p.inverse().unwrap().transpose());
+        // g
+        
+        // Mat::prod(&gs, &p.inverse().unwrap().transpose())
+        Mat::prod(&gs, &p.transpose())
     }
-}
 
-pub trait BinaryIrreducible {
-    fn encode(&self, msg: &Mat<F2>) -> Mat<F2>;
-    fn decode(&self, rcv: &Mat<F2>) -> Mat<F2>;
-}
-
-impl<T> BinaryIrreducible for Goppa<T>
-where
-    T: Copy + fmt::Display + FiniteFieldElement + CharacteristicTwo,
-{
-    fn encode(&self, msg: &Mat<F2>) -> Mat<F2> {
+    pub fn encode(&self, msg: &Mat<F2>) -> Mat<F2> {
         let h = self.parity_check_matrix();
         let hb = h.binary_form();
         let g = Goppa::generator_matrix(&hb);
         Mat::prod(msg, &g)
     }
 
-    fn decode(&self, rcv: &Mat<F2>) -> Mat<F2> {
+    pub fn decode(&self, rcv: &Mat<F2>) -> Mat<F2> {
         let h = self.parity_check_matrix();
+        info!("parity check matrix: {:?}", h);
         let rcv_fq = Mat::from(rcv);
+        info!("received word: {:?}", rcv_fq);
         let syndrome = Mat::prod(&h, &rcv_fq.transpose());
-        let zero = Mat::new(syndrome.rows(), 1);
+        info!("syndrome: {:?}", syndrome);
+
+        let zero = Mat::zero(syndrome.rows(), 1);
         if syndrome == zero {
             return rcv.clone();
         }
 
-        println!("syndrome: {:?}", syndrome);
         let mut deg_s_x = syndrome.rows() - 1;
         for i in 0..syndrome.rows() - 1 {
             if syndrome[(i, 0)] != T::zero() {
@@ -153,37 +190,37 @@ where
         }
         let mut s_x = Poly::new(deg_s_x + 1);
         for i in 0..deg_s_x + 1 {
-            s_x[i] = syndrome[(deg_s_x - i, 0)];
+            s_x[i] = syndrome[(syndrome.rows() - 1 - i, 0)];
             // s_x[i] = syndrome[(i, 0)];
         }
-        println!("s_x: {:?}", s_x);
+        info!("S(x): {:?}", s_x);
         // debug!("this is a debug {}", "message");
         // error!("this is printed by default");
 
         let mut t = s_x.inverse_modulo(&self.poly);
-        println!("T(x) = s(x)^-1 : {:?}", t);
+        info!("T(x) = s(x)^-1 = {:?}", t);
         t.add(&Poly::x_n(1));
         let s = t.square_root_modulo(&self.poly);
-        println!("square root t(x) of T(x) + x: {:?}", s);
+        info!("square root t(x) of T(x) + x: {:?}", s);
         // let (mut a, mut b, _, _, _) = Poly::extended_gcd(&s, &self.poly);
         let (mut a, mut b) = Poly::goppa_extended_gcd(&self.poly, &s);
-        println!("a(x): {:?}", a);
-        println!("b(x): {:?}", b);
+        info!("a(x) = {:?}", a);
+        info!("b(x) = {:?}", b);
         a.square();
         b.square();
         b.mul(&Poly::x_n(1));
-        // let aa = Mat::new(1, n);
+        // let aa = Mat::zero(1, n);
         // for i in 0..a.degree() {
         //     aa[(1, i)] = a[i];
         // }
-        // let bb = Mat::new(1, n);
+        // let bb = Mat::zero(1, n);
         // for i in 0..b.degree() {
         //     bb[(1, i)] = b[i];
         // }
         let sigma = Poly::sum(&a, &b); // not necessarily monic
-        println!("sigma(x): {:?}", sigma);
+        info!("sigma(x) = {:?}", sigma);
         let n = self.set.len();
-        let mut err = Mat::new(1, n);
+        let mut err = Mat::zero(1, n);
         for i in 0..n {
             // use iterator and map ?
             err[(0, i)] = if sigma.eval(self.set[i]) == T::zero() {
