@@ -31,7 +31,7 @@ where
     where
         T: std::fmt::Debug,
     {
-        if !poly.is_irreducible() {
+        if poly.is_irreducible() == false {
             return Err("Goppa polynomial is not irreducible");
         }
         // for i in 0..set.len() {

@@ -61,7 +61,9 @@ fn goppa_f8() {
     assert_eq!(m2, z2);
 
     let gg = Mat::from(&g);
-    let m = Mat::prod(&h, &gg.transpose());
+    // let m = Mat::prod(&h, &gg.transpose());
+    let m = &h * &gg.transpose();
+    
     // warn!("h.g^T: {:?}", m);
     let z = Mat::zero(h.rows(), gg.rows());
     assert_eq!(m, z);
@@ -88,7 +90,8 @@ fn goppa_f8() {
     // // let mut err = Mat::zero(1, 8);
     // // err[(0, 1)] = F2::one();
     println!("err: {:?}", err);
-    let rcv = Mat::sum(&cdw, &err);
+    // let rcv = Mat::sum(&cdw, &err);
+    let rcv = &cdw + err;
     println!("rcv: {:?}", rcv);
     let dcd = c.decode(&rcv);
     println!("dcd: {:?}", dcd);

@@ -1,11 +1,11 @@
 extern crate rand;
 
-use crate::finite_field::FiniteFieldElement;
 use crate::finite_field::CharacteristicTwo;
+use crate::finite_field::FiniteFieldElement;
 use crate::finite_field_2::F2;
 use rand::{distributions, Rng};
 use std::fmt;
-use std::ops::{Index, IndexMut};
+use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign, Index, IndexMut};
 
 // Type T must represent an element from a field, meaning all elements except 0 are inversible.
 #[derive(Clone, Eq, PartialEq)]
@@ -14,6 +14,233 @@ pub struct Mat<T> {
     cols: usize,
     data: Vec<T>,
 }
+
+impl<T> Add for Mat<T>
+where T: Copy + FiniteFieldElement {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self::Output {
+        &self + &other
+    }
+}
+
+impl<T> Add<&Mat<T>> for Mat<T>
+where T: Copy + FiniteFieldElement {
+    type Output = Self;
+
+    fn add(self, other: &Self) -> Self::Output {
+        &self + other
+    }
+}
+
+impl<T> Add<Mat<T>> for &Mat<T>
+where T: Copy + FiniteFieldElement {
+    type Output = Mat<T>;
+
+    fn add(self, other: Mat<T>) -> Self::Output {
+        self + &other
+    }
+}
+
+impl<T> Add for &Mat<T>
+where T: Copy + FiniteFieldElement {
+    type Output = Mat<T>;
+
+    fn add(self, other: Self) -> Self::Output {
+        if self.rows != other.rows || self.cols != other.cols {
+            panic!("Cannot add matrices: dimensions don't match");
+        }
+        
+        let mut sum = Mat::zero(self.rows, self.cols);
+        for i in 0..self.rows * self.cols {
+            sum.data[i] = self.data[i] + other.data[i];
+        }
+        sum
+    }
+}
+
+impl<T> AddAssign<Mat<T>> for Mat<T>
+where T: Copy + FiniteFieldElement {
+    fn add_assign(&mut self, other: Mat<T>) {
+        *self += &other;
+    }
+}
+
+impl<T> AddAssign<&Mat<T>> for Mat<T>
+where T: Copy + FiniteFieldElement {
+    fn add_assign(&mut self, other: &Mat<T>) {
+        if self.rows != other.rows || self.cols != other.cols {
+            panic!("Cannot add matrices: dimensions don't match");
+        }
+        
+        for i in 0..self.rows * self.cols {
+            self.data[i] += other.data[i];
+        }
+
+    }
+}
+
+impl<T> Sub for Mat<T>
+where T: Copy + FiniteFieldElement {
+    type Output = Self;
+
+    fn sub(self, other: Self) -> Self::Output {
+        &self - &other
+    }
+}
+
+impl<T> Sub<&Mat<T>> for Mat<T>
+where T: Copy + FiniteFieldElement {
+    type Output = Self;
+
+    fn sub(self, other: &Self) -> Self::Output {
+        &self - other
+    }
+}
+
+impl<T> Sub<Mat<T>> for &Mat<T>
+where T: Copy + FiniteFieldElement {
+    type Output = Mat<T>;
+
+    fn sub(self, other: Mat<T>) -> Self::Output {
+        self - &other
+    }
+}
+
+impl<T> Sub for &Mat<T>
+where T: Copy + FiniteFieldElement {
+    type Output = Mat<T>;
+
+    fn sub(self, other: Self) -> Self::Output {
+        if self.rows != other.rows || self.cols != other.cols {
+            panic!("Cannot substract matrices: dimensions don't match");
+        }
+        
+        let mut diff = Mat::zero(self.rows, self.cols);
+        for i in 0..self.rows * self.cols {
+            diff.data[i] = self.data[i] - other.data[i];
+        }
+        diff
+    }
+}
+
+impl<T> SubAssign<Mat<T>> for Mat<T>
+where T: Copy + FiniteFieldElement {
+    fn sub_assign(&mut self, other: Mat<T>) {
+        *self -= &other;
+    }
+}
+
+impl<T> SubAssign<&Mat<T>> for Mat<T>
+where T: Copy + FiniteFieldElement {
+    fn sub_assign(&mut self, other: &Mat<T>) {
+        if self.rows != other.rows || self.cols != other.cols {
+            panic!("Cannot substract matrices: dimensions don't match");
+        }
+        
+        for i in 0..self.rows * self.cols {
+            self.data[i] -= other.data[i];
+        }
+
+    }
+}
+
+impl<T> Neg for Mat<T>
+where T: Copy + FiniteFieldElement {
+    type Output = Self;
+    
+    fn neg(self) -> Self::Output {
+        -&self
+    }
+}
+
+impl<T> Neg for &Mat<T>
+where T: Copy + FiniteFieldElement {
+    type Output = Mat<T>;
+    
+    fn neg(self) -> Self::Output {
+        let mut opp = Mat::zero(self.rows, self.cols);
+        
+        for i in 0..self.rows * self.cols {
+            opp.data[i] = -self.data[i];
+        }
+        opp
+    }
+}
+
+impl<T> Mul for Mat<T>
+where T: Copy + FiniteFieldElement {
+    type Output = Self;
+
+    fn mul(self, other: Self) -> Self::Output {
+        &self * &other
+    }
+}
+
+impl<T> Mul<&Mat<T>> for Mat<T>
+where T: Copy + FiniteFieldElement {
+    type Output = Self;
+
+    fn mul(self, other: &Self) -> Self::Output {
+        &self * other
+    }
+}
+
+impl<T> Mul<Mat<T>> for &Mat<T>
+where T: Copy + FiniteFieldElement {
+    type Output = Mat<T>;
+
+    fn mul(self, other: Mat<T>) -> Self::Output {
+        self * &other
+    }
+}
+
+impl<T> Mul for &Mat<T>
+where T: Copy + FiniteFieldElement {
+    type Output = Mat<T>;
+
+    fn mul(self, other: Self) -> Self::Output {
+        if self.cols != other.rows {
+            panic!("Cannot multiply matrices: dimensions don't match");
+        }
+
+        let mut prod = Mat::zero(self.rows, other.cols);
+        for i in 0..prod.rows {
+            for j in 0..prod.cols {
+                for k in 0..self.cols {
+                    prod[(i, j)] += self[(i, k)] * other[(k, j)];
+                }
+            }
+        }
+        prod
+    }
+}
+
+impl<T> MulAssign<Mat<T>> for Mat<T>
+where T: Copy + FiniteFieldElement {
+    fn mul_assign(&mut self, other: Mat<T>) {
+        *self *= &other;
+    }
+}
+
+impl<T> MulAssign<&Mat<T>> for Mat<T>
+where T: Copy + FiniteFieldElement {
+    fn mul_assign(&mut self, other: &Mat<T>) {
+        if self.cols != other.rows {
+            panic!("Cannot multiply matrices: dimensions don't match");
+        }
+
+        let tmp = self.clone();
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                for k in 0..tmp.cols {
+                    self[(i, j)] += tmp[(i, k)] * other[(k, j)];
+                }
+            }
+        }
+    }
+}
+
 
 impl<T> Index<(usize, usize)> for Mat<T> {
     type Output = T;
@@ -61,13 +288,11 @@ where
     }
 
     pub fn zero(rows: usize, cols: usize) -> Mat<T> {
-        let mut mat = Mat {
+        Mat {
             rows,
             cols,
-            data: Vec::<T>::with_capacity(rows * cols),
-        };
-        mat.data.resize(rows * cols, T::zero());
-        mat
+            data: vec![T::zero(); rows * cols],
+        }
     }
 
     pub fn rows(&self) -> usize {
@@ -430,6 +655,18 @@ where
         }
     }
 
+    pub fn add(&mut self, mat: &Mat<T>) {
+        if self.rows != mat.rows || self.cols != mat.cols {
+            panic!("Cannot add matrices: dimensions don't match");
+        }
+
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                self[(i, j)] += mat[(i, j)];
+            }
+        }
+    }
+
     pub fn as_prod(&mut self, mat1: &Mat<T>, mat2: &Mat<T>) {
         if self.rows != mat1.rows || self.cols != mat2.cols || mat1.cols != mat2.rows {
             panic!("Cannot multiply matrices: dimensions don't match");
@@ -623,7 +860,7 @@ where
                     bin[(m as usize * i + k, j)] = match (self[(i, j)].to_u32() >> k) & 1 {
                         0 => F2::zero(),
                         1 => F2::one(),
-                        _ => panic!("!!!"),
+                        _ => panic!("Unexpected value"),
                     }
                 }
             }
@@ -632,7 +869,9 @@ where
     }
 
     pub fn from(a: &Mat<F2>) -> Mat<T>
-    where T: CharacteristicTwo {
+    where
+        T: CharacteristicTwo,
+    {
         let mut b = Mat::zero(a.rows(), a.cols());
         for i in 0..a.rows() {
             for j in 0..a.cols() {
@@ -641,4 +880,33 @@ where
         }
         b
     }
+}
+
+pub struct RowVec<T>(Mat<T>);
+
+impl<T> RowVec<T>
+where
+    T: Copy + FiniteFieldElement,
+{
+    pub fn zero(cols: usize) -> RowVec<T> {
+        RowVec(Mat {
+            rows: 1,
+            cols,
+            data: vec![T::zero(); cols],
+        })
+    }
+
+    pub fn prod(vec: &RowVec<T>, mat: &Mat<T>) -> Mat<T> {
+        Mat::prod(&vec.0, mat)
+    }
+
+    // pub fn add(&mut self, vec: &RowVec<T>) {
+    //     self.0.add(&vec.0);
+    // }
+
+    // pub fn sum(vec1: &RowVec<T>, vec2: &RowVec<T>) -> RowVec<T> {
+    //     let mut sum = RowVec(vec1.0.clone());
+    //     sum.add(vec2);
+    //     sum
+    // }
 }
