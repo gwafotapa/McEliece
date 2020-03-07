@@ -10,15 +10,17 @@
 // mod finite_field_1024;
 // mod matrix;
 
-#[macro_use]
-extern crate log;
+// #[macro_use]
+// extern crate log;
 
 mod finite_field;
-mod finite_field_2;
-mod finite_field_1024;
+mod rowvec;
+// mod finite_field_1024;
+// mod finite_field_2;
+mod matrix;
 mod polynomial;
 
-use crate::finite_field_2::F2;
+use crate::finite_field::F2;
 use crate::polynomial::Poly;
 
 // use std::path::Path;
@@ -26,7 +28,7 @@ use std::char;
 use std::env;
 use std::fs::File;
 use std::fs::OpenOptions;
-use std::io::{Write, Seek, SeekFrom};
+use std::io::{Seek, SeekFrom, Write};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -47,16 +49,16 @@ fn main() {
     if prime_factors.len() != 1 {
         panic!("Order must be a power of a prime");
     }
-    let q = prime_factors[0];
-
-    println!("{}^{}", q, m);
-    // TODO: check bounds on q and m
+    let p = prime_factors[0];
+    if p != 2 {
+        panic!("Only characteristic 2 is supported");
+    }
+    if m < 2 || m > 17 {
+        panic!("Field order must be between 2^2 and 2^17");
+    }
+    println!("{}^{}", p, m);
 
     let file_name = "src/finite_field_".to_owned() + &args[1] + ".rs";
-
-    // if Path::new(&file_name).exists() {
-    //     panic!("File {} already exists", file_name);
-    // }
 
     let mut file = match OpenOptions::new()
         .write(true)
@@ -67,32 +69,31 @@ fn main() {
         Err(e) => panic!("Cannot create file: {}", e),
     };
 
-    let content = "
-use crate::finite_field;
-use finite_field::FiniteFieldElement;
+    let content = "use crate::finite_field::{CharacteristicTwo, FieldElement, FiniteFieldElement, Inv};
 
-use rand::distributions;
+use rand::distributions::{Distribution, Standard};
 use rand::Rng;
-use std::fmt;
+use std::fmt::{Debug, Display, Formatter, Result};
 use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 macro_rules! array_init {
     ( $( $x:expr ),+ ) => {
-        [ $( F***($x) ),+ ]
+        [ $( F{order}($x) ),+ ]
     }
 }
 
 #[derive(Clone, Copy, Eq, PartialEq)]
-pub struct F***(u32);
+pub struct F{order}(u32);
 
-const CARD: u32 = ***;
+const CARD: u32 = {order};
 
-const EXP: [F***; CARD as usize] = array_init![
+const EXP: [F{order}; CARD as usize] = array_init![
     ";
-    
-    let content = content.replace("***", &order.to_string());
-    file.write_all(content.as_bytes()).expect("Cannot write file");
-    
+
+    let content = content.replace("{order}", &order.to_string());
+    file.write_all(content.as_bytes())
+        .expect("Cannot write file");
+
     // https://www.partow.net/programming/polynomials/index.html
     let primitive_poly = match m {
         2 => 0x7,
@@ -122,55 +123,31 @@ const EXP: [F***; CARD as usize] = array_init![
         if elt >= order {
             elt ^= primitive_poly;
         }
-        file.write_all((elt.to_string() + ", ").as_bytes()).expect("Cannot write file");
-            
+        file.write_all((elt.to_string() + ", ").as_bytes())
+            .expect("Cannot write file");
+
         log[elt as usize] = i;
     }
     log[1] = 0;
     file.seek(SeekFrom::Current(-2)).expect("Cannot seek file"); // erase the last comma
     file.write_all(b"\n];\n\n").expect("Cannot write file");
 
-    file.write_all(b"const LOG: [u32; CARD as usize] = [\n    CARD, ").expect("Cannot write file");
-        
+    file.write_all(b"const LOG: [u32; CARD as usize] = [\n    CARD, ")
+        .expect("Cannot write file");
+
     for i in 1..order as usize {
-        file.write_all((log[i].to_string() + ", ").as_bytes()).expect("Cannot write file");
-            
+        file.write_all((log[i].to_string() + ", ").as_bytes())
+            .expect("Cannot write file");
     }
     file.seek(SeekFrom::Current(-2)).expect("Cannot seek file"); // erase the last comma
     file.write_all(b"\n];\n").expect("Cannot seek file");
 
     let content = "
-fn modulo(a: u32) -> u32 {
-    if a >= CARD {
-        a - (CARD - 1)
-    } else {
-        a
-    }
-}
+impl CharacteristicTwo for F{order} {}
 
-impl fmt::Debug for F*** {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, \"{}\", self.0)
-    }
-}
-
-impl finite_field::CharacteristicTwo for F*** {}
-
-impl finite_field::FiniteFieldElement for F*** {
-    fn finite_field_q() -> u32 {
-        2
-    }
-
-    fn finite_field_m() -> u32 {
-        10
-    }
-
-    fn zero() -> Self {
-        Self(0)
-    }
-
-    fn one() -> Self {
-        Self(1)
+impl FiniteFieldElement for F{order} {
+    fn characteristic_exponent() -> u32 {
+        {characteristic_exponent}
     }
 
     fn exp(i: u32) -> Self {
@@ -185,27 +162,26 @@ impl finite_field::FiniteFieldElement for F*** {
         }
     }
 
-    fn to_u32(self) -> u32 {
+    fn to_canonical_basis(self) -> u32 {
         self.0
     }
+}
 
-    fn inv(self) -> Option<Self> {
-        match self {
-            Self(0) => None,
-            _ => Some(Self::exp(CARD - 1 - Self::log(self).unwrap())),
-        }
+impl FieldElement for F{order} {
+    fn zero() -> Self {
+        Self(0)
+    }
+
+    fn one() -> Self {
+        Self(1)
+    }
+
+    fn characteristic() -> u32 {
+        2
     }
 }
 
-impl Neg for F*** {
-    type Output = Self;
-
-    fn neg(self) -> Self {
-        self
-    }
-}
-
-impl Add for F*** {
+impl Add for F{order} {
     type Output = Self;
 
     fn add(self, other: Self) -> Self {
@@ -213,59 +189,80 @@ impl Add for F*** {
     }
 }
 
-impl Sub for F*** {
+impl AddAssign for F{order} {
+    fn add_assign(&mut self, other: Self) {
+        *self = *self + other;
+    }
+}
+
+impl Sub for F{order} {
     type Output = Self;
 
     fn sub(self, other: Self) -> Self {
-        Self(self.0 ^ other.0)
+        self + other
     }
 }
 
-impl AddAssign for F*** {
-    fn add_assign(&mut self, other: Self) {
-        *self = Self(self.0 ^ other.0);
-    }
-}
-
-impl SubAssign for F*** {
+impl SubAssign for F{order} {
     fn sub_assign(&mut self, other: Self) {
-        *self += other;
+        *self = *self - other;
     }
 }
 
-impl Mul for F*** {
+impl Mul for F{order} {
     type Output = Self;
 
     fn mul(self, other: Self) -> Self {
+        let modulo = |a| if a >= CARD { a - (CARD - 1) } else { a };
+
         if self == Self(0) || other == Self(0) {
             Self(0)
         } else {
-            Self::exp(modulo(Self::log(self).unwrap() + Self::log(other).unwrap()))
+            EXP[modulo(LOG[self.0 as usize] + LOG[other.0 as usize]) as usize]
         }
     }
 }
 
-impl MulAssign for F*** {
+impl MulAssign for F{order} {
     fn mul_assign(&mut self, other: Self) {
-        if *self == Self(0) || other == Self(0) {
-            *self = Self(0);
-        } else {
-            *self = Self::exp(modulo(
-                Self::log(*self).unwrap() + Self::log(other).unwrap(),
-            ));
+        *self = *self * other;
+    }
+}
+
+impl Neg for F{order} {
+    type Output = Self;
+
+    fn neg(self) -> Self {
+        self
+    }
+}
+
+impl Inv for F{order} {
+    type Output = Self;
+
+    fn inv(self) -> Option<Self::Output> {
+        match self {
+            Self(0) => None,
+            _ => Some(EXP[(CARD - 1 - LOG[self.0 as usize]) as usize]),
         }
     }
 }
 
-impl fmt::Display for F*** {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, \"{:>4}\", self.0,)
+impl Distribution<F{order}> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> F{order} {
+        F{order}(rng.gen_range(0, CARD) as u32)
     }
 }
 
-impl distributions::Distribution<F***> for distributions::Standard {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> F*** {
-        F***(rng.gen_range(0, CARD) as u32)
+impl Debug for F{order} {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, \"{:>{digits}}\", self.0)
+    }
+}
+
+impl Display for F{order} {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, \"{:>{digits}}\", self.0,)
     }
 }
 
@@ -275,34 +272,41 @@ mod test {
     use crate::finite_field::FiniteFieldElement;
 
     #[test]
-    fn f***_add() {
+    fn f{order}_add() {
         let mut rng = rand::thread_rng();
-        let a: F*** = rng.gen();
-        let b: F*** = rng.gen();
-        let c: F*** = rng.gen();
-        let z = F***::zero();
+        let a: F{order} = rng.gen();
+        let b: F{order} = rng.gen();
+        let c: F{order} = rng.gen();
+        let z = F{order}::zero();
         assert_eq!(a + (b + c), (a + b) + c);
         assert_eq!(a + b, b + a);
         assert_eq!(a + z, a);
     }
 
     #[test]
-    fn f***_sub() {
+    fn f{order}_characteristic() {
         let mut rng = rand::thread_rng();
-        let a: F*** = rng.gen();
-        let z = F***::zero();
-        assert_eq!(a - z, a);
-        assert_eq!(a - a, z);
+        let a: F{order} = rng.gen();
+        let z = F{order}::zero();
+        assert_eq!(a + a, z);
     }
 
     #[test]
-    fn f***_mul() {
+    fn f{order}_sub() {
         let mut rng = rand::thread_rng();
-        let a: F*** = rng.gen();
-        let b: F*** = rng.gen();
-        let c: F*** = rng.gen();
-        let i = F***::one();
-        let z = F***::zero();
+        let a: F{order} = rng.gen();
+        let b: F{order} = rng.gen();
+        assert_eq!(a + b, a - b);
+    }
+
+    #[test]
+    fn f{order}_mul() {
+        let mut rng = rand::thread_rng();
+        let a: F{order} = rng.gen();
+        let b: F{order} = rng.gen();
+        let c: F{order} = rng.gen();
+        let i = F{order}::one();
+        let z = F{order}::zero();
         assert_eq!(a * (b * c), (a * b) * c);
         assert_eq!(a * b, b * a);
         assert_eq!(a * i, a);
@@ -312,35 +316,40 @@ mod test {
     }
 
     #[test]
-    fn f***_inv() {
+    fn f{order}_neg() {
         let mut rng = rand::thread_rng();
-        let a: F*** = rng.gen();
-        let i = F***::one();
-        let z = F***::zero();
-        assert_eq!(z.inv(), None);
-        assert_eq!(i.inv(), Some(i));
-        if a != F***::zero() {
-            assert_eq!(a.inv().unwrap().inv().unwrap(), a);
-            assert_eq!(a * a.inv().unwrap(), i);
-        }
-    }
-
-    #[test]
-    fn f***_neg() {
-        let mut rng = rand::thread_rng();
-        let a: F*** = rng.gen();
-        let b: F*** = rng.gen();
-        let z = F***::zero();
+        let a: F{order} = rng.gen();
+        let b: F{order} = rng.gen();
+        let z = F{order}::zero();
         assert_eq!(-z, z);
         assert_eq!(--a, a);
         assert_eq!(a + -b, a - b);
     }
+
+    #[test]
+    fn f{order}_inv() {
+        let mut rng = rand::thread_rng();
+        let a: F{order} = rng.gen();
+        let i = F{order}::one();
+        let z = F{order}::zero();
+        assert_eq!(z.inv(), None);
+        assert_eq!(i.inv(), Some(i));
+        if a != F{order}::zero() {
+            assert_eq!(a.inv().unwrap().inv().unwrap(), a);
+            assert_eq!(a * a.inv().unwrap(), i);
+        }
+    }
 }";
 
-    let content = content.replace("***", &order.to_string());
-    file.write_all(content.as_bytes()).expect("Cannot write file");
+    let content = content.replace("{order}", &order.to_string());
+    // let content = content.replace("{characteristic}", &p.to_string());
+    let content = content.replace("{characteristic_exponent}", &m.to_string());
+    let digits = (32 - order.leading_zeros()) / 3 + 1; // ceiling of the number of digits of order
+    let content = content.replace("{digits}", &digits.to_string());
+    file.write_all(content.as_bytes())
+        .expect("Cannot write file");
 }
 
 // TODO: need to open lib.rs and add the line "mod finite_field_{q};"
-// modify functions to return proper values (q instead of 2 for characteristic...)
-// make changes for odd characteristic (neg, ...)
+
+// fn main() {}

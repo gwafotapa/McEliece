@@ -1,12 +1,14 @@
 // extern crate rand;
 
-use crate::finite_field::CharacteristicTwo;
-use crate::finite_field::FiniteFieldElement;
-// use crate::finite_field;
-
+use log::info;
 use rand::{distributions, Rng};
 use std::ops::{Index, IndexMut};
 use std::{cmp, fmt};
+
+use crate::finite_field::CharacteristicTwo;
+use crate::finite_field::FieldElement;
+use crate::finite_field::FiniteFieldElement;
+use crate::finite_field::Inv;
 
 #[derive(Clone, Eq, PartialEq)]
 pub struct Poly<T>(Vec<T>);
@@ -370,7 +372,7 @@ where
     where
         T: CharacteristicTwo,
     {
-        let m = T::finite_field_m();
+        let m = T::characteristic_exponent();
         // if T::one() + T::one() != T::zero() {
         //     panic!("Square root is only supported for characteristic 2");
         // }
@@ -392,7 +394,7 @@ where
     where
         T: CharacteristicTwo,
     {
-        let m = T::finite_field_m();
+        let m = T::characteristic_exponent();
         if self.degree() == 0 && self[0] == T::zero() {
             panic!("The null polynom has no inverse");
         }
@@ -450,9 +452,9 @@ where
             return false;
         }
 
-        // let q = T::finite_field_q();
-        // let m = T::finite_field_m();
-        let qm = T::finite_field_order();
+        // let q = T::characteristic();
+        // let m = T::characteristic_exponent();
+        let qm = T::order();
         let mut n_prime_factors = trial_division(n);
         n_prime_factors.dedup();
         info!("decomposition of n in prime factors: {:?}", n_prime_factors);
@@ -533,8 +535,9 @@ pub fn trial_division(mut n: u32) -> Vec<u32> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::finite_field_1024::F1024;
-    use crate::finite_field_2::F2;
+
+    use crate::finite_field::F1024;
+    use crate::finite_field::F2;
 
     #[test]
     fn print() {

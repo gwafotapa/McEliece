@@ -1,9 +1,6 @@
-extern crate mceliece;
-
 use rand::Rng;
 
 use mceliece::finite_field::*;
-use mceliece::finite_field_2::*;
 use mceliece::matrix::*;
 
 #[test]
@@ -125,122 +122,76 @@ fn matrix_f2_invertible_random() {
         mat
     );
 
-    let mut prod = Mat::zero(15, 15);
-    prod.as_prod(
-        &mat,
-        &mat.inverse().expect("Cannot inverse invertible matrix"),
-    );
+    let prod = &mat * &mat.inverse().expect("Cannot inverse invertible matrix");
     let id = Mat::identity(15);
     assert_eq!(prod, id);
 }
 
 #[test]
-fn matrix_f2_as_sum() {
+fn matrix_f2_add() {
     let mut rng = rand::thread_rng();
     let a: Mat<F2> = Mat::random(&mut rng, 11, 11);
     let b: Mat<F2> = Mat::random(&mut rng, 11, 11);
     let c: Mat<F2> = Mat::random(&mut rng, 11, 11);
     let z = Mat::zero(11, 11);
-    let mut s = Mat::zero(11, 11);
     println!("{:?}", a);
 
     // Associativity
-    let mut ab = Mat::zero(11, 11);
-    ab.as_sum(&a, &b);
-    let mut abc1 = Mat::zero(11, 11);
-    abc1.as_sum(&ab, &c);
-    let mut bc = Mat::zero(11, 11);
-    bc.as_sum(&b, &c);
-    let mut abc2 = Mat::zero(11, 11);
-    abc2.as_sum(&a, &bc);
-    assert_eq!(abc1, abc2);
+    assert_eq!((&a + &b) + &c, &a + (&b + &c));
 
     // Commutativity
-    let mut ba = Mat::zero(11, 11);
-    ba.as_sum(&b, &a);
-    assert_eq!(ab, ba);
+    assert_eq!(&a + &b, &b + &a);
 
     // Neutral element
-    s.as_sum(&a, &z);
-    assert_eq!(s, a);
-
+    assert_eq!(&a + &z, a);
+    
     // Characteristic
-    s.as_sum(&a, &a);
-    assert_eq!(s, z);
+    assert_eq!(&a + &a, z);
 }
 
 #[test]
 #[should_panic]
-fn matrix_f2_as_prod_wrong_dimensions() {
+fn matrix_f2_mul_wrong_dimensions() {
     let mut prod: Mat<F2> = Mat::zero(5, 5);
     let mat1 = Mat::zero(5, 4);
     let mat2 = Mat::zero(3, 5);
-    prod.as_prod(&mat1, &mat2);
+    prod.prod(&mat1, &mat2);
 }
 
 #[test]
-fn matrix_f2_as_prod() {
+fn matrix_f2_mul() {
     let mut rng = rand::thread_rng();
     let a: Mat<F2> = Mat::random(&mut rng, 10, 8);
     let b: Mat<F2> = Mat::random(&mut rng, 8, 13);
     let c: Mat<F2> = Mat::random(&mut rng, 13, 4);
 
     // Associativity
-    let mut ab = Mat::zero(10, 13);
-    ab.as_prod(&a, &b);
-    let mut abc1 = Mat::zero(10, 4);
-    abc1.as_prod(&ab, &c);
-    let mut bc = Mat::zero(8, 4);
-    bc.as_prod(&b, &c);
-    let mut abc2 = Mat::zero(10, 4);
-    abc2.as_prod(&a, &bc);
-    assert_eq!(abc1, abc2);
+    assert_eq!((&a * &b) * &c, &a * (&b * &c));
 
     // Neutral element
     let i8 = Mat::identity(8);
     let i10 = Mat::identity(10);
-    let mut p: Mat<F2> = Mat::random(&mut rng, 10, 8);
-    p.as_prod(&a, &i8);
-    assert_eq!(p, a);
-    p.as_prod(&i10, &a);
-    assert_eq!(p, a);
+    assert_eq!(&a * &i8, a);
+    assert_eq!(&i10 * &a, a);
 
     // Zero case
     let z8 = Mat::zero(8, 8);
     let z10 = Mat::zero(10, 10);
     let z10_8 = Mat::zero(10, 8);
-    p.as_prod(&a, &z8);
-    assert_eq!(p, z10_8);
-    p.as_prod(&z10, &a);
-    assert_eq!(p, z10_8);
+    assert_eq!(&a * &z8, z10_8);
+    assert_eq!(&z10 * &a, z10_8);
 
     // Distributivity
     let a: Mat<F2> = Mat::random(&mut rng, 10, 12);
     let b: Mat<F2> = Mat::random(&mut rng, 10, 12);
     let c: Mat<F2> = Mat::random(&mut rng, 12, 9);
     let d: Mat<F2> = Mat::random(&mut rng, 12, 9);
-    let mut p: Mat<F2> = Mat::random(&mut rng, 10, 12);
-    let mut q: Mat<F2> = Mat::random(&mut rng, 10, 9);
-    let mut r: Mat<F2> = Mat::random(&mut rng, 10, 9);
-    let mut s: Mat<F2> = Mat::random(&mut rng, 10, 9);
-    let mut t: Mat<F2> = Mat::random(&mut rng, 10, 9);
-    let mut u: Mat<F2> = Mat::random(&mut rng, 12, 9);
 
     // Left: (a + b)c = ac + bc
-    p.as_sum(&a, &b);
-    q.as_prod(&p, &c);
-    r.as_prod(&a, &c);
-    s.as_prod(&b, &c);
-    t.as_sum(&r, &s);
-    assert_eq!(q, t);
+    assert_eq!((&a + &b) * &c, &a * &c + &b * &c);
 
-    // Right: a(c + d) = ac + ad
-    u.as_sum(&c, &d);
-    t.as_prod(&a, &u);
-    q.as_prod(&a, &c);
-    r.as_prod(&a, &d);
-    s.as_sum(&q, &r);
-    assert_eq!(s, t);
+    // Right: a(b + c) = ab + ac
+    assert_eq!(&a * (&c + &d), &a * &c + &a * &d);
 }
 
 #[test]
@@ -297,11 +248,7 @@ fn matrix_f2_standard_form() {
     assert!(u.is_invertible());
     assert!(s.is_standard_form());
     assert!(p.is_permutation());
-    let mut uh = Mat::zero(13, 31);
-    uh.as_prod(&u, &h);
-    let mut uhp = Mat::zero(13, 31);
-    uhp.as_prod(&uh, &p);
-    assert_eq!(s, uhp);
+    assert_eq!(s, u * h * p);
 }
 
 #[test]

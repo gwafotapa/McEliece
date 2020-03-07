@@ -1,9 +1,8 @@
-use crate::finite_field;
-use finite_field::FiniteFieldElement;
+use crate::finite_field::{CharacteristicTwo, FieldElement, FiniteFieldElement, Inv};
 
-use rand::distributions;
+use rand::distributions::{Distribution, Standard};
 use rand::Rng;
-use std::fmt;
+use std::fmt::{Debug, Display, Formatter, Result};
 use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 macro_rules! array_init {
@@ -131,45 +130,11 @@ const LOG: [u32; CARD as usize] = [
     946, 947, 879, 948, 541, 880, 248, 949,
 ];
 
-fn modulo(a: u32) -> u32 {
-    if a >= CARD {
-        a - (CARD - 1)
-    } else {
-        a
-    }
-}
+impl CharacteristicTwo for F1024 {}
 
-// pub fn log(a: F1024) -> usize {
-//     LOG[a.0 as usize]
-// }
-
-// pub fn exp(i: usize) -> F1024 {
-//     EXP[i]
-// }
-
-impl fmt::Debug for F1024 {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl finite_field::CharacteristicTwo for F1024 {}
-
-impl finite_field::FiniteFieldElement for F1024 {
-    fn finite_field_q() -> u32 {
-        2
-    }
-
-    fn finite_field_m() -> u32 {
+impl FiniteFieldElement for F1024 {
+    fn characteristic_exponent() -> u32 {
         10
-    }
-
-    fn zero() -> Self {
-        Self(0)
-    }
-
-    fn one() -> Self {
-        Self(1)
     }
 
     fn exp(i: u32) -> Self {
@@ -184,23 +149,22 @@ impl finite_field::FiniteFieldElement for F1024 {
         }
     }
 
-    fn to_u32(self) -> u32 {
+    fn to_canonical_basis(self) -> u32 {
         self.0
-    }
-
-    fn inv(self) -> Option<Self> {
-        match self {
-            Self(0) => None,
-            _ => Some(Self::exp(CARD - 1 - Self::log(self).unwrap())),
-        }
     }
 }
 
-impl Neg for F1024 {
-    type Output = Self;
+impl FieldElement for F1024 {
+    fn zero() -> Self {
+        Self(0)
+    }
 
-    fn neg(self) -> Self {
-        self
+    fn one() -> Self {
+        Self(1)
+    }
+
+    fn characteristic() -> u32 {
+        2
     }
 }
 
@@ -212,23 +176,23 @@ impl Add for F1024 {
     }
 }
 
+impl AddAssign for F1024 {
+    fn add_assign(&mut self, other: Self) {
+        *self = *self + other;
+    }
+}
+
 impl Sub for F1024 {
     type Output = Self;
 
     fn sub(self, other: Self) -> Self {
-        Self(self.0 ^ other.0)
-    }
-}
-
-impl AddAssign for F1024 {
-    fn add_assign(&mut self, other: Self) {
-        *self = Self(self.0 ^ other.0);
+        self + other
     }
 }
 
 impl SubAssign for F1024 {
     fn sub_assign(&mut self, other: Self) {
-        *self += other;
+        *self = *self - other;
     }
 }
 
@@ -236,35 +200,56 @@ impl Mul for F1024 {
     type Output = Self;
 
     fn mul(self, other: Self) -> Self {
+        let modulo = |a| if a >= CARD { a - (CARD - 1) } else { a };
+
         if self == Self(0) || other == Self(0) {
             Self(0)
         } else {
-            Self::exp(modulo(Self::log(self).unwrap() + Self::log(other).unwrap()))
+            EXP[modulo(LOG[self.0 as usize] + LOG[other.0 as usize]) as usize]
         }
     }
 }
 
 impl MulAssign for F1024 {
     fn mul_assign(&mut self, other: Self) {
-        if *self == Self(0) || other == Self(0) {
-            *self = Self(0);
-        } else {
-            *self = Self::exp(modulo(
-                Self::log(*self).unwrap() + Self::log(other).unwrap(),
-            ));
+        *self = *self * other;
+    }
+}
+
+impl Neg for F1024 {
+    type Output = Self;
+
+    fn neg(self) -> Self {
+        self
+    }
+}
+
+impl Inv for F1024 {
+    type Output = Self;
+
+    fn inv(self) -> Option<Self::Output> {
+        match self {
+            Self(0) => None,
+            _ => Some(EXP[(CARD - 1 - LOG[self.0 as usize]) as usize]),
         }
     }
 }
 
-impl fmt::Display for F1024 {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:>4}", self.0,)
+impl Distribution<F1024> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> F1024 {
+        F1024(rng.gen_range(0, CARD) as u32)
     }
 }
 
-impl distributions::Distribution<F1024> for distributions::Standard {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> F1024 {
-        F1024(rng.gen_range(0, CARD) as u32)
+impl Debug for F1024 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "{:>4}", self.0)
+    }
+}
+
+impl Display for F1024 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "{:>4}", self.0,)
     }
 }
 
@@ -283,6 +268,13 @@ mod test {
         assert_eq!(a + (b + c), (a + b) + c);
         assert_eq!(a + b, b + a);
         assert_eq!(a + z, a);
+    }
+
+    #[test]
+    fn f1024_characteristic() {
+        let mut rng = rand::thread_rng();
+        let a: F1024 = rng.gen();
+        let z = F1024::zero();
         assert_eq!(a + a, z);
     }
 
@@ -291,7 +283,7 @@ mod test {
         let mut rng = rand::thread_rng();
         let a: F1024 = rng.gen();
         let b: F1024 = rng.gen();
-        assert_eq!(a - b, a + b);
+        assert_eq!(a + b, a - b);
     }
 
     #[test]
@@ -311,6 +303,17 @@ mod test {
     }
 
     #[test]
+    fn f1024_neg() {
+        let mut rng = rand::thread_rng();
+        let a: F1024 = rng.gen();
+        let b: F1024 = rng.gen();
+        let z = F1024::zero();
+        assert_eq!(-z, z);
+        assert_eq!(--a, a);
+        assert_eq!(a + -b, a - b);
+    }
+
+    #[test]
     fn f1024_inv() {
         let mut rng = rand::thread_rng();
         let a: F1024 = rng.gen();
@@ -322,12 +325,5 @@ mod test {
             assert_eq!(a.inv().unwrap().inv().unwrap(), a);
             assert_eq!(a * a.inv().unwrap(), i);
         }
-    }
-
-    #[test]
-    fn f1024_neg() {
-        let mut rng = rand::thread_rng();
-        let a: F1024 = rng.gen();
-        assert_eq!(-a, a);
     }
 }

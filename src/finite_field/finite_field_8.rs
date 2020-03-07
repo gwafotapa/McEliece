@@ -1,46 +1,50 @@
-use crate::finite_field;
-use finite_field::FiniteFieldElement;
+use crate::finite_field::{CharacteristicTwo, FieldElement, FiniteFieldElement, Inv};
 
-use rand::{distributions, Rng};
-use std::fmt;
+use rand::distributions::{Distribution, Standard};
+use rand::Rng;
+use std::fmt::{Debug, Display, Formatter, Result};
 use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub struct F8(pub u32);
-
-const CARD: u32 = 8;
-
-const EXP: [F8; CARD as usize] = [F8(1), F8(2), F8(4), F8(3), F8(6), F8(7), F8(5), F8(1)];
-
-const LOG: [u32; CARD as usize] = [CARD, 0, 1, 3, 2, 6, 4, 5];
-
-fn modulo(a: u32) -> u32 {
-    if a >= CARD {
-        a - (CARD - 1)
-    } else {
-        a
+macro_rules! array_init {
+    ( $( $x:expr ),+ ) => {
+        [ $( F8($x) ),+ ]
     }
 }
 
-// pub fn log(a: F8) -> usize {
-//     LOG[a.0 as usize]
-// }
+#[derive(Clone, Copy, Eq, PartialEq)]
+pub struct F8(u32);
 
-// pub fn exp(i: usize) -> F8 {
-//     EXP[i]
-// }
+const CARD: u32 = 8;
 
-impl finite_field::CharacteristicTwo for F8 {}
+const EXP: [F8; CARD as usize] = array_init![1, 2, 4, 3, 6, 7, 5, 1];
 
-impl finite_field::FiniteFieldElement for F8 {
-    fn finite_field_q() -> u32 {
-        2
-    }
+const LOG: [u32; CARD as usize] = [CARD, 0, 1, 3, 2, 6, 4, 5];
 
-    fn finite_field_m() -> u32 {
+impl CharacteristicTwo for F8 {}
+
+impl FiniteFieldElement for F8 {
+    fn characteristic_exponent() -> u32 {
         3
     }
 
+    fn exp(i: u32) -> Self {
+        EXP[i as usize]
+    }
+
+    fn log(self) -> Option<u32> {
+        if self == Self(0) {
+            None
+        } else {
+            Some(LOG[self.0 as usize])
+        }
+    }
+
+    fn to_canonical_basis(self) -> u32 {
+        self.0
+    }
+}
+
+impl FieldElement for F8 {
     fn zero() -> Self {
         Self(0)
     }
@@ -49,35 +53,8 @@ impl finite_field::FiniteFieldElement for F8 {
         Self(1)
     }
 
-    fn exp(i: u32) -> Self {
-        EXP[i as usize]
-    }
-
-    fn log(self) -> Option<u32> {
-        if self.0 == 0 {
-            None
-        } else {
-            Some(LOG[self.0 as usize])
-        }
-    }
-
-    fn to_u32(self) -> u32 {
-        self.0
-    }
-
-    fn inv(self) -> Option<Self> {
-        match self {
-            Self(0) => None,
-            _ => Some(Self::exp(CARD - 1 - Self::log(self).unwrap())),
-        }
-    }
-}
-
-impl Neg for F8 {
-    type Output = Self;
-
-    fn neg(self) -> Self {
-        self
+    fn characteristic() -> u32 {
+        2
     }
 }
 
@@ -89,23 +66,23 @@ impl Add for F8 {
     }
 }
 
+impl AddAssign for F8 {
+    fn add_assign(&mut self, other: Self) {
+        *self = *self + other;
+    }
+}
+
 impl Sub for F8 {
     type Output = Self;
 
     fn sub(self, other: Self) -> Self {
-        Self(self.0 ^ other.0)
-    }
-}
-
-impl AddAssign for F8 {
-    fn add_assign(&mut self, other: Self) {
-        *self = Self(self.0 ^ other.0);
+        self + other
     }
 }
 
 impl SubAssign for F8 {
     fn sub_assign(&mut self, other: Self) {
-        *self += other;
+        *self = *self - other;
     }
 }
 
@@ -113,35 +90,62 @@ impl Mul for F8 {
     type Output = Self;
 
     fn mul(self, other: Self) -> Self {
+        let modulo = |a| if a >= CARD { a - (CARD - 1) } else { a };
+
         if self == Self(0) || other == Self(0) {
             Self(0)
         } else {
-            Self::exp(modulo(Self::log(self).unwrap() + Self::log(other).unwrap()))
+            EXP[modulo(LOG[self.0 as usize] + LOG[other.0 as usize]) as usize]
         }
     }
 }
 
 impl MulAssign for F8 {
     fn mul_assign(&mut self, other: Self) {
-        if *self == Self(0) || other == Self(0) {
-            *self = Self(0);
-        } else {
-            *self = Self::exp(modulo(
-                Self::log(*self).unwrap() + Self::log(other).unwrap(),
-            ))
+        *self = *self * other;
+    }
+}
+
+impl Neg for F8 {
+    type Output = Self;
+
+    fn neg(self) -> Self {
+        self
+    }
+}
+
+impl Inv for F8 {
+    type Output = Self;
+
+    fn inv(self) -> Option<Self::Output> {
+        match self {
+            Self(0) => None,
+            _ => Some(EXP[(CARD - 1 - LOG[self.0 as usize]) as usize]),
         }
     }
 }
 
-impl fmt::Display for F8 {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0,)
+impl Distribution<F8> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> F8 {
+        F8(rng.gen_range(0, CARD) as u32)
     }
 }
 
-impl distributions::Distribution<F8> for distributions::Standard {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> F8 {
-        F8(rng.gen_range(0, CARD) as u32)
+impl Debug for F8 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "{:>2}", self.0)
+    }
+}
+
+impl Display for F8 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "{:>2}", self.0,)
+    }
+}
+
+impl F8 {
+    fn to_canonical_basis(self) -> u32 {
+        self.0
     }
 }
 
@@ -160,6 +164,13 @@ mod test {
         assert_eq!(a + (b + c), (a + b) + c);
         assert_eq!(a + b, b + a);
         assert_eq!(a + z, a);
+    }
+
+    #[test]
+    fn f8_characteristic() {
+        let mut rng = rand::thread_rng();
+        let a: F8 = rng.gen();
+        let z = F8::zero();
         assert_eq!(a + a, z);
     }
 
@@ -167,9 +178,8 @@ mod test {
     fn f8_sub() {
         let mut rng = rand::thread_rng();
         let a: F8 = rng.gen();
-        let z = F8::zero();
-        assert_eq!(a - z, a);
-        assert_eq!(a - a, z);
+        let b: F8 = rng.gen();
+        assert_eq!(a + b, a - b);
     }
 
     #[test]
@@ -189,6 +199,17 @@ mod test {
     }
 
     #[test]
+    fn f8_neg() {
+        let mut rng = rand::thread_rng();
+        let a: F8 = rng.gen();
+        let b: F8 = rng.gen();
+        let z = F8::zero();
+        assert_eq!(-z, z);
+        assert_eq!(--a, a);
+        assert_eq!(a + -b, a - b);
+    }
+
+    #[test]
     fn f8_inv() {
         let mut rng = rand::thread_rng();
         let a: F8 = rng.gen();
@@ -200,12 +221,5 @@ mod test {
             assert_eq!(a.inv().unwrap().inv().unwrap(), a);
             assert_eq!(a * a.inv().unwrap(), i);
         }
-    }
-
-    #[test]
-    fn f8_neg() {
-        let mut rng = rand::thread_rng();
-        let a: F8 = rng.gen();
-        assert_eq!(-a, a);
     }
 }

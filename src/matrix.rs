@@ -1,11 +1,11 @@
-extern crate rand;
+use crate::finite_field::{CharacteristicTwo, FieldElement, FiniteFieldElement, F2};
 
-use crate::finite_field::CharacteristicTwo;
-use crate::finite_field::FiniteFieldElement;
-use crate::finite_field_2::F2;
-use rand::{distributions, Rng};
-use std::fmt;
-use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign, Index, IndexMut};
+use rand::distributions::{Distribution, Standard};
+use rand::rngs::ThreadRng;
+use rand::Rng;
+use std::fmt::{Debug, Display, Formatter, Result};
+use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign};
+use std::string::ToString;
 
 // Type T must represent an element from a field, meaning all elements except 0 are inversible.
 #[derive(Clone, Eq, PartialEq)]
@@ -15,8 +15,7 @@ pub struct Mat<T> {
     data: Vec<T>,
 }
 
-impl<T> Add for Mat<T>
-where T: Copy + FiniteFieldElement {
+impl<T: FieldElement> Add for Mat<T> {
     type Output = Self;
 
     fn add(self, other: Self) -> Self::Output {
@@ -24,8 +23,7 @@ where T: Copy + FiniteFieldElement {
     }
 }
 
-impl<T> Add<&Mat<T>> for Mat<T>
-where T: Copy + FiniteFieldElement {
+impl<T: FieldElement> Add<&Mat<T>> for Mat<T> {
     type Output = Self;
 
     fn add(self, other: &Self) -> Self::Output {
@@ -33,8 +31,7 @@ where T: Copy + FiniteFieldElement {
     }
 }
 
-impl<T> Add<Mat<T>> for &Mat<T>
-where T: Copy + FiniteFieldElement {
+impl<T: FieldElement> Add<Mat<T>> for &Mat<T> {
     type Output = Mat<T>;
 
     fn add(self, other: Mat<T>) -> Self::Output {
@@ -42,15 +39,14 @@ where T: Copy + FiniteFieldElement {
     }
 }
 
-impl<T> Add for &Mat<T>
-where T: Copy + FiniteFieldElement {
+impl<T: FieldElement> Add for &Mat<T> {
     type Output = Mat<T>;
 
     fn add(self, other: Self) -> Self::Output {
         if self.rows != other.rows || self.cols != other.cols {
             panic!("Cannot add matrices: dimensions don't match");
         }
-        
+
         let mut sum = Mat::zero(self.rows, self.cols);
         for i in 0..self.rows * self.cols {
             sum.data[i] = self.data[i] + other.data[i];
@@ -59,29 +55,25 @@ where T: Copy + FiniteFieldElement {
     }
 }
 
-impl<T> AddAssign<Mat<T>> for Mat<T>
-where T: Copy + FiniteFieldElement {
-    fn add_assign(&mut self, other: Mat<T>) {
+impl<T: FieldElement> AddAssign<Mat<T>> for Mat<T> {
+    fn add_assign(&mut self, other: Self) {
         *self += &other;
     }
 }
 
-impl<T> AddAssign<&Mat<T>> for Mat<T>
-where T: Copy + FiniteFieldElement {
-    fn add_assign(&mut self, other: &Mat<T>) {
+impl<T: FieldElement> AddAssign<&Mat<T>> for Mat<T> {
+    fn add_assign(&mut self, other: &Self) {
         if self.rows != other.rows || self.cols != other.cols {
             panic!("Cannot add matrices: dimensions don't match");
         }
-        
+
         for i in 0..self.rows * self.cols {
             self.data[i] += other.data[i];
         }
-
     }
 }
 
-impl<T> Sub for Mat<T>
-where T: Copy + FiniteFieldElement {
+impl<T: FieldElement> Sub for Mat<T> {
     type Output = Self;
 
     fn sub(self, other: Self) -> Self::Output {
@@ -89,8 +81,7 @@ where T: Copy + FiniteFieldElement {
     }
 }
 
-impl<T> Sub<&Mat<T>> for Mat<T>
-where T: Copy + FiniteFieldElement {
+impl<T: FieldElement> Sub<&Mat<T>> for Mat<T> {
     type Output = Self;
 
     fn sub(self, other: &Self) -> Self::Output {
@@ -98,8 +89,7 @@ where T: Copy + FiniteFieldElement {
     }
 }
 
-impl<T> Sub<Mat<T>> for &Mat<T>
-where T: Copy + FiniteFieldElement {
+impl<T: FieldElement> Sub<Mat<T>> for &Mat<T> {
     type Output = Mat<T>;
 
     fn sub(self, other: Mat<T>) -> Self::Output {
@@ -107,15 +97,14 @@ where T: Copy + FiniteFieldElement {
     }
 }
 
-impl<T> Sub for &Mat<T>
-where T: Copy + FiniteFieldElement {
+impl<T: FieldElement> Sub for &Mat<T> {
     type Output = Mat<T>;
 
     fn sub(self, other: Self) -> Self::Output {
         if self.rows != other.rows || self.cols != other.cols {
             panic!("Cannot substract matrices: dimensions don't match");
         }
-        
+
         let mut diff = Mat::zero(self.rows, self.cols);
         for i in 0..self.rows * self.cols {
             diff.data[i] = self.data[i] - other.data[i];
@@ -124,52 +113,25 @@ where T: Copy + FiniteFieldElement {
     }
 }
 
-impl<T> SubAssign<Mat<T>> for Mat<T>
-where T: Copy + FiniteFieldElement {
-    fn sub_assign(&mut self, other: Mat<T>) {
+impl<T: FieldElement> SubAssign<Mat<T>> for Mat<T> {
+    fn sub_assign(&mut self, other: Self) {
         *self -= &other;
     }
 }
 
-impl<T> SubAssign<&Mat<T>> for Mat<T>
-where T: Copy + FiniteFieldElement {
-    fn sub_assign(&mut self, other: &Mat<T>) {
+impl<T: FieldElement> SubAssign<&Mat<T>> for Mat<T> {
+    fn sub_assign(&mut self, other: &Self) {
         if self.rows != other.rows || self.cols != other.cols {
             panic!("Cannot substract matrices: dimensions don't match");
         }
-        
+
         for i in 0..self.rows * self.cols {
             self.data[i] -= other.data[i];
         }
-
     }
 }
 
-impl<T> Neg for Mat<T>
-where T: Copy + FiniteFieldElement {
-    type Output = Self;
-    
-    fn neg(self) -> Self::Output {
-        -&self
-    }
-}
-
-impl<T> Neg for &Mat<T>
-where T: Copy + FiniteFieldElement {
-    type Output = Mat<T>;
-    
-    fn neg(self) -> Self::Output {
-        let mut opp = Mat::zero(self.rows, self.cols);
-        
-        for i in 0..self.rows * self.cols {
-            opp.data[i] = -self.data[i];
-        }
-        opp
-    }
-}
-
-impl<T> Mul for Mat<T>
-where T: Copy + FiniteFieldElement {
+impl<T: FieldElement> Mul for Mat<T> {
     type Output = Self;
 
     fn mul(self, other: Self) -> Self::Output {
@@ -177,8 +139,7 @@ where T: Copy + FiniteFieldElement {
     }
 }
 
-impl<T> Mul<&Mat<T>> for Mat<T>
-where T: Copy + FiniteFieldElement {
+impl<T: FieldElement> Mul<&Mat<T>> for Mat<T> {
     type Output = Self;
 
     fn mul(self, other: &Self) -> Self::Output {
@@ -186,8 +147,7 @@ where T: Copy + FiniteFieldElement {
     }
 }
 
-impl<T> Mul<Mat<T>> for &Mat<T>
-where T: Copy + FiniteFieldElement {
+impl<T: FieldElement> Mul<Mat<T>> for &Mat<T> {
     type Output = Mat<T>;
 
     fn mul(self, other: Mat<T>) -> Self::Output {
@@ -195,8 +155,7 @@ where T: Copy + FiniteFieldElement {
     }
 }
 
-impl<T> Mul for &Mat<T>
-where T: Copy + FiniteFieldElement {
+impl<T: FieldElement> Mul for &Mat<T> {
     type Output = Mat<T>;
 
     fn mul(self, other: Self) -> Self::Output {
@@ -216,23 +175,22 @@ where T: Copy + FiniteFieldElement {
     }
 }
 
-impl<T> MulAssign<Mat<T>> for Mat<T>
-where T: Copy + FiniteFieldElement {
-    fn mul_assign(&mut self, other: Mat<T>) {
+impl<T: FieldElement> MulAssign<Mat<T>> for Mat<T> {
+    fn mul_assign(&mut self, other: Self) {
         *self *= &other;
     }
 }
 
-impl<T> MulAssign<&Mat<T>> for Mat<T>
-where T: Copy + FiniteFieldElement {
-    fn mul_assign(&mut self, other: &Mat<T>) {
-        if self.cols != other.rows {
+impl<T: FieldElement> MulAssign<&Mat<T>> for Mat<T> {
+    fn mul_assign(&mut self, other: &Self) {
+        if self.cols != other.rows || self.cols != other.cols {
             panic!("Cannot multiply matrices: dimensions don't match");
         }
 
         let tmp = self.clone();
         for i in 0..self.rows {
             for j in 0..self.cols {
+                self[(i, j)] = T::zero();
                 for k in 0..tmp.cols {
                     self[(i, j)] += tmp[(i, k)] * other[(k, j)];
                 }
@@ -241,6 +199,26 @@ where T: Copy + FiniteFieldElement {
     }
 }
 
+impl<T: FieldElement> Neg for Mat<T> {
+    type Output = Self;
+
+    fn neg(self) -> Self::Output {
+        -&self
+    }
+}
+
+impl<T: FieldElement> Neg for &Mat<T> {
+    type Output = Mat<T>;
+
+    fn neg(self) -> Self::Output {
+        let mut opp = Mat::zero(self.rows, self.cols);
+
+        for i in 0..self.rows * self.cols {
+            opp.data[i] = -self.data[i];
+        }
+        opp
+    }
+}
 
 impl<T> Index<(usize, usize)> for Mat<T> {
     type Output = T;
@@ -256,11 +234,25 @@ impl<T> IndexMut<(usize, usize)> for Mat<T> {
     }
 }
 
-impl<T> fmt::Debug for Mat<T>
-where
-    T: fmt::Display,
-{
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl<T: ToString> Debug for Mat<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        let mut s = String::new();
+
+        for i in 0..self.rows {
+            for j in 0..self.cols - 1 {
+                s.push_str(&self[(i, j)].to_string());
+                s.push(' ');
+            }
+            s.push_str(&self[(i, self.cols - 1)].to_string());
+            s.push('\n');
+        }
+
+        write!(f, "\n{:?}", s)
+    }
+}
+
+impl<T: ToString> Display for Mat<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let mut s = String::new();
 
         for i in 0..self.rows {
@@ -276,18 +268,15 @@ where
     }
 }
 
-impl<T> Mat<T>
-where
-    T: Copy + FiniteFieldElement,
-{
-    pub fn new(rows: usize, cols: usize, data: Vec<T>) -> Mat<T> {
+impl<T: FieldElement> Mat<T> {
+    pub fn new(rows: usize, cols: usize, data: Vec<T>) -> Self {
         if data.len() != rows * cols {
             panic!("Wrong dimensions");
         }
         Mat { rows, cols, data }
     }
 
-    pub fn zero(rows: usize, cols: usize) -> Mat<T> {
+    pub fn zero(rows: usize, cols: usize) -> Self {
         Mat {
             rows,
             cols,
@@ -315,28 +304,16 @@ where
     //     self[(row, col)]
     // }
 
-    // pub fn print(&self) {
-    //     for i in 0..self.rows {
-    //         for j in 0..self.cols - 1 {
-    //             print!("{} ", self[(i, j)]);
-    //         }
-    //         println!("{}", self[(i, self.cols - 1)]);
-    //     }
-
-    // //   println!("{:?}", self);
-    // }
-
-    pub fn random(rng: &mut rand::rngs::ThreadRng, n: usize, m: usize) -> Mat<T>
+    pub fn random(rng: &mut ThreadRng, n: usize, m: usize) -> Self
     where
-        distributions::Standard: distributions::Distribution<T>,
+        Standard: Distribution<T>,
     {
         let mut mat = Mat::zero(n, m);
         for i in 0..n {
             for j in 0..m {
-                mat[(i, j)] = rng.gen::<T>();
+                mat[(i, j)] = rng.gen();
             }
         }
-
         mat
     }
 
@@ -348,14 +325,14 @@ where
         let n = self.rows;
         let mut cols = Vec::with_capacity(n); // indices of columns containing a '1'
         cols.resize(n, 0);
+
         for i in 0..n {
             // loop on rows
             let mut has_one = false;
             for j in 0..n {
-                let val = self[(i, j)];
-                if val == T::zero() {
+                if self[(i, j)] == T::zero() {
                     continue;
-                } else if val == T::one() {
+                } else if self[(i, j)] == T::one() {
                     if cols[j] == 1 {
                         return false;
                     }
@@ -370,11 +347,10 @@ where
                 return false;
             }
         }
-
         true
     }
 
-    pub fn permutation_random(rng: &mut rand::rngs::ThreadRng, n: usize) -> Mat<T> {
+    pub fn permutation_random(rng: &mut ThreadRng, n: usize) -> Self {
         let mut mat = Mat::zero(n, n);
         let mut cols = Vec::with_capacity(n); // remaining column indices
         for i in 0..n {
@@ -389,25 +365,19 @@ where
             // Remove the index from the list by putting it at the end
             cols.swap(nbr, n - 1 - i);
         }
-
         mat
     }
 
-    pub fn identity(n: usize) -> Mat<T> {
+    pub fn identity(n: usize) -> Self {
         let mut id = Mat::zero(n, n);
         for i in 0..n {
             id[(i, i)] = T::one();
         }
-
         id
     }
 
     pub fn is_invertible(&self) -> bool {
-        if self.rows != self.cols {
-            return false;
-        }
-
-        self.rank() == self.rows
+        self.rows == self.cols && self.rows == self.rank()
     }
 
     pub fn swap_rows(&mut self, row1: usize, row2: usize) {
@@ -440,14 +410,14 @@ where
 
     // Inv computation via gaussian elimination
     // See https://en.wikipedia.org/wiki/Gaussian_elimination
-    pub fn inverse(&self) -> Option<Mat<T>> {
+    pub fn inverse(&self) -> Option<Self> {
         if self.rows != self.cols {
             return None;
         }
 
         let n = self.rows;
         let mut mat = self.clone();
-        let mut inv: Mat<T> = Mat::identity(n);
+        let mut inv: Self = Mat::identity(n);
         let mut p = 0; // pivot's row and pivot's column
 
         while p < n {
@@ -485,7 +455,6 @@ where
                 }
 
                 let lambda = mat[(k, p)];
-
                 mat[(k, p)] = T::zero();
                 for l in p + 1..n {
                     // first p+1 columns are zero
@@ -505,40 +474,38 @@ where
 
         for j in (0..n).rev() {
             for i in (0..j).rev() {
-                if mat[(i, j)] == T::zero() {
-                    continue;
-                }
-
                 // Perform the row operation to set c(i, j) to 0:
                 // L(i) = L(i) - c(i, j) * L(j)
                 // We don't actually need to operate on the original matrix here.
                 // Mimic the row operation on matrix 'inv'.
+                if mat[(i, j)] == T::zero() {
+                    continue;
+                }
+
                 for l in 0..n {
                     inv[(i, l)] = inv[(i, l)] - mat[(i, j)] * inv[(j, l)];
                 }
             }
         }
-
         Some(inv)
     }
 
-    pub fn invertible_random(rng: &mut rand::rngs::ThreadRng, n: usize) -> Mat<T>
+    pub fn invertible_random(rng: &mut ThreadRng, n: usize) -> Self
     where
-        distributions::Standard: distributions::Distribution<T>,
+        Standard: Distribution<T>,
     {
         let mut mat = Mat::zero(n, n);
         let mut i = 0;
         while i < n {
             // Fill line i at random
             for j in 0..n {
-                mat[(i, j)] = rng.gen::<T>();
+                mat[(i, j)] = rng.gen();
             }
 
             if mat.rank() == i + 1 {
                 i += 1;
             }
         }
-
         mat
     }
 
@@ -560,17 +527,7 @@ where
                 continue;
             }
             rank += 1;
-
-            // Swap rows
-            // if i != row_pivot {
             self.swap_rows(i, row_pivot);
-
-            // for j in 0..m {
-            //     let tmp = self.get(row_pivot, j);
-            //     self.set(row_pivot, j, self.get(i, j));
-            //     self.set(i, j, tmp);
-            // }
-            // }
 
             // Normalize pivot's row
             let pivot_inv = self[(row_pivot, col_pivot)].inv().unwrap();
@@ -593,7 +550,6 @@ where
             row_pivot += 1;
             col_pivot += 1;
         }
-
         rank
     }
 
@@ -624,7 +580,6 @@ where
                 }
             }
         }
-
         rank
     }
 
@@ -633,13 +588,7 @@ where
         mat.row_echelon_form()
     }
 
-    pub fn sum(mat1: &Mat<T>, mat2: &Mat<T>) -> Mat<T> {
-        let mut sum = Mat::zero(mat1.rows, mat1.cols);
-        sum.as_sum(mat1, mat2);
-        sum
-    }
-
-    pub fn as_sum(&mut self, mat1: &Mat<T>, mat2: &Mat<T>) {
+    pub fn sum(&mut self, mat1: &Self, mat2: &Self) {
         if self.rows != mat1.rows
             || self.rows != mat2.rows
             || self.cols != mat1.cols
@@ -655,19 +604,7 @@ where
         }
     }
 
-    pub fn add(&mut self, mat: &Mat<T>) {
-        if self.rows != mat.rows || self.cols != mat.cols {
-            panic!("Cannot add matrices: dimensions don't match");
-        }
-
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                self[(i, j)] += mat[(i, j)];
-            }
-        }
-    }
-
-    pub fn as_prod(&mut self, mat1: &Mat<T>, mat2: &Mat<T>) {
+    pub fn prod(&mut self, mat1: &Self, mat2: &Self) {
         if self.rows != mat1.rows || self.cols != mat2.cols || mat1.cols != mat2.rows {
             panic!("Cannot multiply matrices: dimensions don't match");
         }
@@ -684,9 +621,9 @@ where
     }
 
     // Generates a random row vector of length n and weight t
-    pub fn weighted_vector_random(rng: &mut rand::rngs::ThreadRng, n: usize, t: usize) -> Mat<T>
+    pub fn weighted_vector_random(rng: &mut ThreadRng, n: usize, t: usize) -> Self
     where
-        distributions::Standard: distributions::Distribution<T>,
+        Standard: Distribution<T>,
     {
         let mut vec = Mat::zero(1, n);
         let mut cols = Vec::with_capacity(n); // remaining column indices
@@ -697,16 +634,15 @@ where
         for i in 0..t {
             // Draw a random column index
             let nbr = rng.gen_range(0, n - i);
-            let mut elt = rng.gen::<T>();
+            let mut elt = rng.gen();
             while elt == T::zero() {
-                elt = rng.gen::<T>();
+                elt = rng.gen();
             }
             vec[(0, cols[nbr])] = elt;
 
             // Remove the index from the list by putting it at the end
             cols.swap(nbr, n - 1 - i);
         }
-
         vec
     }
 
@@ -721,13 +657,12 @@ where
                 cnt += 1;
             }
         }
-
         Some(cnt)
     }
 
-    // Compute, if possible, (U, H, P) with U invertible, H standard form and P permutation
-    // such that self = UHP
-    pub fn standard_form(&self) -> Option<(Mat<T>, Mat<T>, Mat<T>)> {
+    // Compute, if possible, (U, S, P) with U invertible, S standard form and P permutation
+    // such that S = U * self * P
+    pub fn standard_form(&self) -> Option<(Self, Self, Self)> {
         let m = self.rows;
         let n = self.cols;
         if m > n {
@@ -786,20 +721,6 @@ where
             }
 
             // Nullify the rest of the column and update matrix U accordingly
-
-            // for i in 0..j + m - n {
-            //     if h.get(i, j) != T::zero() {
-            //         h.combine_rows(i, h.get(i, j), j + m - n);
-            //         u.combine_rows(i, h.get(i, j), j + m - n);
-            //     }
-            // }
-            // for i in j + m - n + 1..m {
-            //     if h.get(i, j) != T::zero() {
-            //         h.combine_rows(i, h.get(i, j), j + m - n);
-            //         u.combine_rows(i, h.get(i, j), j + m - n);
-            //     }
-            // }
-
             for i in 0..m {
                 if h[(i, j)] != T::zero() && i != j + m - n {
                     let lambda = -h[(i, j)];
@@ -808,7 +729,6 @@ where
                 }
             }
         }
-
         Some((u, h, p))
     }
 
@@ -831,11 +751,10 @@ where
                 }
             }
         }
-
         true
     }
 
-    pub fn transpose(&self) -> Mat<T> {
+    pub fn transpose(&self) -> Self {
         let mut t = Mat::zero(self.cols, self.rows);
         for i in 0..t.rows {
             for j in 0..t.cols {
@@ -844,34 +763,10 @@ where
         }
         t
     }
+}
 
-    pub fn prod(a: &Mat<T>, b: &Mat<T>) -> Mat<T> {
-        let mut p = Mat::zero(a.rows, b.cols);
-        p.as_prod(a, b);
-        p
-    }
-
-    pub fn binary_form(&self) -> Mat<F2> {
-        let m = T::finite_field_m();
-        let mut bin = Mat::zero(m as usize * self.rows, self.cols);
-        for j in 0..self.cols {
-            for i in 0..self.rows {
-                for k in 0..m as usize {
-                    bin[(m as usize * i + k, j)] = match (self[(i, j)].to_u32() >> k) & 1 {
-                        0 => F2::zero(),
-                        1 => F2::one(),
-                        _ => panic!("Unexpected value"),
-                    }
-                }
-            }
-        }
-        bin
-    }
-
-    pub fn from(a: &Mat<F2>) -> Mat<T>
-    where
-        T: CharacteristicTwo,
-    {
+impl<T: CharacteristicTwo> Mat<T> {
+    pub fn from(a: &Mat<F2>) -> Self {
         let mut b = Mat::zero(a.rows(), a.cols());
         for i in 0..a.rows() {
             for j in 0..a.cols() {
@@ -882,31 +777,22 @@ where
     }
 }
 
-pub struct RowVec<T>(Mat<T>);
-
-impl<T> RowVec<T>
-where
-    T: Copy + FiniteFieldElement,
-{
-    pub fn zero(cols: usize) -> RowVec<T> {
-        RowVec(Mat {
-            rows: 1,
-            cols,
-            data: vec![T::zero(); cols],
-        })
+impl<T: CharacteristicTwo + FiniteFieldElement> Mat<T> {
+    pub fn binary_form(&self) -> Mat<F2> {
+        let m = T::characteristic_exponent();
+        let mut bin = Mat::zero(m as usize * self.rows, self.cols);
+        for j in 0..self.cols {
+            for i in 0..self.rows {
+                for k in 0..m as usize {
+                    bin[(m as usize * i + k, j)] =
+                        match (self[(i, j)].to_canonical_basis() >> k) & 1 {
+                            0 => F2::zero(),
+                            1 => F2::one(),
+                            _ => panic!("Unexpected value"),
+                        }
+                }
+            }
+        }
+        bin
     }
-
-    pub fn prod(vec: &RowVec<T>, mat: &Mat<T>) -> Mat<T> {
-        Mat::prod(&vec.0, mat)
-    }
-
-    // pub fn add(&mut self, vec: &RowVec<T>) {
-    //     self.0.add(&vec.0);
-    // }
-
-    // pub fn sum(vec1: &RowVec<T>, vec2: &RowVec<T>) -> RowVec<T> {
-    //     let mut sum = RowVec(vec1.0.clone());
-    //     sum.add(vec2);
-    //     sum
-    // }
 }

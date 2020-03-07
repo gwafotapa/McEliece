@@ -56,7 +56,7 @@ where
         distributions::Standard: distributions::Distribution<T>,
         T: std::fmt::Debug,
     {
-        let qm = T::finite_field_order();
+        let qm = T::order();
         let poly = Poly::random_irreducible(rng, t);
         let mut set = Vec::new();
         let mut list = Vec::new();
