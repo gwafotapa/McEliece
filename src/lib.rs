@@ -7,6 +7,6 @@ pub mod rowvec;
 // mod finite_field_7;
 // mod finite_field_8;
 // mod finite_field_64;
-// mod goppa;
+pub mod goppa;
 pub mod matrix;
 pub mod polynomial;

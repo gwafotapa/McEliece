@@ -156,7 +156,6 @@ impl Display for F7 {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::finite_field::FiniteFieldElement;
 
     #[test]
     fn f7_add() {

@@ -1,12 +1,12 @@
-extern crate log;
-extern crate mceliece;
+// extern crate log;
+// extern crate mceliece;
 
-use log::{info, warn};
+use log::info;
 
 use mceliece::finite_field::*;
-use mceliece::finite_field_1024::*;
-use mceliece::finite_field_2::*;
-use mceliece::finite_field_8::*;
+// use mceliece::finite_field_1024::*;
+// use mceliece::finite_field_2::*;
+// use mceliece::finite_field_8::*;
 use mceliece::goppa::*;
 use mceliece::matrix::*;
 use mceliece::polynomial::*;
@@ -26,7 +26,7 @@ fn setup() {
 fn goppa_f8() {
     setup();
 
-    let mut p = Poly::<F8>::new(3);
+    let mut p = Poly::<F8>::zero(3);
     p[2] = F8::one();
     p[1] = F8::one();
     p[0] = F8::one();
@@ -55,7 +55,10 @@ fn goppa_f8() {
 
     // let mut m = Mat::zero(h.rows(), g.rows());
     // m.as_prod(&h, &g.transpose());
-    let m2 = Mat::prod(&h2, &g.transpose());
+
+    // let m2 = Mat::prod(&h2, &g.transpose());
+    let m2 = &h2 * &g.transpose();
+
     // warn!("h2.g^T: {:?}", m2);
     let z2 = Mat::zero(h2.rows(), g.rows());
     assert_eq!(m2, z2);
@@ -110,14 +113,18 @@ fn goppa_f1024() {
     let h = c.parity_check_matrix();
     info!("parity check matrix: {:?}", h);
     let g = Goppa::generator_matrix(&h);
-    assert_eq!(Mat::prod(&h, &g.transpose()), Mat::zero(h.rows(), g.rows()));
+
+    // assert_eq!(Mat::prod(&h, &g.transpose()), Mat::zero(h.rows(), g.rows()));
+    assert_eq!(&h * &g.transpose(), Mat::zero(h.rows(), g.rows()));
 
     let h2 = h.binary_form();
     info!("parity check matrix in binary form: {:?}", h2);
     info!("rank: {}", h2.rank());
     let g = Goppa::generator_matrix(&h2);
     // assert_eq!(Mat::prod(&h, &Mat::from(&g.transpose())), Mat::zero(h.rows(), g.rows()));
-    assert_eq!(Mat::prod(&h2, &g.transpose()), Mat::zero(h2.rows(), g.rows()));
+
+    // assert_eq!(Mat::prod(&h2, &g.transpose()), Mat::zero(h2.rows(), g.rows()));
+    assert_eq!(&h2 * &g.transpose(), Mat::zero(h2.rows(), g.rows()));
 
 
     
@@ -126,12 +133,18 @@ fn goppa_f1024() {
     // assert_eq!(Mat::prod(&h, &g.transpose()), Mat::zero(h.rows(), g.rows()));
     let cdw = Mat::new(1, 30, g.data()[0..30].to_vec());
     info!("codeword: {:?}", cdw);
-    let syndrome_cdw = Mat::prod(&h, &Mat::from(&cdw.transpose()));
+
+    // let syndrome_cdw = Mat::prod(&h, &Mat::from(&cdw.transpose()));
+    let syndrome_cdw = &h * &Mat::from(&cdw.transpose());
+    
     let zero = Mat::zero(syndrome_cdw.rows(), syndrome_cdw.cols());
     assert_eq!(syndrome_cdw, zero);
     let err: Mat<F2> = Mat::weighted_vector_random(&mut rng, 30, 2);
     info!("error: {:?}", err);
-    let rcv = Mat::sum(&cdw, &err);
+
+    // let rcv = Mat::sum(&cdw, &err);
+    let rcv = &cdw + &err;
+
     info!("received word: {:?}", rcv);
     let dcd = c.decode(&rcv);
     info!("decoded word: {:?}", dcd);

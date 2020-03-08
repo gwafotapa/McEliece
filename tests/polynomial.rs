@@ -1,52 +1,33 @@
-extern crate mceliece;
+// extern crate mceliece;
 
 use mceliece::finite_field::*;
-use mceliece::finite_field_1024::*;
-use mceliece::finite_field_2::*;
-use mceliece::finite_field_7::*;
-use rand::Rng;
-// use mceliece::goppa::*;
-// use mceliece::matrix::*;
 use mceliece::polynomial::*;
+use rand::Rng;
 
 #[test]
 fn polynomial_f2_division() {
-    let mut a: Poly<F2> = Poly::new(5);
-    a[0] = F2::one();
-    a[2] = F2::one();
-    a[4] = F2::one();
+    let a: Poly<F2> = Poly::support(&[0, 2, 4]);
     println!("a(x) = {:?}\n", a);
-    let mut b: Poly<F2> = Poly::new(3);
-    b[0] = F2::one();
-    b[1] = F2::one();
-    b[2] = F2::one();
+    let b: Poly<F2> = Poly::support(&[0, 1, 2]);
     println!("b(x) = {:?}\n", b);
     let (q, r) = Poly::euclidean_division(&a, &b);
     println!("q(x) = {:?}\n", q);
     println!("r(x) = {:?}\n", r);
     assert_eq!(b, q);
-    assert_eq!(r, Poly::new(1));
+    assert!(r.is_zero());
 }
 
 #[test]
 fn polynomial_f2_gcd() {
-    let mut a: Poly<F2> = Poly::new(5);
-    a[0] = F2::one();
-    a[1] = F2::one();
-    a[4] = F2::one();
+    let a: Poly<F2> = Poly::support(&[0, 1, 4]);
     println!("a(x) = {:?}\n", a);
-    let mut b: Poly<F2> = Poly::new(3);
-    b[0] = F2::one();
-    b[1] = F2::one();
-    b[2] = F2::one();
+    let b: Poly<F2> = Poly::support(&[0, 1, 2]);
     println!("b(x) = {:?}\n", b);
-    let mut c: Poly<F2> = Poly::new(2);
-    c[0] = F2::one();
-    c[1] = F2::one();
+    let c: Poly<F2> = Poly::support(&[0, 1]);
     println!("c(x) = {:?}\n", c);
-    let ac = Poly::prod(&a, &c);
+    let ac = &a * &c;
     println!("a(x)c(x) = {:?}\n", ac);
-    let bc = Poly::prod(&b, &c);
+    let bc = &b * &c;
     println!("b(x)c(x) = {:?}\n", bc);
     let d = Poly::gcd(&ac, &bc);
     println!("d(x) = gcd(a(x)c(x), b(x)c(x)) = {:?}\n", d);
@@ -88,9 +69,9 @@ fn polynomial_f2_extended_gcd() {
     println!("v(x) = {:?}", v);
     println!("a1(x) = {:?}", a1);
     println!("b1(x) = {:?}", b1);
-    assert_eq!(a, Poly::prod(&d, &a1));
-    assert_eq!(b, Poly::prod(&d, &b1));
-    assert_eq!(d, Poly::sum(&Poly::prod(&a, &u), &Poly::prod(&b, &v)));
+    assert_eq!(a, &d * &a1);
+    assert_eq!(b, &d * &b1);
+    assert_eq!(d, &a * &u + &b * &v);
 }
 
 #[test]
@@ -108,9 +89,9 @@ fn polynomial_f7_extended_gcd() {
     println!("v(x) = {:?}", v);
     println!("a1(x) = {:?}", a1);
     println!("b1(x) = {:?}", b1);
-    assert_eq!(a, Poly::prod(&d, &a1));
-    assert_eq!(b, Poly::prod(&d, &b1));
-    assert_eq!(d, Poly::sum(&Poly::prod(&a, &u), &Poly::prod(&b, &v)));
+    assert_eq!(a, &d * &a1);
+    assert_eq!(b, &d * &b1);
+    assert_eq!(d, &a * &u + &b * &v);
 }
 
 #[test]
@@ -128,9 +109,9 @@ fn polynomial_f1024_extended_gcd() {
     println!("v(x) = {:?}", v);
     println!("a1(x) = {:?}", a1);
     println!("b1(x) = {:?}", b1);
-    assert_eq!(a, Poly::prod(&d, &a1));
-    assert_eq!(b, Poly::prod(&d, &b1));
-    assert_eq!(d, Poly::sum(&Poly::prod(&a, &u), &Poly::prod(&b, &v)));
+    assert_eq!(a, &d * &a1);
+    assert_eq!(b, &d * &b1);
+    assert_eq!(d, &a * &u + &b * &v);
 }
 
 #[test]
@@ -141,7 +122,7 @@ fn polynomial_f1024_square() {
     println!("a(x) = {:?}\n", a);
     let b = a.clone();
     a.square();
-    assert_eq!(a, Poly::prod(&b, &b));
+    assert_eq!(a, &b * &b);
 }
 
 #[test]
@@ -172,14 +153,11 @@ fn polynomial_f1024_sq_root_mod() {
     let deg_a = rng.gen_range(0, 11);
     let a: Poly<F1024> = Poly::random(&mut rng, deg_a);
     println!("a(x) = {:?}\n", a);
-    let aa = Poly::prod(&a, &a);
+    let aa = &a * &a;
     println!("a^2(x) = {:?}\n", aa);
     // let deg_g = rng.gen_range(0, 10);
     // let g = Poly::random(&mut rng, deg_g);
-    let mut g = Poly::new(12);
-    g[11] = F1024::one();
-    g[2] = F1024::one();
-    g[0] = F1024::one();
+    let g = Poly::support(&[0, 2, 11]);
     // let s = aa.square_root_modulo(&Poly::x_n(100));
     let s = aa.square_root_modulo(&g);
     println!("s(x) = {:?}\n", s);
@@ -188,12 +166,7 @@ fn polynomial_f1024_sq_root_mod() {
 
 #[test]
 fn polynomial_f1024_inverse_mod() {
-    // let mut g = Poly::new(11);
-    let mut g = Poly::new(12);
-    // g[10] = F2::one();
-    g[11] = F1024::one();
-    g[2] = F1024::one();
-    g[0] = F1024::one();
+    let g = Poly::support(&[0, 2, 11]);
 
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(0, 11);
@@ -203,7 +176,7 @@ fn polynomial_f1024_inverse_mod() {
 
     let inv = a.inverse_modulo(&g);
     println!("a^-1(x) = {:?}\n", inv);
-    let mut p = Poly::prod(&a, &inv);
+    let mut p = &a * &inv;
     p.modulo(&g);
     let id = Poly::x_n(0);
     assert_eq!(p, id);

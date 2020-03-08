@@ -12,7 +12,7 @@ macro_rules! array_init {
 }
 
 #[derive(Clone, Copy, Eq, PartialEq)]
-pub struct F8(u32);
+pub struct F8(pub u32);
 
 const CARD: u32 = 8;
 
@@ -143,16 +143,9 @@ impl Display for F8 {
     }
 }
 
-impl F8 {
-    fn to_canonical_basis(self) -> u32 {
-        self.0
-    }
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::finite_field::FiniteFieldElement;
 
     #[test]
     fn f8_add() {

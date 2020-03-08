@@ -19,14 +19,12 @@ mod rowvec;
 // mod finite_field_2;
 mod matrix;
 mod polynomial;
-
-use crate::finite_field::F2;
-use crate::polynomial::Poly;
+// mod goppa;
 
 // use std::path::Path;
-use std::char;
+// use std::char;
 use std::env;
-use std::fs::File;
+// use std::fs::File;
 use std::fs::OpenOptions;
 use std::io::{Seek, SeekFrom, Write};
 
@@ -43,7 +41,7 @@ fn main() {
         Ok(o) => o,
         Err(e) => panic!("Cannot read argument: {}", e),
     };
-    let mut prime_factors = polynomial::trial_division(order);
+    let mut prime_factors = polynomial::characteristic_two::trial_division(order);
     let m = prime_factors.len();
     prime_factors.dedup();
     if prime_factors.len() != 1 {
@@ -269,7 +267,6 @@ impl Display for F{order} {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::finite_field::FiniteFieldElement;
 
     #[test]
     fn f{order}_add() {

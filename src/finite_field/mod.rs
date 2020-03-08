@@ -8,7 +8,6 @@ mod finite_field_2;
 mod finite_field_7;
 mod finite_field_8;
 
-use std::fmt::Debug;
 use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 pub trait FiniteFieldElement: FieldElement {
@@ -25,13 +24,12 @@ pub trait FieldElement:
     Add<Output = Self>
     + AddAssign
     + Copy
-    + Debug
     + Eq
     + Inv<Output = Self>
     + Mul<Output = Self>
     + MulAssign
     + Neg<Output = Self>
-    + Sized
+    // + Sized
     + Sub<Output = Self>
     + SubAssign
 {

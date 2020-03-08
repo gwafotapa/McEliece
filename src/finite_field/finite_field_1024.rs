@@ -256,7 +256,6 @@ impl Display for F1024 {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::finite_field::FiniteFieldElement;
 
     #[test]
     fn f1024_add() {
