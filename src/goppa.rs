@@ -1,27 +1,19 @@
 use log::info;
 
-use crate::finite_field::{CharacteristicTwo, FieldElement, FiniteFieldElement, F2};
-use crate::matrix::Mat;
-use crate::polynomial::Poly;
-
 use rand::{distributions, Rng};
 use std::fmt;
+
+use crate::{
+    finite_field::{CharacteristicTwo, FieldElement, FiniteFieldElement, F2},
+    matrix::{Mat, RowVec},
+    polynomial::Poly,
+};
 
 pub struct Goppa<T> {
     len: usize,
     poly: Poly<T>,
     set: Vec<T>,
 }
-
-// trait BinaryCode<T> {
-//     pub fn encode(g: &Mat<T>, msg: &Mat<T>) -> Mat<T> {
-//         Mat::prod(msg, &g)
-//     }
-
-//     pub fn decode(&self, rcv: &Mat<F2>) -> Mat<F2>
-//     where
-//         T: CharacteristicTwo,
-// }
 
 impl<T> Goppa<T>
 where
@@ -154,23 +146,31 @@ where
         // g
 
         // Mat::prod(&gs, &p.inverse().unwrap().transpose())
-        
+
         // Mat::prod(&gs, &p.transpose())
         gs * p.transpose()
     }
 
-    pub fn encode(&self, msg: &Mat<F2>) -> Mat<F2> {
+    // pub fn encode(&self, msg: &Mat<F2>) -> Mat<F2> {
+    //     let h = self.parity_check_matrix();
+    //     let hb = h.binary_form();
+    //     let g = Goppa::generator_matrix(&hb);
+    //     msg * g
+    // }
+
+    pub fn encode(&self, msg: &RowVec<F2>) -> RowVec<F2> {
         let h = self.parity_check_matrix();
         let hb = h.binary_form();
         let g = Goppa::generator_matrix(&hb);
-        // Mat::prod(msg, &g)
         msg * g
     }
 
-    pub fn decode(&self, rcv: &Mat<F2>) -> Mat<F2> {
+    // pub fn decode(&self, rcv: &Mat<F2>) -> Mat<F2> {
+    pub fn decode(&self, rcv: &RowVec<F2>) -> RowVec<F2> {
         let h = self.parity_check_matrix();
         info!("parity check matrix: {:?}", h);
-        let rcv_fq = Mat::from(rcv);
+        // let rcv_fq = Mat::from(rcv);
+        let rcv_fq = RowVec::from(rcv);
         info!("received word: {:?}", rcv_fq);
         // let syndrome = Mat::prod(&h, &rcv_fq.transpose());
         let syndrome = h * rcv_fq.transpose();
@@ -223,10 +223,13 @@ where
         let sigma = &a + &b;
         info!("sigma(x) = {:?}", sigma);
         let n = self.set.len();
-        let mut err = Mat::zero(1, n);
+        // let mut err = Mat::zero(1, n);
+        let mut err = RowVec::zero(n);
+
         for i in 0..n {
             // use iterator and map ?
-            err[(0, i)] = if sigma.eval(self.set[i]) == T::zero() {
+            // err[(0, i)] = if sigma.eval(self.set[i]) == T::zero() {
+            err[i] = if sigma.eval(self.set[i]) == T::zero() {
                 F2::one()
             } else {
                 F2::zero()

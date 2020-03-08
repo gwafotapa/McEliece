@@ -1,12 +1,15 @@
-use crate::finite_field::FieldElement;
-use crate::matrix::Mat;
+// use crate::finite_field::FieldElement;
+use super::{CharacteristicTwo, FieldElement, Mat, F2};
 
-use rand::distributions::{Distribution, Standard};
-use rand::rngs::ThreadRng;
-use rand::Rng;
-use std::fmt::{Debug, Display, Formatter, Result};
-use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign};
-use std::string::ToString;
+use rand::{
+    distributions::{Distribution, Standard},
+    rngs::ThreadRng,
+    Rng,
+};
+use std::{
+    fmt::{Debug, Display, Formatter, Result},
+    ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign},
+};
 
 #[derive(Clone, Eq, PartialEq)]
 pub struct RowVec<T>(Mat<T>);
@@ -207,11 +210,11 @@ impl<T: ToString> Display for RowVec<T> {
 }
 
 impl<T: FieldElement> RowVec<T> {
-    pub fn new(cols: usize, data: Vec<T>) -> Self {
-        if data.len() != cols {
-            panic!("Wrong dimension");
+    pub fn new(data: Vec<T>) -> Self {
+        if data.len() == 0 {
+            panic!("Empty row vector");
         }
-        RowVec(Mat::new(1, cols, data))
+        RowVec(Mat::new(1, data.len(), data))
     }
 
     pub fn zero(cols: usize) -> Self {
@@ -240,7 +243,17 @@ impl<T: FieldElement> RowVec<T> {
         weight
     }
 
-    pub fn with_weight(rng: &mut ThreadRng, n: usize, w: usize) -> Self
+    pub fn random(rng: &mut ThreadRng, n: usize) -> Self
+    where Standard: Distribution<T>,
+    {
+        let mut vec = RowVec::zero(n);
+        for i in 0..n {
+            vec[i] = rng.gen();
+        }
+        vec
+    }
+    
+    pub fn random_with_weight(rng: &mut ThreadRng, n: usize, w: usize) -> Self
     where
         Standard: Distribution<T>,
     {
@@ -271,6 +284,17 @@ impl<T: FieldElement> RowVec<T> {
         }
 
         self.0.sum(&vec1.0, &vec2.0);
+    }
+
+    pub fn from(a: &RowVec<F2>) -> Self
+    where
+        T: CharacteristicTwo,
+    {
+        RowVec(Mat::from(&a.0))
+    }
+
+    pub fn transpose(&self) -> Mat<T> {
+        self.0.transpose()
     }
 
     // pub fn transpose(&self) -> ColVec<T> {

@@ -1,14 +1,13 @@
-pub use self::finite_field_1024::F1024;
-pub use self::finite_field_2::F2;
-pub use self::finite_field_7::F7;
-pub use self::finite_field_8::F8;
+use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+
+pub use self::{
+    finite_field_1024::F1024, finite_field_2::F2, finite_field_7::F7, finite_field_8::F8,
+};
 
 mod finite_field_1024;
 mod finite_field_2;
 mod finite_field_7;
 mod finite_field_8;
-
-use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 pub trait FiniteFieldElement: FieldElement {
     fn characteristic_exponent() -> u32;
@@ -29,15 +28,12 @@ pub trait FieldElement:
     + Mul<Output = Self>
     + MulAssign
     + Neg<Output = Self>
-    // + Sized
     + Sub<Output = Self>
     + SubAssign
 {
     fn zero() -> Self;
     fn one() -> Self;
-    fn characteristic() -> u32 {
-        2
-    }
+    fn characteristic() -> u32;
 }
 
 pub trait Inv {

@@ -26,10 +26,11 @@ fn setup() {
 fn goppa_f8() {
     setup();
 
-    let mut p = Poly::<F8>::zero(3);
-    p[2] = F8::one();
-    p[1] = F8::one();
-    p[0] = F8::one();
+    // let mut p = Poly::<F8>::zero(3);
+    // p[2] = F8::one();
+    // p[1] = F8::one();
+    // p[0] = F8::one();
+    let p = Poly::support(&[2, 1, 0]);
     println!("{:?}", p);
     let c: Goppa<F8> = Goppa::new(
         p,
@@ -75,7 +76,10 @@ fn goppa_f8() {
     // println!("{:?}", h_bin_form);
 
     let mut rng = rand::thread_rng();
-    let msg = Mat::random(&mut rng, 1, 2);
+    // let msg = Mat::random(&mut rng, 1, 2);
+    let msg = RowVec::random(&mut rng, 2);
+
+    
     // // let mut msg = Mat::zero(1, 2);
     // // msg[(0, 0)] = F2::one();
     // println!("msg: {:?}", msg);
@@ -89,7 +93,9 @@ fn goppa_f8() {
 
     let cdw = c.encode(&msg);
     println!("cdw: {:?}", cdw);
-    let err = Mat::weighted_vector_random(&mut rng, 8, 2);
+    // let err = Mat::weighted_vector_random(&mut rng, 8, 2);
+    let err = RowVec::random_with_weight(&mut rng, 8, 2);
+    
     // // let mut err = Mat::zero(1, 8);
     // // err[(0, 1)] = F2::one();
     println!("err: {:?}", err);
@@ -99,9 +105,6 @@ fn goppa_f8() {
     let dcd = c.decode(&rcv);
     println!("dcd: {:?}", dcd);
     assert_eq!(cdw, dcd);
-
-    // Problem in the maths: the rcv word which is not a codeword has a null syndrome,
-    // that is the syndrome is a multiple of the goppa polynomial.
 }
 
 #[test]
@@ -131,7 +134,10 @@ fn goppa_f1024() {
     // info!("generator matrix: {:?}", g2);
     // let g = Mat::from(&g2);
     // assert_eq!(Mat::prod(&h, &g.transpose()), Mat::zero(h.rows(), g.rows()));
-    let cdw = Mat::new(1, 30, g.data()[0..30].to_vec());
+
+    
+    // let cdw = Mat::new(1, 30, g.data()[0..30].to_vec());
+    let cdw = RowVec::new(g.data()[0..30].to_vec());
     info!("codeword: {:?}", cdw);
 
     // let syndrome_cdw = Mat::prod(&h, &Mat::from(&cdw.transpose()));
@@ -139,7 +145,9 @@ fn goppa_f1024() {
     
     let zero = Mat::zero(syndrome_cdw.rows(), syndrome_cdw.cols());
     assert_eq!(syndrome_cdw, zero);
-    let err: Mat<F2> = Mat::weighted_vector_random(&mut rng, 30, 2);
+    
+    // let err: Mat<F2> = Mat::weighted_vector_random(&mut rng, 30, 2);
+    let err: RowVec<F2> = RowVec::random_with_weight(&mut rng, 30, 2);
     info!("error: {:?}", err);
 
     // let rcv = Mat::sum(&cdw, &err);

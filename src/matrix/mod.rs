@@ -1,5 +1,3 @@
-use crate::finite_field::{CharacteristicTwo, FieldElement, FiniteFieldElement, F2};
-
 use rand::{
     distributions::{Distribution, Standard},
     rngs::ThreadRng,
@@ -10,6 +8,10 @@ use std::{
     ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign},
     string::ToString,
 };
+
+use crate::finite_field::{CharacteristicTwo, FieldElement, FiniteFieldElement, F2};
+
+pub use rowvec::RowVec;
 
 // Type T must represent an element from a field, meaning all elements except 0 are inversible.
 #[derive(Clone, Eq, PartialEq)]
@@ -496,3 +498,4 @@ impl<T: CharacteristicTwo + FiniteFieldElement> Mat<T> {
 }
 
 mod gauss;
+mod rowvec;

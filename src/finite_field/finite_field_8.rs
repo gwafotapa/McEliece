@@ -1,9 +1,13 @@
 use crate::finite_field::{CharacteristicTwo, FieldElement, FiniteFieldElement, Inv};
 
-use rand::distributions::{Distribution, Standard};
-use rand::Rng;
-use std::fmt::{Debug, Display, Formatter, Result};
-use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+use rand::{
+    distributions::{Distribution, Standard},
+    Rng,
+};
+use std::{
+    fmt::{Debug, Display, Formatter, Result},
+    ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign},
+};
 
 macro_rules! array_init {
     ( $( $x:expr ),+ ) => {
@@ -16,9 +20,13 @@ pub struct F8(pub u32);
 
 const CARD: u32 = 8;
 
-const EXP: [F8; CARD as usize] = array_init![1, 2, 4, 3, 6, 7, 5, 1];
+const EXP: [F8; CARD as usize] = array_init![
+    1, 2, 4, 3, 6, 7, 5, 1
+];
 
-const LOG: [u32; CARD as usize] = [CARD, 0, 1, 3, 2, 6, 4, 5];
+const LOG: [u32; CARD as usize] = [
+    CARD, 0, 1, 3, 2, 6, 4, 5
+];
 
 impl CharacteristicTwo for F8 {}
 

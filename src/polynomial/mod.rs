@@ -1,6 +1,5 @@
-// extern crate rand;
-
 // use log::info;
+
 use rand::{
     distributions::{Distribution, Standard},
     rngs::ThreadRng,

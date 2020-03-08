@@ -1,32 +1,15 @@
-// Is there a way to maintain the integrity of a polynomial (i.e. to ensure that the leading coefficient is not zero) ? With a trait like for characteristic 2 ?
-// Add functions for rows and columns operations on matrices
 // Try rr
 
-// mod matrix;
-// mod goppa;
-// mod finite_field;
-// mod finite_field_2;
-// mod finite_field_7;
-// mod finite_field_1024;
-// mod matrix;
-
-// #[macro_use]
-// extern crate log;
+use std::{
+    env,
+    fs::OpenOptions,
+    io::{Seek, SeekFrom, Write},
+};
 
 mod finite_field;
-mod rowvec;
-// mod finite_field_1024;
-// mod finite_field_2;
-mod matrix;
+// mod matrix;
 mod polynomial;
 // mod goppa;
-
-// use std::path::Path;
-// use std::char;
-use std::env;
-// use std::fs::File;
-use std::fs::OpenOptions;
-use std::io::{Seek, SeekFrom, Write};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -67,12 +50,17 @@ fn main() {
         Err(e) => panic!("Cannot create file: {}", e),
     };
 
-    let content = "use crate::finite_field::{CharacteristicTwo, FieldElement, FiniteFieldElement, Inv};
+    let content =
+        "use crate::finite_field::{CharacteristicTwo, FieldElement, FiniteFieldElement, Inv};
 
-use rand::distributions::{Distribution, Standard};
-use rand::Rng;
-use std::fmt::{Debug, Display, Formatter, Result};
-use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+use rand::{
+    distributions::{Distribution, Standard},
+    Rng,
+};
+use std::{
+    fmt::{Debug, Display, Formatter, Result},
+    ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign},
+};
 
 macro_rules! array_init {
     ( $( $x:expr ),+ ) => {
@@ -81,7 +69,7 @@ macro_rules! array_init {
 }
 
 #[derive(Clone, Copy, Eq, PartialEq)]
-pub struct F{order}(u32);
+pub struct F{order}(pub u32);
 
 const CARD: u32 = {order};
 

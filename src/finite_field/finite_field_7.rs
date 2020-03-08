@@ -1,12 +1,16 @@
+use rand::{
+    distributions::{Distribution, Standard},
+    Rng,
+};
+use std::{
+    fmt::{Debug, Display, Formatter, Result},
+    ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign},
+};
+
 use crate::finite_field::{FieldElement, FiniteFieldElement, Inv};
 
-use rand::distributions::{Distribution, Standard};
-use rand::Rng;
-use std::fmt::{Debug, Display, Formatter, Result};
-use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
-
 #[derive(Clone, Copy, Eq, PartialEq)]
-pub struct F7(u32);
+pub struct F7(pub u32);
 
 const CARD: u32 = 7;
 
@@ -83,7 +87,7 @@ impl Mul for F7 {
 
     fn mul(self, other: Self) -> Self {
         let modulo = |a| if a >= CARD { a - (CARD - 1) } else { a };
-        
+
         if self == Self(0) || other == Self(0) {
             Self(0)
         } else {

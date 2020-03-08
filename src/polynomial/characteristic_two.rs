@@ -1,11 +1,13 @@
 use log::info;
-use crate::finite_field::{CharacteristicTwo, FiniteFieldElement};
-use super::Poly;
+
 use rand::{
     distributions::{Distribution, Standard},
     rngs::ThreadRng,
     Rng,
 };
+
+use super::Poly;
+use crate::finite_field::{CharacteristicTwo, FiniteFieldElement};
 
 impl<T: CharacteristicTwo + FiniteFieldElement> Poly<T> {
     // TODO: Should I add another constructor s.t. coefficients might not be 1 ?
@@ -13,7 +15,7 @@ impl<T: CharacteristicTwo + FiniteFieldElement> Poly<T> {
         if support.is_empty() {
             panic!("Support cannot be empty");
         }
-        
+
         let mut vec = vec![T::zero(); support[support.len() - 1]];
         for &i in support.iter() {
             if i >= vec.len() {
@@ -23,7 +25,7 @@ impl<T: CharacteristicTwo + FiniteFieldElement> Poly<T> {
         }
         Poly(vec)
     }
-    
+
     pub fn random_irreducible(rng: &mut ThreadRng, degree: usize) -> Self
     where
         Standard: Distribution<T>,
