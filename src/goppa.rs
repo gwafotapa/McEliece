@@ -1,7 +1,7 @@
 use log::info;
 
 use rand::{distributions, Rng};
-use std::fmt;
+use std::string::ToString;
 
 use crate::{
     finite_field::{CharacteristicTwo, FieldElement, FiniteFieldElement, F2},
@@ -17,7 +17,7 @@ pub struct Goppa<T> {
 
 impl<T> Goppa<T>
 where
-    T: Copy + fmt::Display + FiniteFieldElement + CharacteristicTwo,
+    T: CharacteristicTwo + FiniteFieldElement + ToString,
 {
     pub fn new(poly: Poly<T>, set: Vec<T>) -> Result<Goppa<T>, &'static str>
     where
@@ -26,12 +26,7 @@ where
         if poly.is_irreducible() == false {
             return Err("Goppa polynomial is not irreducible");
         }
-        // for i in 0..set.len() {
-        //     if poly.eval(set[i]) == T::zero() {
-        //         println!("{} is a root of the polynomial", set[i]);
-        //         return Err("Set contains a root of the polynomial");
-        //     }
-        // }
+
         Ok(Goppa::<T> {
             len: set.len(),
             poly,

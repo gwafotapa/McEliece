@@ -248,7 +248,7 @@ impl<T: FieldElement + ToString> Debug for Poly<T> {
             i += 1;
         }
 
-        write!(f, "{}", s)
+        write!(f, "{:?}", s)
     }
 }
 

@@ -199,13 +199,15 @@ impl<T> IndexMut<usize> for RowVec<T> {
 
 impl<T: ToString> Debug for RowVec<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "\n{:?}", self.0)
+        write!(f, "{:?}", self.0)
+        // Debug::fmt(&self.0, f)
     }
 }
 
 impl<T: ToString> Display for RowVec<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "\n{:?}", self.0)
+        write!(f, "{}", self.0)
+        // Display::fmt(&self.0, f)
     }
 }
 

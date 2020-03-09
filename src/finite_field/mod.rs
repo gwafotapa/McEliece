@@ -1,11 +1,13 @@
 use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
 pub use self::{
-    finite_field_1024::F1024, finite_field_2::F2, finite_field_7::F7, finite_field_8::F8,
+    finite_field_1024::F1024, finite_field_2::F2, finite_field_256::F256, finite_field_7::F7,
+    finite_field_8::F8,
 };
 
 mod finite_field_1024;
 mod finite_field_2;
+mod finite_field_256;
 mod finite_field_7;
 mod finite_field_8;
 
