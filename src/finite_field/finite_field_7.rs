@@ -147,13 +147,19 @@ impl Distribution<F7> for Standard {
 
 impl Debug for F7 {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "{}", self.0,)
+        write!(f, "{:?}", self.0,)
     }
 }
 
 impl Display for F7 {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "{}", self.0,)
+        // write!(f, "{}", self.0,)
+        match self {
+            Self(0) => write!(f, "0"),
+            Self(1) => write!(f, "1"),
+            Self(2) => write!(f, "a"),
+            _ => write!(f, "a^{}", self.log().unwrap()),
+        }
     }
 }
 

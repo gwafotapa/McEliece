@@ -1,5 +1,5 @@
 // use crate::finite_field::FieldElement;
-use super::{CharacteristicTwo, FieldElement, Mat, F2};
+use super::{CharacteristicTwo, FieldElement, FiniteFieldElement, Mat, F2};
 
 use rand::{
     distributions::{Distribution, Standard},
@@ -197,17 +197,15 @@ impl<T> IndexMut<usize> for RowVec<T> {
     }
 }
 
-impl<T: ToString> Debug for RowVec<T> {
+impl<T: Debug + Display + FiniteFieldElement> Debug for RowVec<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{:?}", self.0)
-        // Debug::fmt(&self.0, f)
     }
 }
 
-impl<T: ToString> Display for RowVec<T> {
+impl<T: Display + FiniteFieldElement> Display for RowVec<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{}", self.0)
-        // Display::fmt(&self.0, f)
     }
 }
 

@@ -141,13 +141,18 @@ impl Distribution<F256> for Standard {
 
 impl Debug for F256 {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "{:>4}", self.0)
+        write!(f, "{:b}", self.0)
     }
 }
 
 impl Display for F256 {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "{:>4}", self.0,)
+        match self {
+            Self(0) => write!(f, "0"),
+            Self(1) => write!(f, "1"),
+            Self(2) => write!(f, "a"),
+            _ => write!(f, "a^{}", self.log().unwrap()),
+        }
     }
 }
 

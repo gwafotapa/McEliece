@@ -220,67 +220,55 @@ impl<T> IndexMut<usize> for Poly<T> {
     }
 }
 
-impl<T: FieldElement + ToString> Debug for Poly<T> {
+impl<T: FieldElement + Debug> Debug for Poly<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         if self.is_zero() {
             return write!(f, "0");
         }
-
-        let mut s = String::new();
         let mut i = 0;
         while i <= self.degree() {
             if self[i] != T::zero() {
                 if self[i] != T::one() || i == 0 {
-                    s.push_str(&self[i].to_string());
+                    write!(f, "{:?}", self[i])?;
                 }
                 match i {
                     0 => (),
-                    1 => s.push_str("x"),
-                    _ => {
-                        s.push_str("x^");
-                        s.push_str(&i.to_string());
-                    }
+                    1 => write!(f, "x")?,
+                    _ => write!(f, "x^{}", i)?,
                 }
                 if i < self.degree() {
-                    s.push_str(" + ");
+                    write!(f, " + ")?;
                 }
             }
             i += 1;
         }
-
-        write!(f, "{:?}", s)
+        Ok(())
     }
 }
 
-impl<T: FieldElement + ToString> Display for Poly<T> {
+impl<T: FieldElement + Display> Display for Poly<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         if self.is_zero() {
             return write!(f, "0");
         }
-
-        let mut s = String::new();
         let mut i = 0;
         while i <= self.degree() {
             if self[i] != T::zero() {
                 if self[i] != T::one() || i == 0 {
-                    s.push_str(&self[i].to_string());
+                    write!(f, "{}", self[i])?;
                 }
                 match i {
                     0 => (),
-                    1 => s.push_str("x"),
-                    _ => {
-                        s.push_str("x^");
-                        s.push_str(&i.to_string());
-                    }
+                    1 => write!(f, "x")?,
+                    _ => write!(f, "x^{}", i)?,
                 }
                 if i < self.degree() {
-                    s.push_str(" + ");
+                    write!(f, " + ")?;
                 }
             }
             i += 1;
         }
-
-        write!(f, "{}", s)
+        Ok(())
     }
 }
 

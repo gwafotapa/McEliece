@@ -1,7 +1,7 @@
 use log::info;
 
 use rand::{distributions, Rng};
-use std::string::ToString;
+use std::fmt::{Debug, Display};
 
 use crate::{
     finite_field::{CharacteristicTwo, FieldElement, FiniteFieldElement, F2},
@@ -17,7 +17,7 @@ pub struct Goppa<T> {
 
 impl<T> Goppa<T>
 where
-    T: CharacteristicTwo + FiniteFieldElement + ToString,
+    T: CharacteristicTwo + Debug + Display + FiniteFieldElement,
 {
     pub fn new(poly: Poly<T>, set: Vec<T>) -> Result<Goppa<T>, &'static str>
     where

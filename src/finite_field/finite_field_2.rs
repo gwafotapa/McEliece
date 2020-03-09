@@ -143,7 +143,7 @@ impl Distribution<F2> for Standard {
 
 impl Debug for F2 {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "{}", *self as u32)
+        write!(f, "{:?}", *self as u32)
     }
 }
 

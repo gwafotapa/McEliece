@@ -242,13 +242,18 @@ impl Distribution<F{order}> for Standard {
 
 impl Debug for F{order} {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, \"{:>{digits}}\", self.0)
+        write!(f, \"{:b}\", self.0)
     }
 }
 
 impl Display for F{order} {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, \"{:>{digits}}\", self.0,)
+        match self {
+            Self(0) => write!(f, \"0\"),
+            Self(1) => write!(f, \"1\"),
+            Self(2) => write!(f, \"a\"),
+            _ => write!(f, \"a^{}\", self.log().unwrap()),
+        }
     }
 }
 
@@ -329,8 +334,6 @@ mod test {
     let content = content.replace("{order}", &order.to_string());
     // let content = content.replace("{characteristic}", &p.to_string());
     let content = content.replace("{characteristic_exponent}", &m.to_string());
-    let digits = (32 - order.leading_zeros()) / 3 + 1; // ceiling of the number of digits of order
-    let content = content.replace("{digits}", &digits.to_string());
     file.write_all(content.as_bytes())
         .expect("Cannot write file");
 }

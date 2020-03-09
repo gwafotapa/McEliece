@@ -6,7 +6,6 @@ use rand::{
 use std::{
     fmt::{Debug, Display, Formatter, Result},
     ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign},
-    string::ToString,
 };
 
 use crate::finite_field::{CharacteristicTwo, FieldElement, FiniteFieldElement, F2};
@@ -240,37 +239,52 @@ impl<T> IndexMut<(usize, usize)> for Mat<T> {
     }
 }
 
-impl<T: ToString> Debug for Mat<T> {
+impl<T: Debug + FiniteFieldElement> Debug for Mat<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        let mut s = String::new();
-
+        write!(f, "\n")?;
         for i in 0..self.rows {
             for j in 0..self.cols - 1 {
-                s.push_str(&self[(i, j)].to_string());
-                s.push(' ');
+                write!(
+                    f,
+                    "{:>width$}",
+                    format!("{:?} ", self[(i, j)]),
+                    width = 1 + T::characteristic_exponent() as usize
+                )?;
             }
-            s.push_str(&self[(i, self.cols - 1)].to_string());
-            s.push('\n');
+            write!(
+                f,
+                "{:>width$}",
+                format!("{:?}\n", self[(i, self.cols - 1)]),
+                width = 1 + T::characteristic_exponent() as usize
+            )?;
         }
-
-        write!(f, "\n{:?}", s)
+        Ok(())
     }
 }
 
-impl<T: ToString> Display for Mat<T> {
+impl<T: Display + FiniteFieldElement> Display for Mat<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        let mut s = String::new();
+        // number of digits of order
+        let digits = ((32 - T::order().leading_zeros()) / 3 + 1) as usize;
 
+        write!(f, "\n")?;
         for i in 0..self.rows {
             for j in 0..self.cols - 1 {
-                s.push_str(&self[(i, j)].to_string());
-                s.push(' ');
+                write!(
+                    f,
+                    "{:>width$} ",
+                    self[(i, j)].to_string(),
+                    width = if T::order() == 2 { 1 } else { 2 + digits }
+                )?;
             }
-            s.push_str(&self[(i, self.cols - 1)].to_string());
-            s.push('\n');
+            write!(
+                f,
+                "{:>width$}\n",
+                self[(i, self.cols - 1)].to_string(),
+                width = if T::order() == 2 { 1 } else { 2 + digits }
+            )?;
         }
-
-        write!(f, "\n{}", s)
+        Ok(())
     }
 }
 
