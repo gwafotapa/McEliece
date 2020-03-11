@@ -1,11 +1,11 @@
-use super::{FieldElement, Mat};
+use super::{Field, Mat};
 use rand::{
-    distributions::{Distribution, Standard},
+    // distributions::{Distribution, Standard},
     rngs::ThreadRng,
-    Rng,
+    // Rng,
 };
 
-impl<T: FieldElement> Mat<T> {
+impl<'a, F: Eq + Field> Mat<'a, F> {
     pub fn swap_rows(&mut self, row1: usize, row2: usize) {
         if row1 == row2 {
             return;
@@ -28,9 +28,9 @@ impl<T: FieldElement> Mat<T> {
         }
     }
 
-    pub fn combine_rows(&mut self, row1: usize, lambda: T, row2: usize) {
+    pub fn combine_rows(&mut self, row1: usize, lambda: F::FElt, row2: usize) {
         for j in 0..self.cols {
-            self[(row1, j)] = self[(row1, j)] + lambda * self[(row2, j)];
+            self[(row1, j)] = self.field.add(self[(row1, j)], self.field.mul(lambda, self[(row2, j)]));
         }
     }
 
@@ -47,13 +47,13 @@ impl<T: FieldElement> Mat<T> {
 
         let n = self.rows;
         let mut mat = self.clone();
-        let mut inv: Self = Mat::identity(n);
+        let mut inv: Self = Mat::identity(self.field, n);
         let mut p = 0; // pivot's row and pivot's column
 
         while p < n {
             // Find pivot
             let mut i = p;
-            while i < n && mat[(i, p)] == T::zero() {
+            while i < n && mat[(i, p)] == self.field.zero() {
                 i += 1;
             }
             if i == n {
@@ -65,35 +65,35 @@ impl<T: FieldElement> Mat<T> {
             inv.swap_rows(i, p);
 
             // Normalize pivot's row: L(p) = pivot^-1 * L(p)
-            let pivot_inv = mat[(p, p)].inv().unwrap();
+            let pivot_inv = self.field.inv(mat[(p, p)]).unwrap();
             for j in p + 1..n {
                 // first p+1 columns are zero
-                mat[(p, j)] = pivot_inv * mat[(p, j)];
+                mat[(p, j)] = self.field.mul(pivot_inv, mat[(p, j)]);
             }
-            mat[(p, p)] = T::one();
+            mat[(p, p)] = self.field.one();
 
             // Mimic normalization on matrix 'inv'
             for j in 0..n {
-                inv[(p, j)] = pivot_inv * inv[(p, j)];
+                inv[(p, j)] = self.field.mul(pivot_inv, inv[(p, j)]);
             }
 
             // Adjust all rows below pivot's row: L(k) = L(k) - c(k,p) * L(p)
             // where L(k) is the kth row and c(k,p) is the coefficient [k,p] of our matrix
             for k in p + 1..n {
-                if mat[(k, p)] == T::zero() {
+                if mat[(k, p)] == self.field.zero() {
                     continue;
                 }
 
                 let lambda = mat[(k, p)];
-                mat[(k, p)] = T::zero();
+                mat[(k, p)] = self.field.zero();
                 for l in p + 1..n {
                     // first p+1 columns are zero
-                    mat[(k, l)] = mat[(k, l)] - lambda * mat[(p, l)];
+                    mat[(k, l)] = self.field.sub(mat[(k, l)], self.field.mul(lambda, mat[(p, l)]));
                 }
 
                 // Mimic operation on matrix 'inv'
                 for l in 0..n {
-                    inv[(k, l)] = inv[(k, l)] - lambda * inv[(p, l)];
+                    inv[(k, l)] = self.field.sub(inv[(k, l)], self.field.mul(lambda, inv[(p, l)]));
                 }
             }
 
@@ -108,28 +108,29 @@ impl<T: FieldElement> Mat<T> {
                 // L(i) = L(i) - c(i, j) * L(j)
                 // We don't actually need to operate on the original matrix here.
                 // Mimic the row operation on matrix 'inv'.
-                if mat[(i, j)] == T::zero() {
+                if mat[(i, j)] == self.field.zero() {
                     continue;
                 }
 
                 for l in 0..n {
-                    inv[(i, l)] = inv[(i, l)] - mat[(i, j)] * inv[(j, l)];
+                    inv[(i, l)] = self.field.sub(inv[(i, l)], self.field.mul(mat[(i, j)], inv[(j, l)]));
                 }
             }
         }
         Some(inv)
     }
 
-    pub fn invertible_random(rng: &mut ThreadRng, n: usize) -> Self
-    where
-        Standard: Distribution<T>,
+    pub fn invertible_random(rng: &mut ThreadRng, f: &'a F, n: usize) -> Self
+    // where
+    //     Standard: Distribution<T>,
     {
-        let mut mat = Mat::zero(n, n);
+        let mut mat = Mat::zero(f, n, n);
         let mut i = 0;
         while i < n {
             // Fill line i at random
             for j in 0..n {
-                mat[(i, j)] = rng.gen();
+                // mat[(i, j)] = rng.gen();
+                mat[(i, j)] = f.random(rng);                
             }
 
             if mat.rank() == i + 1 {
@@ -149,7 +150,7 @@ impl<T: FieldElement> Mat<T> {
         while row_pivot < self.rows && col_pivot < self.cols {
             // Find pivot
             let mut i = row_pivot;
-            while i < n && self[(i, col_pivot)] == T::zero() {
+            while i < n && self[(i, col_pivot)] == self.field.zero() {
                 i += 1;
             }
             if i == n {
@@ -160,21 +161,21 @@ impl<T: FieldElement> Mat<T> {
             self.swap_rows(i, row_pivot);
 
             // Normalize pivot's row
-            let pivot_inv = self[(row_pivot, col_pivot)].inv().unwrap();
+            let pivot_inv = self.field.inv(self[(row_pivot, col_pivot)]).unwrap();
             for j in col_pivot + 1..m {
-                self[(row_pivot, j)] = pivot_inv * self[(row_pivot, j)];
+                self[(row_pivot, j)] = self.field.mul(pivot_inv, self[(row_pivot, j)]);
             }
-            self[(row_pivot, col_pivot)] = T::one();
+            self[(row_pivot, col_pivot)] = self.field.one();
 
             // Adjust all rows below pivot's row
             for k in row_pivot + 1..n {
-                if self[(k, col_pivot)] == T::zero() {
+                if self[(k, col_pivot)] == self.field.zero() {
                     continue;
                 }
                 for l in col_pivot + 1..m {
-                    self[(k, l)] = self[(k, l)] - self[(k, col_pivot)] * self[(row_pivot, l)];
+                    self[(k, l)] = self.field.sub(self[(k, l)], self.field.mul(self[(k, col_pivot)], self[(row_pivot, l)]));
                 }
-                self[(k, col_pivot)] = T::zero();
+                self[(k, col_pivot)] = self.field.zero();
             }
 
             row_pivot += 1;
@@ -191,7 +192,7 @@ impl<T: FieldElement> Mat<T> {
         for row_pivot in (0..n).rev() {
             // Find the pivot on this row if any
             let mut col_pivot = 0;
-            while col_pivot < m && self[(row_pivot, col_pivot)] == T::zero() {
+            while col_pivot < m && self[(row_pivot, col_pivot)] == self.field.zero() {
                 col_pivot += 1;
             }
             if col_pivot == m {
@@ -200,13 +201,13 @@ impl<T: FieldElement> Mat<T> {
 
             // Eliminate all non zero elements in the pivot's column
             for i in (0..row_pivot).rev() {
-                if self[(i, col_pivot)] == T::zero() {
+                if self[(i, col_pivot)] == self.field.zero() {
                     continue;
                 }
 
                 for k in col_pivot..m {
                     self[(i, k)] =
-                        self[(i, k)] - self[(i, col_pivot)] * self[(row_pivot, col_pivot)];
+                        self.field.sub(self[(i, k)], self.field.mul(self[(i, col_pivot)], self[(row_pivot, col_pivot)]));
                 }
             }
         }
@@ -226,9 +227,9 @@ impl<T: FieldElement> Mat<T> {
         if m > n {
             return None;
         }
-        let mut u = Mat::identity(m);
+        let mut u = Mat::identity(self.field, m);
         let mut h = self.clone();
-        let mut p = Mat::identity(n);
+        let mut p = Mat::identity(self.field, n);
         let mut col = n; // index of the column to check for a pivot
 
         // j is the index of the column to "standardize":
@@ -246,7 +247,7 @@ impl<T: FieldElement> Mat<T> {
 
                 // Check column 'col' for a pivot
                 for row in (0..j + m - n + 1).rev() {
-                    if h[(row, col)] != T::zero() {
+                    if h[(row, col)] != self.field.zero() {
                         pivot = true;
                         row_pivot = row;
                         col_pivot = col;
@@ -270,18 +271,18 @@ impl<T: FieldElement> Mat<T> {
             // Pivot is now at (j+m-n, j)
 
             // Multiply pivot row by pivot^-1 and update U
-            let pivot_inv = h[(j + m - n, j)].inv().unwrap();
+            let pivot_inv = self.field.inv(h[(j + m - n, j)]).unwrap();
             for k in 0..n {
-                h[(j + m - n, k)] = pivot_inv * h[(j + m - n, k)];
+                h[(j + m - n, k)] = self.field.mul(pivot_inv, h[(j + m - n, k)]);
             }
             for k in 0..m {
-                u[(j + m - n, k)] = pivot_inv * u[(j + m - n, k)];
+                u[(j + m - n, k)] = self.field.mul(pivot_inv, u[(j + m - n, k)]);
             }
 
             // Nullify the rest of the column and update matrix U accordingly
             for i in 0..m {
-                if h[(i, j)] != T::zero() && i != j + m - n {
-                    let lambda = -h[(i, j)];
+                if h[(i, j)] != self.field.zero() && i != j + m - n {
+                    let lambda = self.field.neg(h[(i, j)]);
                     h.combine_rows(i, lambda, j + m - n);
                     u.combine_rows(i, lambda, j + m - n);
                 }
@@ -299,11 +300,11 @@ impl<T: FieldElement> Mat<T> {
         for i in 0..m {
             for j in n - m..n {
                 if n + i == m + j {
-                    if self[(i, j)] != T::one() {
+                    if self[(i, j)] != self.field.one() {
                         return false;
                     }
                 } else {
-                    if self[(i, j)] != T::zero() {
+                    if self[(i, j)] != self.field.zero() {
                         return false;
                     }
                 }

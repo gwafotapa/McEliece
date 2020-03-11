@@ -1,26 +1,40 @@
-use rand::{
-    distributions::{Distribution, Standard},
-    rngs::ThreadRng,
-    Rng,
-};
+use rand::{rngs::ThreadRng, Rng};
+// use rand::{
+//     distributions::{Distribution, Standard},
+//     rngs::ThreadRng,
+//     Rng,
+// };
 use std::{
     fmt::{Debug, Display, Formatter, Result},
     ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
-use crate::finite_field::{CharacteristicTwo, FieldElement, FiniteFieldElement, F2};
+use crate::finite_field::{Field, FiniteField};
+// use crate::finite_field::{CharacteristicTwo, FieldElement, FiniteFieldElement, F2};
 
 pub use rowvec::RowVec;
 
 // Type T must represent an element from a field, meaning all elements except 0 are inversible.
-#[derive(Clone, Eq, PartialEq)]
-pub struct Mat<T> {
+#[derive(Eq, PartialEq)]
+pub struct Mat<'a, F: Eq + Field> {
+    field: &'a F,
     rows: usize,
     cols: usize,
-    data: Vec<T>,
+    data: Vec<F::FElt>,
 }
 
-impl<T: FieldElement> Add for Mat<T> {
+impl<'a, F: Eq + Field> Clone for Mat<'a, F> {
+    fn clone(&self) -> Self {
+        Mat {
+            field: self.field, // shallow copy
+            rows: self.rows,
+            cols: self.cols,
+            data: self.data.clone(),
+        }
+    }
+}
+
+impl<'a, F: Eq + Field> Add for Mat<'a, F> {
     type Output = Self;
 
     fn add(self, other: Self) -> Self::Output {
@@ -28,7 +42,7 @@ impl<T: FieldElement> Add for Mat<T> {
     }
 }
 
-impl<T: FieldElement> Add<&Mat<T>> for Mat<T> {
+impl<'a, F: Eq + Field> Add<&Mat<'a, F>> for Mat<'a, F> {
     type Output = Self;
 
     fn add(self, other: &Self) -> Self::Output {
@@ -36,49 +50,53 @@ impl<T: FieldElement> Add<&Mat<T>> for Mat<T> {
     }
 }
 
-impl<T: FieldElement> Add<Mat<T>> for &Mat<T> {
-    type Output = Mat<T>;
+impl<'a, F: Eq + Field> Add<Mat<'a, F>> for &Mat<'a, F> {
+    type Output = Mat<'a, F>;
 
-    fn add(self, other: Mat<T>) -> Self::Output {
+    fn add(self, other: Mat<'a, F>) -> Self::Output {
         self + &other
     }
 }
 
-impl<T: FieldElement> Add for &Mat<T> {
-    type Output = Mat<T>;
+impl<'a, F: Eq + Field> Add for &Mat<'a, F> {
+    type Output = Mat<'a, F>;
 
     fn add(self, other: Self) -> Self::Output {
-        if self.rows != other.rows || self.cols != other.cols {
+        if self.field != other.field {
+            panic!("Cannot add matrices: fields don't match");
+        } else if self.rows != other.rows || self.cols != other.cols {
             panic!("Cannot add matrices: dimensions don't match");
         }
 
-        let mut sum = Mat::zero(self.rows, self.cols);
+        let mut sum = Mat::zero(self.field, self.rows, self.cols);
         for i in 0..self.rows * self.cols {
-            sum.data[i] = self.data[i] + other.data[i];
+            sum.data[i] = sum.field.add(self.data[i], other.data[i]);
         }
         sum
     }
 }
 
-impl<T: FieldElement> AddAssign<Mat<T>> for Mat<T> {
+impl<'a, F: Eq + Field> AddAssign<Mat<'a, F>> for Mat<'a, F> {
     fn add_assign(&mut self, other: Self) {
         *self += &other;
     }
 }
 
-impl<T: FieldElement> AddAssign<&Mat<T>> for Mat<T> {
+impl<'a, F: Eq + Field> AddAssign<&Mat<'a, F>> for Mat<'a, F> {
     fn add_assign(&mut self, other: &Self) {
-        if self.rows != other.rows || self.cols != other.cols {
+        if self.field != other.field {
+            panic!("Cannot add matrices: fields don't match");
+        } else if self.rows != other.rows || self.cols != other.cols {
             panic!("Cannot add matrices: dimensions don't match");
         }
 
         for i in 0..self.rows * self.cols {
-            self.data[i] += other.data[i];
+            self.data[i] = self.field.add(self.data[i], other.data[i]);
         }
     }
 }
 
-impl<T: FieldElement> Sub for Mat<T> {
+impl<'a, F: Eq + Field> Sub for Mat<'a, F> {
     type Output = Self;
 
     fn sub(self, other: Self) -> Self::Output {
@@ -86,7 +104,7 @@ impl<T: FieldElement> Sub for Mat<T> {
     }
 }
 
-impl<T: FieldElement> Sub<&Mat<T>> for Mat<T> {
+impl<'a, F: Eq + Field> Sub<&Mat<'a, F>> for Mat<'a, F> {
     type Output = Self;
 
     fn sub(self, other: &Self) -> Self::Output {
@@ -94,49 +112,53 @@ impl<T: FieldElement> Sub<&Mat<T>> for Mat<T> {
     }
 }
 
-impl<T: FieldElement> Sub<Mat<T>> for &Mat<T> {
-    type Output = Mat<T>;
+impl<'a, F: Eq + Field> Sub<Mat<'a, F>> for &Mat<'a, F> {
+    type Output = Mat<'a, F>;
 
-    fn sub(self, other: Mat<T>) -> Self::Output {
+    fn sub(self, other: Mat<'a, F>) -> Self::Output {
         self - &other
     }
 }
 
-impl<T: FieldElement> Sub for &Mat<T> {
-    type Output = Mat<T>;
+impl<'a, F: Eq + Field> Sub for &Mat<'a, F> {
+    type Output = Mat<'a, F>;
 
     fn sub(self, other: Self) -> Self::Output {
-        if self.rows != other.rows || self.cols != other.cols {
+        if self.field != other.field {
+            panic!("Cannot substract matrices: fields don't match");
+        } else if self.rows != other.rows || self.cols != other.cols {
             panic!("Cannot substract matrices: dimensions don't match");
         }
 
-        let mut diff = Mat::zero(self.rows, self.cols);
+        let mut diff = Mat::zero(self.field, self.rows, self.cols);
         for i in 0..self.rows * self.cols {
-            diff.data[i] = self.data[i] - other.data[i];
+            diff.data[i] = diff.field.sub(self.data[i], other.data[i]);
         }
         diff
     }
 }
 
-impl<T: FieldElement> SubAssign<Mat<T>> for Mat<T> {
+impl<'a, F: Eq + Field> SubAssign<Mat<'a, F>> for Mat<'a, F> {
     fn sub_assign(&mut self, other: Self) {
         *self -= &other;
     }
 }
 
-impl<T: FieldElement> SubAssign<&Mat<T>> for Mat<T> {
+impl<'a, F: Eq + Field> SubAssign<&Mat<'a, F>> for Mat<'a, F> {
     fn sub_assign(&mut self, other: &Self) {
-        if self.rows != other.rows || self.cols != other.cols {
+        if self.field != other.field {
+            panic!("Cannot substract matrices: fields don't match");
+        } else if self.rows != other.rows || self.cols != other.cols {
             panic!("Cannot substract matrices: dimensions don't match");
         }
 
         for i in 0..self.rows * self.cols {
-            self.data[i] -= other.data[i];
+            self.data[i] = self.field.sub(self.data[i], other.data[i]);
         }
     }
 }
 
-impl<T: FieldElement> Mul for Mat<T> {
+impl<'a, F: Eq + Field> Mul for Mat<'a, F> {
     type Output = Self;
 
     fn mul(self, other: Self) -> Self::Output {
@@ -144,7 +166,7 @@ impl<T: FieldElement> Mul for Mat<T> {
     }
 }
 
-impl<T: FieldElement> Mul<&Mat<T>> for Mat<T> {
+impl<'a, F: Eq + Field> Mul<&Mat<'a, F>> for Mat<'a, F> {
     type Output = Self;
 
     fn mul(self, other: &Self) -> Self::Output {
@@ -152,27 +174,31 @@ impl<T: FieldElement> Mul<&Mat<T>> for Mat<T> {
     }
 }
 
-impl<T: FieldElement> Mul<Mat<T>> for &Mat<T> {
-    type Output = Mat<T>;
+impl<'a, F: Eq + Field> Mul<Mat<'a, F>> for &Mat<'a, F> {
+    type Output = Mat<'a, F>;
 
-    fn mul(self, other: Mat<T>) -> Self::Output {
+    fn mul(self, other: Mat<'a, F>) -> Self::Output {
         self * &other
     }
 }
 
-impl<T: FieldElement> Mul for &Mat<T> {
-    type Output = Mat<T>;
+impl<'a, F: Eq + Field> Mul for &Mat<'a, F> {
+    type Output = Mat<'a, F>;
 
     fn mul(self, other: Self) -> Self::Output {
-        if self.cols != other.rows {
+        if self.field != other.field {
+            panic!("Cannot multiply matrices: fields don't match");
+        } else if self.cols != other.rows {
             panic!("Cannot multiply matrices: dimensions don't match");
         }
 
-        let mut prod = Mat::zero(self.rows, other.cols);
+        let mut prod = Mat::zero(self.field, self.rows, other.cols);
         for i in 0..prod.rows {
             for j in 0..prod.cols {
                 for k in 0..self.cols {
-                    prod[(i, j)] += self[(i, k)] * other[(k, j)];
+                    prod[(i, j)] = prod
+                        .field
+                        .add(prod[(i, j)], prod.field.mul(self[(i, k)], other[(k, j)]));
                 }
             }
         }
@@ -180,31 +206,35 @@ impl<T: FieldElement> Mul for &Mat<T> {
     }
 }
 
-impl<T: FieldElement> MulAssign<Mat<T>> for Mat<T> {
+impl<'a, F: Eq + Field> MulAssign<Mat<'a, F>> for Mat<'a, F> {
     fn mul_assign(&mut self, other: Self) {
         *self *= &other;
     }
 }
 
-impl<T: FieldElement> MulAssign<&Mat<T>> for Mat<T> {
+impl<'a, F: Eq + Field> MulAssign<&Mat<'a, F>> for Mat<'a, F> {
     fn mul_assign(&mut self, other: &Self) {
-        if self.cols != other.rows || self.cols != other.cols {
+        if self.field != other.field {
+            panic!("Cannot multiply matrices: fields don't match");
+        } else if self.cols != other.rows || self.cols != other.cols {
             panic!("Cannot multiply matrices: dimensions don't match");
         }
 
         let tmp = self.clone();
         for i in 0..self.rows {
             for j in 0..self.cols {
-                self[(i, j)] = T::zero();
+                self[(i, j)] = self.field.zero();
                 for k in 0..tmp.cols {
-                    self[(i, j)] += tmp[(i, k)] * other[(k, j)];
+                    self[(i, j)] = self
+                        .field
+                        .add(self[(i, j)], self.field.mul(tmp[(i, k)], other[(k, j)]));
                 }
             }
         }
     }
 }
 
-impl<T: FieldElement> Neg for Mat<T> {
+impl<'a, F: Eq + Field> Neg for Mat<'a, F> {
     type Output = Self;
 
     fn neg(self) -> Self::Output {
@@ -212,34 +242,37 @@ impl<T: FieldElement> Neg for Mat<T> {
     }
 }
 
-impl<T: FieldElement> Neg for &Mat<T> {
-    type Output = Mat<T>;
+impl<'a, F: Eq + Field> Neg for &Mat<'a, F> {
+    type Output = Mat<'a, F>;
 
     fn neg(self) -> Self::Output {
-        let mut opp = Mat::zero(self.rows, self.cols);
+        let mut opp = Mat::zero(self.field, self.rows, self.cols);
 
         for i in 0..self.rows * self.cols {
-            opp.data[i] = -self.data[i];
+            opp.data[i] = self.field.neg(self.data[i]);
         }
         opp
     }
 }
 
-impl<T> Index<(usize, usize)> for Mat<T> {
-    type Output = T;
+impl<'a, F: Eq + Field> Index<(usize, usize)> for Mat<'a, F> {
+    type Output = F::FElt;
 
     fn index(&self, index: (usize, usize)) -> &Self::Output {
         &self.data[index.0 * self.cols + index.1]
     }
 }
 
-impl<T> IndexMut<(usize, usize)> for Mat<T> {
+impl<'a, F: Eq + Field> IndexMut<(usize, usize)> for Mat<'a, F> {
     fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {
         &mut self.data[index.0 * self.cols + index.1]
     }
 }
 
-impl<T: Debug + FiniteFieldElement> Debug for Mat<T> {
+impl<'a, F: Eq + FiniteField> Debug for Mat<'a, F>
+where
+    F::FElt: Debug,
+{
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "\n")?;
         for i in 0..self.rows {
@@ -247,25 +280,28 @@ impl<T: Debug + FiniteFieldElement> Debug for Mat<T> {
                 write!(
                     f,
                     "{:>width$}",
-                    format!("{:?} ", self[(i, j)]),
-                    width = 1 + T::characteristic_exponent() as usize
+                    self.field.to_string_debug(self[(i, j)]),
+                    width = 1 + self.field.characteristic_exponent() as usize
                 )?;
             }
             write!(
                 f,
-                "{:>width$}",
-                format!("{:?}\n", self[(i, self.cols - 1)]),
-                width = 1 + T::characteristic_exponent() as usize
+                "{:>width$}\n",
+                self.field.to_string_debug(self[(i, self.cols - 1)]),
+                width = 1 + self.field.characteristic_exponent() as usize
             )?;
         }
         Ok(())
     }
 }
 
-impl<T: Display + FiniteFieldElement> Display for Mat<T> {
+impl<'a, F: Eq + FiniteField> Display for Mat<'a, F>
+where
+    F::FElt: Display,
+{
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         // number of digits of order
-        let digits = ((32 - T::order().leading_zeros()) / 3 + 1) as usize;
+        let digits = ((32 - self.field.order().leading_zeros()) / 3 + 1) as usize;
 
         write!(f, "\n")?;
         for i in 0..self.rows {
@@ -273,34 +309,48 @@ impl<T: Display + FiniteFieldElement> Display for Mat<T> {
                 write!(
                     f,
                     "{:>width$} ",
-                    self[(i, j)].to_string(),
-                    width = if T::order() == 2 { 1 } else { 2 + digits }
+                    self.field.to_string_display(self[(i, j)]),
+                    width = if self.field.order() == 2 {
+                        1
+                    } else {
+                        2 + digits
+                    }
                 )?;
             }
             write!(
                 f,
                 "{:>width$}\n",
-                self[(i, self.cols - 1)].to_string(),
-                width = if T::order() == 2 { 1 } else { 2 + digits }
+                self.field.to_string_display(self[(i, self.cols - 1)]),
+                width = if self.field.order() == 2 {
+                    1
+                } else {
+                    2 + digits
+                }
             )?;
         }
         Ok(())
     }
 }
 
-impl<T: FieldElement> Mat<T> {
-    pub fn new(rows: usize, cols: usize, data: Vec<T>) -> Self {
+impl<'a, F: Eq + Field> Mat<'a, F> {
+    pub fn new(field: &'a F, rows: usize, cols: usize, data: Vec<F::FElt>) -> Self {
         if data.len() != rows * cols {
             panic!("Wrong dimensions");
         }
-        Mat { rows, cols, data }
-    }
-
-    pub fn zero(rows: usize, cols: usize) -> Self {
-        Mat {
+        Self {
+            field,
             rows,
             cols,
-            data: vec![T::zero(); rows * cols],
+            data,
+        }
+    }
+
+    pub fn zero(field: &'a F, rows: usize, cols: usize) -> Self {
+        Self {
+            field,
+            rows,
+            cols,
+            data: vec![field.zero(); rows * cols],
         }
     }
 
@@ -312,26 +362,27 @@ impl<T: FieldElement> Mat<T> {
         self.cols
     }
 
-    pub fn data(&self) -> Vec<T> {
+    pub fn data(&self) -> Vec<F::FElt> {
         self.data.clone()
     }
 
-    // pub fn set(&mut self, row: usize, col: usize, val: T) {
-    //     self[(row, col)] = val;
-    // }
+    //     // pub fn set(&mut self, row: usize, col: usize, val: T) {
+    //     //     self[(row, col)] = val;
+    //     // }
 
-    // pub fn get(&self, row: usize, col: usize) -> T {
-    //     self[(row, col)]
-    // }
+    //     // pub fn get(&self, row: usize, col: usize) -> T {
+    //     //     self[(row, col)]
+    //     // }
 
-    pub fn random(rng: &mut ThreadRng, n: usize, m: usize) -> Self
-    where
-        Standard: Distribution<T>,
+    pub fn random(rng: &mut ThreadRng, f: &'a F, n: usize, m: usize) -> Self
+// where
+    //     Standard: Distribution<F::FElt>,
     {
-        let mut mat = Mat::zero(n, m);
+        let mut mat = Mat::zero(f, n, m);
         for i in 0..n {
             for j in 0..m {
-                mat[(i, j)] = rng.gen();
+                // mat[(i, j)] = rng.gen();
+                mat[(i, j)] = f.random(rng);
             }
         }
         mat
@@ -350,9 +401,9 @@ impl<T: FieldElement> Mat<T> {
             // loop on rows
             let mut has_one = false;
             for j in 0..n {
-                if self[(i, j)] == T::zero() {
+                if self[(i, j)] == self.field.zero() {
                     continue;
-                } else if self[(i, j)] == T::one() {
+                } else if self[(i, j)] == self.field.one() {
                     if cols[j] == 1 {
                         return false;
                     }
@@ -370,8 +421,8 @@ impl<T: FieldElement> Mat<T> {
         true
     }
 
-    pub fn permutation_random(rng: &mut ThreadRng, n: usize) -> Self {
-        let mut mat = Mat::zero(n, n);
+    pub fn permutation_random(rng: &mut ThreadRng, f: &'a F, n: usize) -> Self {
+        let mut mat = Mat::zero(f, n, n);
         let mut cols = Vec::with_capacity(n); // remaining column indices
         for i in 0..n {
             cols.push(i);
@@ -380,7 +431,7 @@ impl<T: FieldElement> Mat<T> {
         for i in 0..n {
             // Draw a random column index j to set the '1' on this row
             let nbr = rng.gen_range(0, n - i);
-            mat[(i, cols[nbr])] = T::one();
+            mat[(i, cols[nbr])] = f.one();
 
             // Remove the index from the list by putting it at the end
             cols.swap(nbr, n - 1 - i);
@@ -388,16 +439,18 @@ impl<T: FieldElement> Mat<T> {
         mat
     }
 
-    pub fn identity(n: usize) -> Self {
-        let mut id = Mat::zero(n, n);
+    pub fn identity(f: &'a F, n: usize) -> Self {
+        let mut id = Mat::zero(f, n, n);
         for i in 0..n {
-            id[(i, i)] = T::one();
+            id[(i, i)] = f.one();
         }
         id
     }
 
     pub fn sum(&mut self, mat1: &Self, mat2: &Self) {
-        if self.rows != mat1.rows
+        if self.field != mat1.field || self.field != mat2.field {
+            panic!("Cannot add matrices: fields don't match");
+        } else if self.rows != mat1.rows
             || self.rows != mat2.rows
             || self.cols != mat1.cols
             || self.cols != mat2.cols
@@ -407,69 +460,73 @@ impl<T: FieldElement> Mat<T> {
 
         for i in 0..self.rows {
             for j in 0..self.cols {
-                self[(i, j)] = mat1[(i, j)] + mat2[(i, j)];
+                self[(i, j)] = self.field.add(mat1[(i, j)], mat2[(i, j)]);
             }
         }
     }
 
     pub fn prod(&mut self, mat1: &Self, mat2: &Self) {
-        if self.rows != mat1.rows || self.cols != mat2.cols || mat1.cols != mat2.rows {
+        if self.field != mat1.field || self.field != mat2.field {
+            panic!("Cannot add matrices: fields don't match");
+        } else if self.rows != mat1.rows || self.cols != mat2.cols || mat1.cols != mat2.rows {
             panic!("Cannot multiply matrices: dimensions don't match");
         }
 
         for i in 0..self.rows {
             for j in 0..self.cols {
-                let mut sum = T::zero();
+                let mut sum = self.field.zero();
                 for k in 0..mat1.cols {
-                    sum += mat1[(i, k)] * mat2[(k, j)];
+                    sum = self
+                        .field
+                        .add(sum, self.field.mul(mat1[(i, k)], mat2[(k, j)]));
                 }
                 self[(i, j)] = sum;
             }
         }
     }
 
-    // Generates a random row vector of length n and weight t
-    pub fn weighted_vector_random(rng: &mut ThreadRng, n: usize, t: usize) -> Self
-    where
-        Standard: Distribution<T>,
-    {
-        let mut vec = Mat::zero(1, n);
-        let mut cols = Vec::with_capacity(n); // remaining column indices
-        for i in 0..n {
-            cols.push(i);
-        }
+    //     // Generates a random row vector of length n and weight t
+    //     pub fn weighted_vector_random(rng: &mut ThreadRng, n: usize, t: usize) -> Self
+    //     where
+    //         Standard: Distribution<T>,
+    //     {
+    //         let mut vec = Mat::zero(1, n);
+    //         let mut cols = Vec::with_capacity(n); // remaining column indices
+    //         for i in 0..n {
+    //             cols.push(i);
+    //         }
 
-        for i in 0..t {
-            // Draw a random column index
-            let nbr = rng.gen_range(0, n - i);
-            let mut elt = rng.gen();
-            while elt == T::zero() {
-                elt = rng.gen();
-            }
-            vec[(0, cols[nbr])] = elt;
+    //         for i in 0..t {
+    //             // Draw a random column index
+    //             let nbr = rng.gen_range(0, n - i);
+    //             let mut elt = rng.gen();
+    //             while elt == T::zero() {
+    //                 elt = rng.gen();
+    //             }
+    //             vec[(0, cols[nbr])] = elt;
 
-            // Remove the index from the list by putting it at the end
-            cols.swap(nbr, n - 1 - i);
-        }
-        vec
-    }
+    //             // Remove the index from the list by putting it at the end
+    //             cols.swap(nbr, n - 1 - i);
+    //         }
+    //         vec
+    //     }
 
-    pub fn weight(&self) -> Option<usize> {
-        if self.rows != 1 {
-            return None;
-        }
+    //     pub fn weight(&self) -> Option<usize> {
+    //         if self.rows != 1 {
+    //             return None;
+    //         }
 
-        let mut cnt = 0;
-        for j in 0..self.cols {
-            if self[(0, j)] != T::zero() {
-                cnt += 1;
-            }
-        }
-        Some(cnt)
-    }
+    //         let mut cnt = 0;
+    //         for j in 0..self.cols {
+    //             if self[(0, j)] != T::zero() {
+    //                 cnt += 1;
+    //             }
+    //         }
+    //         Some(cnt)
+    //     }
 
     pub fn transpose(&self) -> Self {
-        let mut t = Mat::zero(self.cols, self.rows);
+        let mut t = Mat::zero(self.field, self.cols, self.rows);
         for i in 0..t.rows {
             for j in 0..t.cols {
                 t[(i, j)] = self[(j, i)];
@@ -479,37 +536,37 @@ impl<T: FieldElement> Mat<T> {
     }
 }
 
-impl<T: CharacteristicTwo> Mat<T> {
-    pub fn from(a: &Mat<F2>) -> Self {
-        let mut b = Mat::zero(a.rows(), a.cols());
-        for i in 0..a.rows() {
-            for j in 0..a.cols() {
-                b[(i, j)] = CharacteristicTwo::from(a[(i, j)]);
-            }
-        }
-        b
-    }
-}
+// impl<T: CharacteristicTwo> Mat<'a, F> {
+//     pub fn from(a: &Mat<F2>) -> Self {
+//         let mut b = Mat::zero(a.rows(), a.cols());
+//         for i in 0..a.rows() {
+//             for j in 0..a.cols() {
+//                 b[(i, j)] = CharacteristicTwo::from(a[(i, j)]);
+//             }
+//         }
+//         b
+//     }
+// }
 
-impl<T: CharacteristicTwo + FiniteFieldElement> Mat<T> {
-    pub fn binary_form(&self) -> Mat<F2> {
-        let m = T::characteristic_exponent();
-        let mut bin = Mat::zero(m as usize * self.rows, self.cols);
-        for j in 0..self.cols {
-            for i in 0..self.rows {
-                for k in 0..m as usize {
-                    bin[(m as usize * i + k, j)] =
-                        match (self[(i, j)].to_canonical_basis() >> k) & 1 {
-                            0 => F2::zero(),
-                            1 => F2::one(),
-                            _ => panic!("Unexpected value"),
-                        }
-                }
-            }
-        }
-        bin
-    }
-}
+// impl<T: CharacteristicTwo + FiniteFieldElement> Mat<'a, F> {
+//     pub fn binary_form(&self) -> Mat<F2> {
+//         let m = T::characteristic_exponent();
+//         let mut bin = Mat::zero(m as usize * self.rows, self.cols);
+//         for j in 0..self.cols {
+//             for i in 0..self.rows {
+//                 for k in 0..m as usize {
+//                     bin[(m as usize * i + k, j)] =
+//                         match (self[(i, j)].to_canonical_basis() >> k) & 1 {
+//                             0 => F2::zero(),
+//                             1 => F2::one(),
+//                             _ => panic!("Unexpected value"),
+//                         }
+//                 }
+//             }
+//         }
+//         bin
+//     }
+// }
 
 mod gauss;
 mod rowvec;
