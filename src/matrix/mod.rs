@@ -269,10 +269,7 @@ impl<'a, F: Eq + Field> IndexMut<(usize, usize)> for Mat<'a, F> {
     }
 }
 
-impl<'a, F: Eq + FiniteField> Debug for Mat<'a, F>
-where
-    F::FElt: Debug,
-{
+impl<'a, F: Eq + FiniteField> Debug for Mat<'a, F> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "\n")?;
         for i in 0..self.rows {
@@ -295,10 +292,7 @@ where
     }
 }
 
-impl<'a, F: Eq + FiniteField> Display for Mat<'a, F>
-where
-    F::FElt: Display,
-{
+impl<'a, F: Eq + FiniteField> Display for Mat<'a, F> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         // number of digits of order
         let digits = ((32 - self.field.order().leading_zeros()) / 3 + 1) as usize;
@@ -378,7 +372,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
 // where
     //     Standard: Distribution<F::FElt>,
     {
-        let mut mat = Mat::zero(f, n, m);
+        let mut mat = Self::zero(f, n, m);
         for i in 0..n {
             for j in 0..m {
                 // mat[(i, j)] = rng.gen();
@@ -422,7 +416,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
     }
 
     pub fn permutation_random(rng: &mut ThreadRng, f: &'a F, n: usize) -> Self {
-        let mut mat = Mat::zero(f, n, n);
+        let mut mat = Self::zero(f, n, n);
         let mut cols = Vec::with_capacity(n); // remaining column indices
         for i in 0..n {
             cols.push(i);
@@ -440,7 +434,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
     }
 
     pub fn identity(f: &'a F, n: usize) -> Self {
-        let mut id = Mat::zero(f, n, n);
+        let mut id = Self::zero(f, n, n);
         for i in 0..n {
             id[(i, i)] = f.one();
         }
@@ -490,7 +484,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
     //     where
     //         Standard: Distribution<T>,
     //     {
-    //         let mut vec = Mat::zero(1, n);
+    //         let mut vec = Self::zero(1, n);
     //         let mut cols = Vec::with_capacity(n); // remaining column indices
     //         for i in 0..n {
     //             cols.push(i);
@@ -526,7 +520,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
     //     }
 
     pub fn transpose(&self) -> Self {
-        let mut t = Mat::zero(self.field, self.cols, self.rows);
+        let mut t = Self::zero(self.field, self.cols, self.rows);
         for i in 0..t.rows {
             for j in 0..t.cols {
                 t[(i, j)] = self[(j, i)];
