@@ -1,13 +1,11 @@
-// use crate::finite_field::FieldElement;
-// use super::{CharacteristicTwo, FieldElement, FiniteFieldElement, Mat, F2};
-
 use rand::{rngs::ThreadRng, Rng};
 use std::{
     fmt::{Debug, Display, Formatter, Result},
     ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
-use super::{Field, FiniteField, Mat};
+use super::Mat;
+use crate::finite_field::{CharacteristicTwo, Field, FiniteField, F2};
 
 #[derive(Eq, PartialEq)]
 pub struct RowVec<'a, F: Eq + Field>(Mat<'a, F>);
@@ -134,18 +132,6 @@ impl<'a, F: Eq + Field> Mul<&Mat<'a, F>> for &RowVec<'a, F> {
     type Output = RowVec<'a, F>;
 
     fn mul(self, other: &Mat<'a, F>) -> Self::Output {
-        //     if self.cols() != other.rows() {
-        //         panic!("Cannot multiply matrices: dimensions don't match");
-        //     }
-
-        //     let mut prod = RowVec::zero(other.cols());
-        //     for j in 0..prod.cols() {
-        //         prod[j] = self.field.zero();
-        //         for k in 0..self.cols() {
-        //             prod[j] += self[k] * other[(k, j)];
-        //         }
-        //     }
-        //     prod
         RowVec(&self.0 * other)
     }
 }
@@ -158,20 +144,7 @@ impl<'a, F: Eq + Field> MulAssign<Mat<'a, F>> for RowVec<'a, F> {
 
 impl<'a, F: Eq + Field> MulAssign<&Mat<'a, F>> for RowVec<'a, F> {
     fn mul_assign(&mut self, other: &Mat<'a, F>) {
-        if self.cols() != other.rows() || self.cols() != other.cols() {
-            panic!("Cannot multiply matrices: dimensions don't match");
-        }
-
-        let tmp = self.clone();
-        for j in 0..self.cols() {
-            self[j] = self.0.field.zero();
-            for k in 0..tmp.cols() {
-                self[j] = self
-                    .0
-                    .field
-                    .add(self[j], self.0.field.mul(tmp[k], other[(k, j)]));
-            }
-        }
+        self.0 *= other;
     }
 }
 
@@ -205,19 +178,13 @@ impl<'a, F: Eq + Field> IndexMut<usize> for RowVec<'a, F> {
     }
 }
 
-impl<'a, F: Eq + FiniteField> Debug for RowVec<'a, F>
-where
-    F::FElt: Debug,
-{
+impl<'a, F: Eq + FiniteField> Debug for RowVec<'a, F> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{:?}", self.0)
     }
 }
 
-impl<'a, F: Eq + FiniteField> Display for RowVec<'a, F>
-where
-    F::FElt: Display,
-{
+impl<'a, F: Eq + FiniteField> Display for RowVec<'a, F> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{}", self.0)
     }
@@ -233,6 +200,10 @@ impl<'a, F: Eq + Field> RowVec<'a, F> {
 
     pub fn zero(field: &'a F, cols: usize) -> Self {
         RowVec(Mat::zero(field, 1, cols))
+    }
+
+    pub fn field(&self) -> &'a F {
+        self.0.field()
     }
 
     pub fn rows(&self) -> usize {
@@ -258,11 +229,6 @@ impl<'a, F: Eq + Field> RowVec<'a, F> {
     }
 
     pub fn random(rng: &mut ThreadRng, f: &'a F, n: usize) -> Self {
-        // let mut vec = RowVec::zero(n);
-        // for i in 0..n {
-        //     vec[i] = rng.gen();
-        // }
-        // vec
         RowVec(Mat::random(rng, f, 1, n))
     }
 
@@ -276,11 +242,9 @@ impl<'a, F: Eq + Field> RowVec<'a, F> {
         for i in 0..w {
             // Draw a random column index
             let nbr = rng.gen_range(0, n - i);
-            // let mut elt = rng.gen();
-            let mut elt = f.random(rng);
+            let mut elt = f.random_element(rng);
             while elt == f.zero() {
-                // elt = rng.gen();
-                elt = f.random(rng);
+                elt = f.random_element(rng);
             }
             vec[cols[nbr]] = elt;
 
@@ -290,25 +254,30 @@ impl<'a, F: Eq + Field> RowVec<'a, F> {
         vec
     }
 
+    // TODO: Is this function useful ?
     pub fn sum(&mut self, vec1: &Self, vec2: &Self) {
+        let f = self.field();
+        if f != vec1.field() || f != vec2.field() {
+            panic!("Cannot add vectors: fields don't match");
+        }
         if self.rows() != vec1.rows() || self.rows() != vec2.rows() {
             panic!("Cannot add vectors: dimensions don't match");
         }
-
         self.0.sum(&vec1.0, &vec2.0);
     }
 
-    // pub fn from(a: &RowVec<F2>) -> Self
-    // where
-    //     T: CharacteristicTwo,
-    // {
-    //     RowVec(Mat::from(&a.0))
-    // }
+    pub fn from<'b>(f: &'a F, vec_f2: &RowVec<'b, F2>) -> Self
+    where
+        F: CharacteristicTwo,
+    {
+        RowVec(Mat::from(f, &vec_f2.0))
+    }
 
     pub fn transpose(&self) -> Mat<'a, F> {
         self.0.transpose()
     }
 
+    // TODO: Is this function useful ?
     // pub fn transpose(&self) -> ColVec<T> {
     //     ColVec::new(self.cols(), self.data())
     // }

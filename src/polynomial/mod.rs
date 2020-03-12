@@ -10,6 +10,7 @@ use std::{
 use crate::finite_field::Field;
 
 // #[derive(Clone, Eq, PartialEq)]
+#[derive(Eq, PartialEq)]
 pub struct Poly<'a, F: Eq + Field> {
     field: &'a F,
     data: Vec<F::FElt>,
@@ -306,6 +307,28 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
         Self { field, data: v }
     }
 
+    pub fn support(f: &'a F, support: &[usize]) -> Self {
+        if support.is_empty() {
+            panic!("Support cannot be empty");
+        }
+
+        let mut vec = vec![f.zero(); support[support.len() - 1]];
+        for &i in support.iter() {
+            if i >= vec.len() {
+                vec.resize(i + 1, f.zero());
+            }
+            vec[i] = f.one();
+        }
+        Self {
+            field: f,
+            data: vec,
+        }
+    }
+
+    pub fn field(&self) -> &'a F {
+        self.field
+    }
+    
     pub fn degree(&self) -> usize {
         let mut degree = self.data.len() - 1;
         while self[degree] == self.field.zero() && degree != 0 {
@@ -325,10 +348,10 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
     pub fn random(rng: &mut ThreadRng, f: &'a F, degree: usize) -> Self {
         let mut p = Self::zero(f, degree + 1);
         for i in 0..degree {
-            p[i] = f.random(rng);
+            p[i] = f.random_element(rng);
         }
         while p[degree] == f.zero() {
-            p[degree] = f.random(rng);
+            p[degree] = f.random_element(rng);
         }
         p
     }
@@ -483,4 +506,4 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
     }
 }
 
-// pub mod characteristic_two;
+pub mod characteristic_two;

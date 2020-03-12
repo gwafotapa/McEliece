@@ -1,48 +1,28 @@
 use log::info;
 
-use rand::{
-    distributions::{Distribution, Standard},
-    rngs::ThreadRng,
-    Rng,
-};
+use rand::rngs::ThreadRng;
 
-use super::Poly;
-use crate::finite_field::{CharacteristicTwo, FiniteFieldElement};
+use super::{Field, Poly};
+use crate::finite_field::{CharacteristicTwo, FiniteField};
 
-impl<T: CharacteristicTwo + FiniteFieldElement> Poly<T> {
-    // TODO: Should I add another constructor s.t. coefficients might not be 1 ?
-    pub fn support(support: &[usize]) -> Poly<T> {
-        if support.is_empty() {
-            panic!("Support cannot be empty");
-        }
-
-        let mut vec = vec![T::zero(); support[support.len() - 1]];
-        for &i in support.iter() {
-            if i >= vec.len() {
-                vec.resize(i + 1, T::zero());
-            }
-            vec[i] = T::one();
-        }
-        Poly(vec)
-    }
-
-    pub fn random_irreducible(rng: &mut ThreadRng, degree: usize) -> Self
+impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
+    pub fn random_irreducible(rng: &mut ThreadRng, f: &'a F, degree: usize) -> Self
     where
-        Standard: Distribution<T>,
+        F: FiniteField,
     {
-        let mut p = Poly::zero(degree + 1);
+        let mut p = Self::zero(f, degree + 1);
         for i in 0..degree {
-            p[i] = rng.gen();
+            p[i] = f.random_element(rng);
         }
-        while p[degree] == T::zero() {
-            p[degree] = rng.gen();
+        while p[degree] == f.zero() {
+            p[degree] = f.random_element(rng);
         }
         while !p.is_irreducible() {
             for i in 0..degree {
-                p[i] = rng.gen();
+                p[i] = f.random_element(rng);
             }
-            while p[degree] == T::zero() {
-                p[degree] = rng.gen();
+            while p[degree] == f.zero() {
+                p[degree] = f.random_element(rng);
             }
         }
         p
@@ -53,20 +33,27 @@ impl<T: CharacteristicTwo + FiniteFieldElement> Poly<T> {
         // if T::one() + T::one() != T::zero() {
         //     panic!("Square root is only supported for characteristic 2");
         // }
+        let f = self.field;
         let t = self.degree();
-        self.0.resize(2 * t + 1, T::zero());
+        self.data.resize(2 * t + 1, f.zero());
 
         for i in (1..t + 1).rev() {
-            self[2 * i] = self[i] * self[i];
-            self[2 * i - 1] = T::zero();
+            self[2 * i] = f.mul(self[i], self[i]);
+            self[2 * i - 1] = f.zero();
         }
-        self[0] = self[0] * self[0];
+        self[0] = f.mul(self[0], self[0]);
     }
 
     // characteristic 2 only
     // finite field order is 2^m
-    pub fn square_root_modulo(&self, modulus: &Self) -> Self {
-        let m = T::characteristic_exponent();
+    pub fn square_root_modulo(&self, modulus: &Self) -> Self
+    where
+        F: FiniteField,
+    {
+        if self.field != modulus.field {
+            panic!("Cannot compute square root modulo: fields don't match");
+        }
+        let m = self.field.characteristic_exponent();
         // if T::one() + T::one() != T::zero() {
         //     panic!("Square root is only supported for characteristic 2");
         // }
@@ -84,8 +71,14 @@ impl<T: CharacteristicTwo + FiniteFieldElement> Poly<T> {
     // TODO: shouldn't I simply use euclid algo that also works for odd characteristics
     // characteristic 2 only
     // finite field order is 2^m
-    pub fn inverse_modulo(&self, modulus: &Self) -> Self {
-        let m = T::characteristic_exponent();
+    pub fn inverse_modulo(&self, modulus: &Self) -> Self
+    where
+        F: FiniteField,
+    {
+        if self.field != modulus.field {
+            panic!("Cannot compute inverse modulo: fields don't match");
+        }
+        let m = self.field.characteristic_exponent();
         if self.is_zero() {
             panic!("The null polynom has no inverse");
         }
@@ -112,10 +105,13 @@ impl<T: CharacteristicTwo + FiniteFieldElement> Poly<T> {
 
     // Computes p^n mod (modulus)
     pub fn pow_modulo(&mut self, mut n: u32, modulus: &Self) {
+        if self.field != modulus.field {
+            panic!("Cannot compute power modulo: fields don't match");
+        }
         let mut tmp = self.clone();
         tmp.modulo(modulus);
-        self.0.truncate(1);
-        self[0] = T::one();
+        self.data.truncate(1);
+        self[0] = self.field.one();
         if n & 1 == 1 {
             *self *= &tmp;
         }
@@ -131,7 +127,10 @@ impl<T: CharacteristicTwo + FiniteFieldElement> Poly<T> {
         }
     }
 
-    pub fn is_irreducible(&self) -> bool {
+    pub fn is_irreducible(&self) -> bool
+    where
+        F: FiniteField,
+    {
         let n = self.degree() as u32;
         if n == 0 {
             return false;
@@ -139,7 +138,8 @@ impl<T: CharacteristicTwo + FiniteFieldElement> Poly<T> {
 
         // let q = T::characteristic();
         // let m = T::characteristic_exponent();
-        let qm = T::order();
+        let f = self.field;
+        let qm = f.order();
         let mut n_prime_factors = trial_division(n);
         n_prime_factors.dedup();
         info!("decomposition of n in prime factors: {:?}", n_prime_factors);
@@ -155,25 +155,25 @@ impl<T: CharacteristicTwo + FiniteFieldElement> Poly<T> {
         );
 
         for i in 0..k {
-            // let mut xqn_x = Poly::x_n(q.pow(n_div_primes[i]) as usize);
-            let mut h = Poly::x_n(1);
+            // let mut xqn_x = Self::x_n(q.pow(n_div_primes[i]) as usize);
+            let mut h = Self::x_n(f, 1);
             for _j in 0..n_div_primes[i] {
                 h.pow_modulo(qm, self);
             }
-            h -= &Self::x_n(1);
-            let g = Poly::gcd(self, &h);
+            h -= &Self::x_n(f, 1);
+            let g = Self::gcd(self, &h);
             if g.degree() != 0 {
                 // info!("{:?}", g);
                 return false;
             }
         }
-        let mut g = Poly::x_n(1);
+        let mut g = Self::x_n(f, 1);
         // info!("{:?}", g);
         for _i in 0..n {
             g.pow_modulo(qm, self);
             // info!("{:?}", g);
         }
-        g -= &Poly::x_n(1);
+        g -= &Self::x_n(f, 1);
         // info!("{:?}", g);
         g.modulo(self);
         // info!("{:?}", g);
@@ -221,14 +221,18 @@ pub fn trial_division(mut n: u32) -> Vec<u32> {
 mod tests {
     use super::*;
 
-    use crate::finite_field::{FiniteFieldElement, F1024, F2};
+    use crate::finite_field::{F2, F2m};
+    // use crate::finite_field::{FiniteFieldElement, F1024, F2};
 
     // #[test]
     // fn print() {
-    //     let p: Poly<F2> = Poly::support(&[0, 4, 5]);
+    //     env_logger::init();
+
+    //     let f2 = &F2 {};
+    //     let p = Poly::support(f, &[0, 4, 5]);
     //     println!("{:?}", p);
 
-    //     let q: Poly<F2> = Poly::support(&[2, 3]);
+    //     let q = Poly::support(f, &[2, 3]);
     //     println!("{:?}", q);
     // }
 
@@ -236,26 +240,29 @@ mod tests {
     fn is_irreducible() {
         env_logger::init();
 
-        let zero: Poly<F2> = Poly::zero(1);
+        let f2 = &F2 {};
+        let f1024 = &F2m::generate(1024);
+        
+        let zero = Poly::zero(f2, 1);
         assert!(!zero.is_irreducible());
 
-        let mut constant_poly: Poly<F1024> = Poly::zero(1);
-        constant_poly[0] = F1024::exp(533);
+        let mut constant_poly = Poly::zero(f1024, 1);
+        constant_poly[0] = f1024.exp(533);
         assert!(!constant_poly.is_irreducible());
 
-        let p: Poly<F2> = Poly::support(&[0, 1, 2]);
+        let p = Poly::support(f2, &[0, 1, 2]);
         assert!(p.is_irreducible());
 
-        let p: Poly<F2> = Poly::support(&[0, 2]);
+        let p = Poly::support(f2, &[0, 2]);
         assert!(!p.is_irreducible());
 
-        let p: Poly<F1024> = Poly::support(&[0, 2, 11]);
+        let p = Poly::support(f1024, &[0, 2, 11]);
         assert!(p.is_irreducible());
 
-        let p: Poly<F2> = Poly::support(&[0, 3, 10]);
+        let p = Poly::support(f2, &[0, 3, 10]);
         assert!(p.is_irreducible());
 
-        let p: Poly<F1024> = Poly::support(&[0, 3, 10]);
+        let p = Poly::support(f1024, &[0, 3, 10]);
         assert!(!p.is_irreducible());
     }
 }

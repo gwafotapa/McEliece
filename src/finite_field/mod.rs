@@ -1,33 +1,12 @@
-// use rand::{rngs::ThreadRng, Rng};
 use rand::rngs::ThreadRng;
-// use rand::{
-//     distributions::{Distribution, Standard},
-//     rngs::ThreadRng,
-//     Rng,
-// };
-use std::fmt::{Formatter, Result};
-//     ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign},
-// };
 
-pub use ff2::{F2Elt, F2};
-pub use ff2m::F2m;
-pub use ff7::F7;
+pub use f2::F2;
+pub use f2m::F2m;
+pub use f7::F7;
 
-pub mod ff2;
-pub mod ff2m;
-pub mod ff7;
-
-// pub trait FiniteField: Field {
-//     fn characteristic_exponent() -> u32;
-//     fn order() -> u32 {
-//         Self::characteristic().pow(Self::characteristic_exponent())
-//     }
-//     // fn exp(n: u32) -> Self;
-//     // fn log(self) -> Option<u32>;
-//     // fn to_canonical_basis(self) -> u32;
-// }
-
-// type F2mElt = u32; // Finite Field of characteristic 2 Element
+pub mod f2;
+pub mod f2m;
+pub mod f7;
 
 pub trait Field {
     type FElt: Copy + Eq; // Field Element
@@ -40,9 +19,9 @@ pub trait Field {
     fn mul(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt;
     fn neg(&self, a: Self::FElt) -> Self::FElt;
     fn inv(&self, a: Self::FElt) -> Option<Self::FElt>;
-    fn random(&self, rng: &mut ThreadRng) -> Self::FElt;
-    fn to_string_debug(&self, a: Self::FElt) -> String;
-    fn to_string_display(&self, a: Self::FElt) -> String;
+    fn random_element(&self, rng: &mut ThreadRng) -> Self::FElt;
+    fn to_string_debug(&self, a: Self::FElt) -> String; // Element to string (debug format)
+    fn to_string_display(&self, a: Self::FElt) -> String; // Element to string (display format)
 }
 
 pub trait FiniteField: Field {
@@ -54,11 +33,18 @@ pub trait FiniteField: Field {
     fn log(&self, a: Self::FElt) -> Option<u32>;
 }
 
-// pub trait CharacteristicTwo: FieldElement {
-//     fn from(elt: F2) -> Self {
-//         match elt {
-//             F2::Zero => Self::zero(),
-//             F2::One => Self::one(),
-//         }
-//     }
-// }
+pub trait CharacteristicTwo: Field {
+    // "Converts" the 0 and 1 of F2 to the 0 and 1 of an extension of F2
+    fn from(&self, f2: &F2, elt: <F2 as Field>::FElt) -> Self::FElt {
+        if elt == f2.zero() {
+            self.zero()
+        } else {
+            self.one()
+        }
+    }
+}
+
+pub trait F2FiniteExtension: CharacteristicTwo + FiniteField {
+    // The u32 binary representation matches the decomposition of 'a' on the canonical basis
+    fn project_on_canonical_basis(&self, a: Self::FElt) -> u32;
+}

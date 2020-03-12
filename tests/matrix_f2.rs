@@ -10,7 +10,7 @@ fn matrix_f2_new() {
     mat[(2, 2)] = 1;
     mat[(1, 0)] = 1;
     mat[(2, 3)] = 1;
-    let v: Vec<F2Elt> = vec![0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1];
+    let v: Vec<<F2 as Field>::FElt> = vec![0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1];
 
     assert_eq!(mat.rows(), 3);
     assert_eq!(mat.cols(), 4);
