@@ -11,6 +11,7 @@ pub mod f7;
 pub trait Field {
     type FElt: Copy + Eq; // Field Element
 
+    fn generate(order: u32) -> Self;
     fn zero(&self) -> Self::FElt;
     fn one(&self) -> Self::FElt;
     fn characteristic(&self) -> u32;
@@ -20,8 +21,6 @@ pub trait Field {
     fn neg(&self, a: Self::FElt) -> Self::FElt;
     fn inv(&self, a: Self::FElt) -> Option<Self::FElt>;
     fn random_element(&self, rng: &mut ThreadRng) -> Self::FElt;
-    fn to_string_debug(&self, a: Self::FElt) -> String; // Element to string (debug format)
-    fn to_string_display(&self, a: Self::FElt) -> String; // Element to string (display format)
 }
 
 pub trait FiniteField: Field {
@@ -31,6 +30,17 @@ pub trait FiniteField: Field {
     }
     fn exp(&self, n: u32) -> Self::FElt;
     fn log(&self, a: Self::FElt) -> Option<u32>;
+    fn elt_to_str(&self, a: Self::FElt) -> String {
+        if a == self.zero() {
+            "0".to_owned()
+        } else if a == self.one() {
+            "1".to_owned()
+        } else if self.log(a) == Some(1) {
+            "a".to_owned()
+        } else {
+            format!("a^{}", self.log(a).unwrap())
+        }
+    }
 }
 
 pub trait CharacteristicTwo: Field {
@@ -46,5 +56,9 @@ pub trait CharacteristicTwo: Field {
 
 pub trait F2FiniteExtension: CharacteristicTwo + FiniteField {
     // The u32 binary representation matches the decomposition of 'a' on the canonical basis
-    fn project_on_canonical_basis(&self, a: Self::FElt) -> u32;
+    fn elt_to_u32(&self, a: Self::FElt) -> u32;
+    fn u32_to_elt(&self, n: u32) -> Self::FElt;
+    // fn elt_to_hexstr(&self, a: Self::FElt) -> String {
+    //     format!("{:x}", self.elt_to_u32(a))
+    // }
 }

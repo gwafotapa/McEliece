@@ -1,345 +1,223 @@
-// // Try rr
+// use log::info;
 
-// use std::{
-//     env,
-//     fs::OpenOptions,
-//     io::{Seek, SeekFrom, Write},
-// };
+use std::{
+    env,
+    fs::File,
+    io::{BufRead, BufReader, Read, Write},
+};
 
-// mod finite_field;
-// // mod matrix;
-// mod polynomial;
-// // mod goppa;
+use crypto::{PublicKey, SecretKey};
+use finite_field::{F2m, F2, Field};
+use goppa::Goppa;
+use matrix::{Mat, RowVec};
+// use polynomial::Poly;
 
-// fn main() {
-//     let args: Vec<String> = env::args().collect();
+mod crypto;
+mod finite_field;
+mod goppa;
+mod matrix;
+mod polynomial;
 
-//     println!("{}", &args[0]);
+const GOPPA_M: u32 = 5; // The underlying field of the code is F2^GOPPA_M
+const GOPPA_N: u32 = 1 << GOPPA_M; // Code length
+const GOPPA_T: u32 = 4; // Code correction capacity i.e. degree of the goppa polynomial
 
-//     if args.len() != 2 {
-//         panic!("One argument expected (the field order)");
-//     }
+// type PublicKey<'a> = (Mat<'a, F2>, u32);
+// type SecretKey<'a, 'b> = (Mat<'a, F2>, Goppa<'b, F2m>, Mat<'a, F2>);
 
-//     let order = match u32::from_str_radix(&args[1], 10) {
-//         Ok(o) => o,
-//         Err(e) => panic!("Cannot read argument: {}", e),
-//     };
-//     let mut prime_factors = polynomial::characteristic_two::trial_division(order);
-//     let m = prime_factors.len();
-//     prime_factors.dedup();
-//     if prime_factors.len() != 1 {
-//         panic!("Order must be a power of a prime");
-//     }
-//     let p = prime_factors[0];
-//     if p != 2 {
-//         panic!("Only characteristic 2 is supported");
-//     }
-//     if m < 2 || m > 17 {
-//         panic!("Field order must be between 2^2 and 2^17");
-//     }
-//     println!("{}^{}", p, m);
+fn save_public_key(pk: &PublicKey, file_name: &str) {
+    println!("{}\n", pk.sgp);
+    let mut f = File::create(file_name).expect("Unable to create file");
+    // f.write_all(format!("{:02x}", pk.sgp.rows()).as_bytes());
+    // f.write_all(format!("{:02x}", pk.sgp.cols()).as_bytes());
+    // for i in 0..pk.sgp.rows() {
+    //     for j in (0..pk.sgp.cols()).step_by(8) {
+    //         let mut tmp = 0;
+    //         for k in 0..8 {
+    //             tmp |= pk.sgp[(i, j + k)] << 7 - k;
+    //         }
+    //         f.write_all(format!("{:02x}", tmp).as_bytes());
+    //     }
+    // }
+    f.write_all(pk.sgp.to_hex_string().as_bytes());
+    f.write_all(format!("\n{:02x}\n", pk.t).as_bytes());
+}
 
-//     let file_name = "src/finite_field_".to_owned() + &args[1] + ".rs";
+fn save_secret_key(sk: &SecretKey, file_name: &str) {
+    let mut f = File::create(file_name).expect("Unable to create file");
+    f.write_all((sk.s.to_hex_string() + "\n").as_bytes());
+    f.write_all((sk.goppa.to_hex_string() + "\n").as_bytes());
+    f.write_all((sk.p.to_hex_string() + "\n").as_bytes());
+}
 
-//     let mut file = match OpenOptions::new()
-//         .write(true)
-//         .create_new(true)
-//         .open(file_name)
-//     {
-//         Ok(f) => f,
-//         Err(e) => panic!("Cannot create file: {}", e),
-//     };
+fn load_public_key<'a>(file_name: &str, f2: &'a F2) -> PublicKey<'a> {
+    let mut f = File::open(file_name).expect("Unable to open file");
+    let mut f = BufReader::new(f);
+    // let mut buf = String::new();
+    // let mut lines = f.lines();
+    // f.read_to_string(&mut data).expect("Unable to read data");
+    // buf.pop(); // Remove terminating newline character
+    let mut line = String::new();
+    f.read_line(&mut line).expect("Unable to read the first line");
+    line.pop(); // Remove terminating newline
+    let sgp = Mat::from_hex_string(&line, f2);
+                                                                         // let mut data = hex::decode(data).expect("Hex decoding failed");
+                                                                         // let t = data.pop().unwrap() as u32;
+                                                                         // let rows = data[0];
+                                                                         // let cols = data[1];
+                                                                         // println!("rows: {}\ncols: {}\n", rows, cols);
+                                                                         // let mut sgp = Mat::zero(f2, rows.into(), cols as usize); // TODO: into() or as ?
+                                                                         // for i in 2..data.len() {
+                                                                         //     for j in 0..8 {
+                                                                         //         let bit_index = 8 * (i - 2) + j;
+                                                                         //         let row = bit_index / cols as usize;
+                                                                         //         let col = bit_index % cols as usize;
+                                                                         //         sgp[(row, col)] = ((data[i] >> 7 - j) & 1).into();
+                                                                         //     }
+                                                                         // }
+    println!("{}\n", sgp);
+    // f.readline(&mut buf).expect("Cannot read second line");
+    // buf.pop();
+    line.clear();
+    f.read_line(&mut line).expect("Unable to read the second line");
+    line.pop(); // Remove terminating newline
+    let t = u32::from_str_radix(&line, 16).unwrap();
+    PublicKey { sgp, t }
+}
 
-//     let content =
-//         "use crate::finite_field::{CharacteristicTwo, FieldElement, FiniteFieldElement, Inv};
+fn load_finite_field(file_name: &str) -> F2m {
+    let mut f = File::open(file_name).expect("Unable to open file"); // TODO: return result and use ?
+    let mut f = BufReader::new(f);
+    let mut line = String::new();
+    f.read_line(&mut line).expect("Unable to read the first line");
+    line.clear();
+    f.read_line(&mut line).expect("Unable to read the second line");
+    let order = u32::from_str_radix(line.split('#').next().unwrap(), 16).unwrap();
+    let f = F2m::generate(order);
+    f
+}
 
-// use rand::{
-//     distributions::{Distribution, Standard},
-//     Rng,
-// };
-// use std::{
-//     fmt::{Debug, Display, Formatter, Result},
-//     ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign},
-// };
+fn load_secret_key<'a, 'b>(file_name: &str, f2: &'a F2, f2m: &'b F2m) -> SecretKey<'a, 'b> {
+    let mut f = File::open(file_name).expect("Unable to open file"); // TODO: return result and use ?
+    let f = BufReader::new(f);
+    let mut lines = f.lines();
+    let s = Mat::from_hex_string(&lines.next().unwrap().unwrap(), f2); // TODO: double unwrap ??
+    let goppa = Goppa::from_hex_string(&lines.next().unwrap().unwrap(), f2m); // TODO: double unwrap ??
+    let p = Mat::from_hex_string(&lines.next().unwrap().unwrap(), f2); // TODO: double unwrap ??
+    SecretKey { s, goppa, p }
+}
 
-// macro_rules! array_init {
-//     ( $( $x:expr ),+ ) => {
-//         [ $( F{order}($x) ),+ ]
-//     }
-// }
+fn save_vector(file_name: &str, vec: RowVec<'_, F2>) {
+    let mut f = File::create(file_name).expect("Unable to create file");
+    let mut s = format!("{:x}#", vec.cols());
+    let mut byte: u8 = 0;
+    let mut cnt_mod_8 = 7;
+    for i in 0..vec.cols() {
+        byte |= (vec[i] << cnt_mod_8) as u8;
+        if cnt_mod_8 == 0 {
+            s.push_str(format!("{:02x}", byte).as_str());
+            cnt_mod_8 = 7;
+            byte = 0;
+        } else {
+            cnt_mod_8 -= 1;
+        }
+    }
+    f.write_all(s.as_bytes());
+}
 
-// #[derive(Clone, Copy, Eq, PartialEq)]
-// pub struct F{order}(pub u32);
+fn load_vector<'a>(file_name: &str, f2: &'a F2) -> RowVec<'a, F2> {
+    let mut f = File::open(file_name).expect("Unable to open file"); // TODO: return result and use ?
+    let mut buf = String::new();
+    f.read_to_string(&mut buf).expect("Unable to read data");
+    let v: Vec<&str> = buf.split('#').collect();
+    let cols = u32::from_str_radix(v[0], 16).unwrap() as usize;
+    let mut vec = RowVec::zero(f2, cols);
+    let mut cnt_mod_8 = 0;
+    let mut iter = v[1].as_bytes().iter();
+    let mut byte = iter.next().unwrap();
+    for i in 0..cols {
+        vec[i] = (*byte as u32 >> cnt_mod_8) & 1_u32;
+        if cnt_mod_8 == 7 {
+            byte = iter.next().unwrap();
+            cnt_mod_8 = 0;
+        } else {
+            cnt_mod_8 += 1;
+        }
+    }
+    vec
+}
 
-// const CARD: u32 = {order};
+fn main() {
+    // TODO: deal with all the unwrap()s
+    env_logger::init();
+    if GOPPA_N > 255 {
+        panic!("n should be less than 256");
+    }
+    if GOPPA_N % 8 != 0 {
+        panic!("n should be a multiple of 8");
+    }
+    if GOPPA_N < GOPPA_M * GOPPA_T {
+        panic!("m * t should be less than n");
+    }
+    let args: Vec<String> = env::args().collect();
+    if args.len() == 1 {
+        panic!("Command expected.");
+    }
+    match args[1].as_str() {
+        "keygen" => {
+            let f2 = &F2 {};
+            let f2m = &F2m::generate(1 << GOPPA_M);
+            let (pk, sk) = crypto::keygen(f2, f2m, GOPPA_M, GOPPA_N, GOPPA_T);
+            save_public_key(&pk, "public_key.mce");
+            save_secret_key(&sk, "secret_key.mce");
+            ()
+        }
+        "encrypt" => {
+            let f2 = &F2 {};
+            let pk = load_public_key("public_key.mce", f2);
+            let m = load_vector("message.mce", f2);
+            let c = crypto::encrypt(&pk, &m);
+            save_vector("ciphertext.mce", c);
+            ()
+        }
+        "decrypt" => {
+            let f2 = &F2 {};
+            let f2m = &load_finite_field("secret_key.mce"); // &F2m::generate(1 << GOPPA_M);
+            let sk = load_secret_key("secret_key.mce", f2, f2m);
+            let c = load_vector("ciphertext.mce", f2);
+            let m = crypto::decrypt(&sk, &c);
+            save_vector("decoded.mce", m); // TODO: pick convention for arguments order
+            ()
+        }
+        _ => panic!("Unexpected command. Valid commands are 'keygen', 'encrypt' and 'decrypt'."),
+    }
 
-// const EXP: [F{order}; CARD as usize] = array_init![
-//     ";
+    // // TODO: Check the length of data to avoid mul overflow ?
+    // let data = fs::read(&args[1]).expect("Unable to read file");
+    // println!("{:?}", data);
+    // let k = 8 * data.len();
+    // if k != 72 {
+    //     panic!("Plaintext is {} bits and should be 72", k);
+    // }
+    // let f2 = &F2 {};
+    // let mut msg = RowVec::zero(f2, k);
+    // for i in 0..(data.len() - 1) {
+    //     let nbr = char::from(data[i]).to_digit(16).unwrap();
+    //     println!("{} ", nbr);
+    //     for j in 0..8 {
+    //         msg[8 * i + j] = ((nbr >> (7 - j)) & 1).into();
+    //     }
+    // }
+    // println!("{:?}", msg);
 
-//     let content = content.replace("{order}", &order.to_string());
-//     file.write_all(content.as_bytes())
-//         .expect("Cannot write file");
+    // let file_name = args[1];
 
-//     // https://www.partow.net/programming/polynomials/index.html
-//     let primitive_poly = match m {
-//         2 => 0x7,
-//         3 => 0xB,
-//         4 => 0x11,
-//         5 => 0x25,
-//         6 => 0x43,
-//         7 => 0x83,
-//         8 => 0x11D,
-//         9 => 0x211,
-//         10 => 0x409,
-//         11 => 0x805,
-//         12 => 0x1053,
-//         13 => 0x201B,
-//         14 => 0x4143,
-//         15 => 0x8003,
-//         16 => 0x110B,
-//         17 => 0x2009,
-//         _ => panic!("m must be at least 2 and at most 17"),
-//     };
-
-//     let mut log = vec![0_u32; order as usize];
-//     let mut elt = 1_u32;
-//     file.write_all(b"1, ").expect("Cannot write file");
-//     for i in 1..order {
-//         elt *= 2;
-//         if elt >= order {
-//             elt ^= primitive_poly;
-//         }
-//         file.write_all((elt.to_string() + ", ").as_bytes())
-//             .expect("Cannot write file");
-
-//         log[elt as usize] = i;
-//     }
-//     log[1] = 0;
-//     file.seek(SeekFrom::Current(-2)).expect("Cannot seek file"); // erase the last comma
-//     file.write_all(b"\n];\n\n").expect("Cannot write file");
-
-//     file.write_all(b"const LOG: [u32; CARD as usize] = [\n    CARD, ")
-//         .expect("Cannot write file");
-
-//     for i in 1..order as usize {
-//         file.write_all((log[i].to_string() + ", ").as_bytes())
-//             .expect("Cannot write file");
-//     }
-//     file.seek(SeekFrom::Current(-2)).expect("Cannot seek file"); // erase the last comma
-//     file.write_all(b"\n];\n").expect("Cannot seek file");
-
-//     let content = "
-// impl CharacteristicTwo for F{order} {}
-
-// impl FiniteFieldElement for F{order} {
-//     fn characteristic_exponent() -> u32 {
-//         {characteristic_exponent}
-//     }
-
-//     fn exp(i: u32) -> Self {
-//         EXP[i as usize]
-//     }
-
-//     fn log(self) -> Option<u32> {
-//         if self == Self(0) {
-//             None
-//         } else {
-//             Some(LOG[self.0 as usize])
-//         }
-//     }
-
-//     fn to_canonical_basis(self) -> u32 {
-//         self.0
-//     }
-// }
-
-// impl FieldElement for F{order} {
-//     fn zero() -> Self {
-//         Self(0)
-//     }
-
-//     fn one() -> Self {
-//         Self(1)
-//     }
-
-//     fn characteristic() -> u32 {
-//         2
-//     }
-// }
-
-// impl Add for F{order} {
-//     type Output = Self;
-
-//     fn add(self, other: Self) -> Self {
-//         Self(self.0 ^ other.0)
-//     }
-// }
-
-// impl AddAssign for F{order} {
-//     fn add_assign(&mut self, other: Self) {
-//         *self = *self + other;
-//     }
-// }
-
-// impl Sub for F{order} {
-//     type Output = Self;
-
-//     fn sub(self, other: Self) -> Self {
-//         self + other
-//     }
-// }
-
-// impl SubAssign for F{order} {
-//     fn sub_assign(&mut self, other: Self) {
-//         *self = *self - other;
-//     }
-// }
-
-// impl Mul for F{order} {
-//     type Output = Self;
-
-//     fn mul(self, other: Self) -> Self {
-//         let modulo = |a| if a >= CARD { a - (CARD - 1) } else { a };
-
-//         if self == Self(0) || other == Self(0) {
-//             Self(0)
-//         } else {
-//             EXP[modulo(LOG[self.0 as usize] + LOG[other.0 as usize]) as usize]
-//         }
-//     }
-// }
-
-// impl MulAssign for F{order} {
-//     fn mul_assign(&mut self, other: Self) {
-//         *self = *self * other;
-//     }
-// }
-
-// impl Neg for F{order} {
-//     type Output = Self;
-
-//     fn neg(self) -> Self {
-//         self
-//     }
-// }
-
-// impl Inv for F{order} {
-//     type Output = Self;
-
-//     fn inv(self) -> Option<Self::Output> {
-//         match self {
-//             Self(0) => None,
-//             _ => Some(EXP[(CARD - 1 - LOG[self.0 as usize]) as usize]),
-//         }
-//     }
-// }
-
-// impl Distribution<F{order}> for Standard {
-//     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> F{order} {
-//         F{order}(rng.gen_range(0, CARD) as u32)
-//     }
-// }
-
-// impl Debug for F{order} {
-//     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-//         write!(f, \"{:b}\", self.0)
-//     }
-// }
-
-// impl Display for F{order} {
-//     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-//         match self {
-//             Self(0) => write!(f, \"0\"),
-//             Self(1) => write!(f, \"1\"),
-//             Self(2) => write!(f, \"a\"),
-//             _ => write!(f, \"a^{}\", self.log().unwrap()),
-//         }
-//     }
-// }
-
-// #[cfg(test)]
-// mod test {
-//     use super::*;
-
-//     #[test]
-//     fn f{order}_add() {
-//         let mut rng = rand::thread_rng();
-//         let a: F{order} = rng.gen();
-//         let b: F{order} = rng.gen();
-//         let c: F{order} = rng.gen();
-//         let z = F{order}::zero();
-//         assert_eq!(a + (b + c), (a + b) + c);
-//         assert_eq!(a + b, b + a);
-//         assert_eq!(a + z, a);
-//     }
-
-//     #[test]
-//     fn f{order}_characteristic() {
-//         let mut rng = rand::thread_rng();
-//         let a: F{order} = rng.gen();
-//         let z = F{order}::zero();
-//         assert_eq!(a + a, z);
-//     }
-
-//     #[test]
-//     fn f{order}_sub() {
-//         let mut rng = rand::thread_rng();
-//         let a: F{order} = rng.gen();
-//         let b: F{order} = rng.gen();
-//         assert_eq!(a + b, a - b);
-//     }
-
-//     #[test]
-//     fn f{order}_mul() {
-//         let mut rng = rand::thread_rng();
-//         let a: F{order} = rng.gen();
-//         let b: F{order} = rng.gen();
-//         let c: F{order} = rng.gen();
-//         let i = F{order}::one();
-//         let z = F{order}::zero();
-//         assert_eq!(a * (b * c), (a * b) * c);
-//         assert_eq!(a * b, b * a);
-//         assert_eq!(a * i, a);
-//         assert_eq!(a * z, z);
-//         assert_eq!(a * (b + c), a * b + a * c);
-//         assert_eq!(a * (b - c), a * b - a * c);
-//     }
-
-//     #[test]
-//     fn f{order}_neg() {
-//         let mut rng = rand::thread_rng();
-//         let a: F{order} = rng.gen();
-//         let b: F{order} = rng.gen();
-//         let z = F{order}::zero();
-//         assert_eq!(-z, z);
-//         assert_eq!(--a, a);
-//         assert_eq!(a + -b, a - b);
-//     }
-
-//     #[test]
-//     fn f{order}_inv() {
-//         let mut rng = rand::thread_rng();
-//         let a: F{order} = rng.gen();
-//         let i = F{order}::one();
-//         let z = F{order}::zero();
-//         assert_eq!(z.inv(), None);
-//         assert_eq!(i.inv(), Some(i));
-//         if a != F{order}::zero() {
-//             assert_eq!(a.inv().unwrap().inv().unwrap(), a);
-//             assert_eq!(a * a.inv().unwrap(), i);
-//         }
-//     }
-// }";
-
-//     let content = content.replace("{order}", &order.to_string());
-//     // let content = content.replace("{characteristic}", &p.to_string());
-//     let content = content.replace("{characteristic_exponent}", &m.to_string());
-//     file.write_all(content.as_bytes())
-//         .expect("Cannot write file");
-// }
-
-// // TODO: need to open lib.rs and add the line "mod finite_field_{q};"
-
-// mod matrix;
-
-fn main() {}
+    // let mut file = match OpenOptions::new()
+    //     .write(true)
+    //     .create_new(true)
+    //     .open(file_name)
+    // {
+    //     Ok(f) => f,
+    //     Err(e) => panic!("Cannot create file: {}", e),
+    // };
+}

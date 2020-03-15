@@ -8,6 +8,10 @@ pub struct F2 {}
 impl Field for F2 {
     type FElt = u32;
 
+    fn generate(_: u32) -> Self {
+        F2 {}
+    }
+
     fn zero(&self) -> Self::FElt {
         0
     }
@@ -57,14 +61,6 @@ impl Field for F2 {
     fn random_element(&self, rng: &mut ThreadRng) -> Self::FElt {
         rng.gen_range(0, 2)
     }
-
-    fn to_string_debug(&self, a: Self::FElt) -> String {
-        a.to_string()
-    }
-
-    fn to_string_display(&self, a: Self::FElt) -> String {
-        a.to_string()
-    }
 }
 
 impl FiniteField for F2 {
@@ -83,6 +79,10 @@ impl FiniteField for F2 {
             Some(0)
         }
     }
+
+    fn elt_to_str(&self, a: Self::FElt) -> String {
+        a.to_string()
+    }
 }
 
 impl CharacteristicTwo for F2 {
@@ -92,8 +92,12 @@ impl CharacteristicTwo for F2 {
 }
 
 impl F2FiniteExtension for F2 {
-    fn project_on_canonical_basis(&self, a: Self::FElt) -> u32 {
+    fn elt_to_u32(&self, a: Self::FElt) -> u32 {
         a
+    }
+
+    fn u32_to_elt(&self, n: u32) -> Self::FElt {
+        n
     }
 }
 

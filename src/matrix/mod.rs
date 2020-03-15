@@ -19,7 +19,7 @@ pub struct Mat<'a, F: Eq + Field> {
 impl<'a, F: Eq + Field> Clone for Mat<'a, F> {
     fn clone(&self) -> Self {
         Mat {
-            field: self.field, // copy
+            field: self.field, // field is shared
             rows: self.rows,
             cols: self.cols,
             data: self.data.clone(),
@@ -265,24 +265,40 @@ impl<'a, F: Eq + Field> IndexMut<(usize, usize)> for Mat<'a, F> {
     }
 }
 
-impl<'a, F: Eq + FiniteField> Debug for Mat<'a, F> {
+// impl<'a> Debug for Mat<'a, F2> {
+//     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+//         let k = self.field;
+//         write!(f, "\n")?;
+//         for i in 0..self.rows {
+//             for j in 0..self.cols - 1 {
+//                 write!(f, "{} ", self[(i, j)].to_string())?;
+//             }
+//             write!(f, "{}\n", self[(i, self.cols - 1)].to_string())?;
+//         }
+//         Ok(())
+//     }
+// }
+
+impl<'a, F: Eq + F2FiniteExtension> Debug for Mat<'a, F> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let k = self.field;
+        let chr = k.characteristic_exponent() as usize;
+        let width = chr / 4 + if chr % 4 == 0 { 0 } else { 1 };
         write!(f, "\n")?;
         for i in 0..self.rows {
             for j in 0..self.cols - 1 {
                 write!(
                     f,
-                    "{:>width$}",
-                    k.to_string_debug(self[(i, j)]),
-                    width = 1 + k.characteristic_exponent() as usize
+                    "{:>w$x} ",
+                    k.elt_to_u32(self[(i, j)]),
+                    w = width
                 )?;
             }
             write!(
                 f,
-                "{:>width$}\n",
-                k.to_string_debug(self[(i, self.cols - 1)]),
-                width = 1 + k.characteristic_exponent() as usize
+                "{:>w$}\n",
+                k.elt_to_u32(self[(i, self.cols - 1)]),
+                w = width
             )?;
         }
         Ok(())
@@ -302,14 +318,14 @@ impl<'a, F: Eq + FiniteField> Display for Mat<'a, F> {
                 write!(
                     f,
                     "{:>width$} ",
-                    k.to_string_display(self[(i, j)]),
+                    k.elt_to_str(self[(i, j)]),
                     width = if k.order() == 2 { 1 } else { 2 + digits }
                 )?;
             }
             write!(
                 f,
                 "{:>width$}\n",
-                k.to_string_display(self[(i, self.cols - 1)]),
+                k.elt_to_str(self[(i, self.cols - 1)]),
                 width = if k.order() == 2 { 1 } else { 2 + digits }
             )?;
         }
@@ -472,31 +488,12 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         }
         t
     }
-
-    pub fn generator_matrix(h: &Mat<'a, F>) -> Mat<'a, F> {
-        let f = h.field();
-        let m = h.rows();
-        let n = h.cols();
-        let k = n - m;
-        if let Some((_u, hs, p)) = h.standard_form() {
-            let mut gs = Mat::zero(f, k, n);
-            for i in 0..k {
-                gs[(i, i)] = f.one();
-                for j in k..n {
-                    gs[(i, j)] = f.neg(hs[(j - k, i)]);
-                }
-            }
-            gs * p.transpose()
-        } else {
-            panic!("Rows of the parity-check matrix aren't independant");
-        }
-    }
 }
 
 impl<'a, F: CharacteristicTwo + Eq> Mat<'a, F> {
     pub fn from<'b>(f: &'a F, mat_f2: &Mat<'b, F2>) -> Self
-    where
-        F2: Eq + F2FiniteExtension,
+// where
+    //     F2: Eq + F2FiniteExtension,
     {
         let mut mat_f2m = Mat::zero(f, mat_f2.rows(), mat_f2.cols());
         for i in 0..mat_f2.rows() {
@@ -510,8 +507,8 @@ impl<'a, F: CharacteristicTwo + Eq> Mat<'a, F> {
 
 impl<'a, F: Eq + F2FiniteExtension> Mat<'a, F> {
     pub fn binary_form<'b>(&self, f2: &'b F2) -> Mat<'b, F2>
-    where
-        F2: Eq + F2FiniteExtension,
+// where
+    //     F2: Eq + F2FiniteExtension,
     {
         let f = self.field();
         let m = f.characteristic_exponent();
@@ -519,16 +516,84 @@ impl<'a, F: Eq + F2FiniteExtension> Mat<'a, F> {
         for j in 0..self.cols {
             for i in 0..self.rows {
                 for k in 0..m as usize {
-                    bin[(m as usize * i + k, j)] =
-                        match (f.project_on_canonical_basis(self[(i, j)]) >> k) & 1 {
-                            0 => f2.zero(),
-                            1 => f2.one(),
-                            _ => panic!("Unexpected value"),
-                        }
+                    bin[(m as usize * i + k, j)] = match (f.elt_to_u32(self[(i, j)]) >> k) & 1 {
+                        0 => f2.zero(),
+                        1 => f2.one(),
+                        _ => panic!("Unexpected value"),
+                    }
                 }
             }
         }
         bin
+    }
+}
+
+impl<'a> Mat<'a, F2> {
+    pub fn to_hex_string(&self) -> String { // TODO: Should return type be String or str or &str ??
+        if self.rows > 255 || self.cols > 255 {
+            panic!("Cannot convert matrix to hex string: dimensions not supported");
+        }
+        let len = 2 * (4 + 1) + 2 * (self.rows * self.cols / 8 + 1);
+        let mut s = String::with_capacity(len);
+        s.push_str(format!("{:x}#{:x}#", self.rows, self.cols).as_str());
+        let mut byte = 0;
+        let mut shift = 7;
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                // let shift = (self.cols * i + j) % 8;
+                byte |= self[(i, j)] << shift;
+                if shift == 0 {
+                    s.push_str(format!("{:02x}", byte).as_str());
+                    byte = 0;
+                    shift = 7;
+                } else {
+                    shift -= 1;
+                }
+            }
+        }
+        s
+    }
+
+    // TODO: Shouldn't I create a f2 field and return it along the matrix ?
+    pub fn from_hex_string(s: &str, f2: &'a F2) -> Self {
+        // TODO: how to deal with badly formed input ?
+        let v: Vec<&str> = s.split('#').collect();
+        let rows = usize::from_str_radix(v[0], 16).unwrap();
+        let cols = usize::from_str_radix(v[1], 16).unwrap();
+        let data = hex::decode(v[2]).expect("Hex decoding failed"); // TODO: use a result and ?
+                                                                 // if data.len() < 3 {
+                                                                 //     panic!("Cannot convert hex string to matrix: string is too short");
+                                                                 // }
+        // let rows = data[0];
+        // let cols = data[1];
+        // if data.len() != 2 + rows * cols {
+        //     panic!("Cannot convert hex string to matrix: wrong matrix dimensions");
+        // }
+        // println!("rows: {}\ncols: {}\n", rows, cols);
+        let mut mat = Mat::zero(f2, rows, cols); // TODO: into() or as ?
+        let mut d = 0;
+        let mut shift = 7;
+        for i in 0..rows {
+            for j in 0..cols {
+                mat[(i, j)] = ((data[d] >> shift) & 1).into();
+                if shift == 0 {
+                    d += 1;
+                    shift = 7;
+                } else {
+                    shift -= 1;
+                }
+            }
+        }
+        // for i in 0..data.len() {
+        //     for j in 0..8 {
+        //         let bit_index = 8 * i + j;
+        //         let row = bit_index / cols;
+        //         let col = bit_index % cols;
+        //         mat[(row, col)] = ((data[i] >> 7 - j) & 1).into();
+        //     }
+        // }
+        // println!("{}\n", mat);
+        mat
     }
 }
 

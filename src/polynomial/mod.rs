@@ -7,9 +7,8 @@ use std::{
     ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
-use crate::finite_field::Field;
+use crate::finite_field::{F2FiniteExtension, Field, FiniteField};
 
-// #[derive(Clone, Eq, PartialEq)]
 #[derive(Eq, PartialEq)]
 pub struct Poly<'a, F: Eq + Field> {
     field: &'a F,
@@ -19,7 +18,7 @@ pub struct Poly<'a, F: Eq + Field> {
 impl<'a, F: Eq + Field> Clone for Poly<'a, F> {
     fn clone(&self) -> Self {
         Poly {
-            field: self.field, // shallow copy
+            field: self.field, // field is shared
             data: self.data.clone(),
         }
     }
@@ -67,13 +66,14 @@ impl<'a, F: Eq + Field> AddAssign<Poly<'a, F>> for Poly<'a, F> {
 
 impl<'a, F: Eq + Field> AddAssign<&Poly<'a, F>> for Poly<'a, F> {
     fn add_assign(&mut self, other: &Self) {
+        let f = self.field;
         self.data.resize(
             1 + cmp::max(self.degree(), other.degree()),
-            self.field.zero(),
+            f.zero(),
         );
 
         for i in 0..other.degree() + 1 {
-            self[i] = self.field.add(self[i], other[i]);
+            self[i] = f.add(self[i], other[i]);
         }
 
         self.update_len();
@@ -122,13 +122,14 @@ impl<'a, F: Eq + Field> SubAssign<Poly<'a, F>> for Poly<'a, F> {
 
 impl<'a, F: Eq + Field> SubAssign<&Poly<'a, F>> for Poly<'a, F> {
     fn sub_assign(&mut self, other: &Self) {
+        let f = self.field;
         self.data.resize(
             1 + cmp::max(self.degree(), other.degree()),
-            self.field.zero(),
+            f.zero(),
         );
 
         for i in 0..other.degree() + 1 {
-            self[i] = self.field.sub(self[i], other[i]);
+            self[i] = f.sub(self[i], other[i]);
         }
 
         self.update_len();
@@ -213,10 +214,11 @@ impl<'a, F: Eq + Field> Neg for &Poly<'a, F> {
     type Output = Poly<'a, F>;
 
     fn neg(self) -> Self::Output {
-        let mut opp = Poly::zero(self.field, self.degree() + 1);
+        let f = self.field;
+        let mut opp = Poly::zero(f, self.degree() + 1);
 
         for i in 0..self.degree() + 1 {
-            opp[i] = self.field.neg(self[i]);
+            opp[i] = f.neg(self[i]);
         }
         opp
     }
@@ -236,17 +238,17 @@ impl<'a, F: Eq + Field> IndexMut<usize> for Poly<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> Debug for Poly<'a, F> {
+impl<'a, F: Eq + F2FiniteExtension> Debug for Poly<'a, F> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         if self.is_zero() {
             return write!(f, "0");
         }
+        let k = self.field;
         let mut i = 0;
         while i <= self.degree() {
-            if self[i] != self.field.zero() {
-                if self[i] != self.field.one() || i == 0 {
-                    write!(f, "{}", self.field.to_string_debug(self[i]))?;
-                    // write!(f, "{:?}", self[i])?;
+            if self[i] != k.zero() {
+                if self[i] != k.one() || i == 0 {
+                    write!(f, "{:X}", k.elt_to_u32(self[i]))?;
                 }
                 match i {
                     0 => (),
@@ -263,17 +265,17 @@ impl<'a, F: Eq + Field> Debug for Poly<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> Display for Poly<'a, F> {
+impl<'a, F: Eq + FiniteField> Display for Poly<'a, F> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         if self.is_zero() {
             return write!(f, "0");
         }
+        let k = self.field;
         let mut i = 0;
         while i <= self.degree() {
-            if self[i] != self.field.zero() {
-                if self[i] != self.field.one() || i == 0 {
-                    write!(f, "{}", self.field.to_string_display(self[i]))?;
-                    // write!(f, "{}", self[i])?;
+            if self[i] != k.zero() {
+                if self[i] != k.one() || i == 0 {
+                    write!(f, "{}", k.elt_to_str(self[i]))?;
                 }
                 match i {
                     0 => (),
@@ -432,9 +434,9 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
         }
 
         let f = a.field;
-        let mut r: Vec<Self> = Vec::new();
-        let mut s: Vec<Self> = Vec::new();
-        let mut t: Vec<Self> = Vec::new();
+        let mut r = Vec::new();
+        let mut s = Vec::new();
+        let mut t = Vec::new();
         r.push(a.clone());
         r.push(b.clone());
         let s0 = Self::x_n(f, 0);
@@ -480,8 +482,8 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
         let f = g.field;
         let mut i = 1;
 
-        let mut a: Vec<Self> = Vec::new();
-        let mut b: Vec<Self> = Vec::new();
+        let mut a = Vec::new();
+        let mut b = Vec::new();
         a.push(g.clone());
         a.push(t.clone());
         let b0 = Self::zero(f, 1);

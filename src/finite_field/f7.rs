@@ -22,6 +22,10 @@ impl PartialEq for F7 {
 impl Field for F7 {
     type FElt = F7Elt;
 
+    fn generate(_: u32) -> Self {
+        F7 {}
+    }
+
     fn zero(&self) -> Self::FElt {
         0
     }
@@ -72,19 +76,6 @@ impl Field for F7 {
 
     fn random_element(&self, rng: &mut ThreadRng) -> Self::FElt {
         rng.gen_range(0, CARD)
-    }
-
-    fn to_string_debug(&self, a: Self::FElt) -> String {
-        a.to_string()
-    }
-
-    fn to_string_display(&self, a: Self::FElt) -> String {
-        match a {
-            0 => "0".to_owned(),
-            1 => "1".to_owned(),
-            3 => "a".to_owned(),
-            _ => format!("a^{}", LOG[a as usize]),
-        }
     }
 }
 

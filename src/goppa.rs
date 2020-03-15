@@ -3,7 +3,7 @@ use log::info;
 use rand::{rngs::ThreadRng, Rng};
 
 use crate::{
-    finite_field::{F2FiniteExtension, Field, F2},
+    finite_field::{F2FiniteExtension, F2m, Field, FiniteField, F2},
     matrix::{Mat, RowVec},
     polynomial::Poly,
 };
@@ -127,25 +127,45 @@ where
         x * y * z
     }
 
-    // pub fn syndrome(&self, h: Option<&Mat<'a, F>>, x: &RowVec<'a, F>) -> ColVec<'a, F> {}
+    // pub fn generator_matrix<'b, G>(h: &Mat<'b, G>) -> Mat<'b, G>
+    // where G: Eq + F2FiniteExtension {
+    pub fn generator_matrix(h: &Mat<'a, F>) -> Mat<'a, F> {
+        let f = h.field();
+        let m = h.rows();
+        let n = h.cols();
+        let k = n - m;
+        if let Some((_u, hs, p)) = h.standard_form() {
+            let mut gs = Mat::zero(f, k, n);
+            for i in 0..k {
+                gs[(i, i)] = f.one();
+                for j in k..n {
+                    gs[(i, j)] = f.neg(hs[(j - k, i)]);
+                }
+            }
+            gs * p.transpose()
+        } else {
+            panic!("Rows of the parity-check matrix aren't independant");
+        }
+    }
 
+    // TODO: add a syndrome function ?
+    // pub fn syndrome(&self, h: Option<&Mat<'a, F>>, x: &RowVec<'a, F>) -> ColVec<'a, F> {}
     // pub fn syndrome_poly(&self, h: Option<&Mat<'a, F>>, x: &RowVec<'a, F>) -> Poly<'a, F> {}
 
-    pub fn encode<'b>(&self, msg: &RowVec<'b, F2>) -> RowVec<'b, F2>
-    where
-        F2: Eq + F2FiniteExtension,
-    {
+    // pub fn goppa_encode(g: &Mat<'a, F2>, msg: &RowVec<'a, F2>) -> RowVec<'a, F2> {
+    //     msg * g
+    // }
+
+    pub fn encode<'b>(&self, msg: &RowVec<'b, F2>) -> RowVec<'b, F2> {
         let f2 = msg.field();
         let h = self.parity_check_matrix();
         let hb = h.binary_form(f2);
-        let g = Mat::generator_matrix(&hb);
+        let g = Goppa::generator_matrix(&hb);
         msg * g
+        // Self::goppa_encode(&g, msg)
     }
 
-    pub fn decode<'b>(&self, rcv: &RowVec<'b, F2>) -> RowVec<'b, F2>
-    where
-        F2: Eq + F2FiniteExtension,
-    {
+    pub fn decode<'b>(&self, rcv: &RowVec<'b, F2>) -> RowVec<'b, F2> {
         let f = self.field();
         let f2 = rcv.field();
         let h = self.parity_check_matrix();
@@ -220,5 +240,67 @@ where
         // let cdw = Mat::sum(rcv, &err);
         let cdw = rcv + err;
         cdw
+    }
+}
+
+// Should I generalise from F2m ?
+impl<'a, F: Eq + F2FiniteExtension> Goppa<'a, F>
+where F::FElt: std::fmt::Debug { // TODO: remove the trait ?
+    pub fn to_hex_string(&self) -> String
+// where
+    //     F::FElt: std::fmt::LowerHex,
+    {
+        // TODO: add 'use fmt::LowerHex'
+        if self.field().order() > 1 << 16 {
+            panic!("Cannot convert polynomial to hex string: field order must be at most 2^16");
+        }
+        // let mut s = String::new();
+        // s.push_str(format!("{:04x}", self.field().order()).as_str());
+        // s.push_str(format!("{:02x}", self.poly.degree()).as_str());
+        let mut s = self.poly.to_hex_string(); // TODO: Does it clone the string or not ?
+        s.push(' ');
+        let mut byte = 0;
+        let mut cnt_mod_8 = 7;
+        for i in 0..self.field().order() {
+            if self.set.contains(&self.field().u32_to_elt(i)) { // TODO: rewrite using elt_to_u32
+                byte |= 1 << cnt_mod_8;
+            }
+            if cnt_mod_8 == 0 {
+                s.push_str(format!("{:02x}", byte).as_str());
+                byte = 0;
+                cnt_mod_8 = 7;
+            } else {
+                cnt_mod_8 -= 1;
+            }
+        }
+        s
+    }
+
+    pub fn from_hex_string(s: &str, f: &'a F) -> Self {
+        // let order = u32::from_str_radix(&s[0..4], 16).unwrap();
+        // let t = u32::from_str_radix(&s[4..6], 16).unwrap();
+        // let poly_len = 4 + 2 + 4 * (t as usize + 1);
+        let v: Vec<&str> = s.split(' ').collect();
+        let poly = Poly::from_hex_string(v[0], f);
+        println!("{:?}\n", poly);
+        let set_data = hex::decode(v[1]).expect("Hex decoding failed");
+        // println!("{:?}", set_data);
+        let mut set = Vec::new();
+        let mut iter = set_data.iter();
+        let mut byte = iter.next().unwrap();
+        let mut cnt_mod_8 = 7;
+        for i in 0..f.order() {
+            if (*byte >> cnt_mod_8) & 1 == 1 {
+                set.push(f.u32_to_elt(i));
+            }
+            if cnt_mod_8 == 0 && i != f.order() - 1 {
+                cnt_mod_8 = 7;
+                byte = iter.next().unwrap();
+            } else {
+                cnt_mod_8 -= 1
+            }
+        }
+        println!("{:?}\n", set);
+        Goppa { poly, set }
     }
 }

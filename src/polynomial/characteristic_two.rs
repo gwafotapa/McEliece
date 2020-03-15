@@ -3,7 +3,7 @@ use log::info;
 use rand::rngs::ThreadRng;
 
 use super::{Field, Poly};
-use crate::finite_field::{CharacteristicTwo, FiniteField};
+use crate::finite_field::{CharacteristicTwo, F2FiniteExtension, FiniteField};
 
 impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
     pub fn random_irreducible(rng: &mut ThreadRng, f: &'a F, degree: usize) -> Self
@@ -183,6 +183,54 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
     }
 }
 
+// TODO: Should I add to_hex_string and from_hex_string method to Field or FiniteField traits ?
+// Or should I add std::fmt::LowerHex and From::u32 traits to F::Elt ?
+impl<'a, F: Eq + F2FiniteExtension> Poly<'a, F> {
+    pub fn to_hex_string(&self) -> String
+// where
+    //     F: FiniteField,
+    //     F::FElt: std::fmt::LowerHex,
+    {
+        // TODO: add 'use fmt::LowerHex'
+        let f = self.field();
+        // println!("{}", *self);
+        if f.order() > 1 << 16 {
+            panic!("Cannot convert polynomial to hex string: field order must be at most 2^16");
+        }
+        if self.degree() > 255 {
+            panic!("Cannot convert polynomial to hex string: degree must be less than 256");
+        }
+        let len = 2 * (4 + 1) + 4 * (self.degree() + 1);
+        let mut s = String::with_capacity(len);
+        s.push_str(format!("{:x}#{:x}#", f.order(), self.degree()).as_str());
+        for i in 0..self.degree() + 1 {
+            s.push_str(format!("{:04x}", f.elt_to_u32(self[i])).as_str());
+        }
+        s
+    }
+
+    pub fn from_hex_string(s: &str, f: &'a F) -> Self {
+        // TODO: add 'use fmt::LowerHex'{
+        let v: Vec<&str> = s.split('#').collect();
+        // let order = u32::from_str_radix(iter.next().unwrap(), 16).unwrap();
+        // let f = F::generate(order);
+        // iter.next();
+        let t = usize::from_str_radix(v[1], 16).unwrap();
+        // let data = hex::decode(iter.next().unwrap()).expect("Hex decoding failed"); // TODO: use a result and ?
+        // let order = 256 * data[0] as u32 + data[1] as u32;
+
+        // let t = data[2] as usize;
+        // let coeffs = v[2];
+        let mut poly = Self::zero(&f, t + 1);
+        for i in 0..t + 1 {
+            // TODO: rewrite using an iterator over data
+            // poly[i] = f.u32_to_elt(256 * data[2 * i + 3] as u32 + data[2 * i + 4] as u32);
+            poly[i] = f.u32_to_elt(u32::from_str_radix(&v[2][4*i..4*i+4], 16).unwrap());
+        }
+        poly
+    }
+}
+
 /// Computes the prime factors of (non zero) integer n by trial division
 /// https://en.wikipedia.org/wiki/Trial_division
 /// ```
@@ -221,7 +269,7 @@ pub fn trial_division(mut n: u32) -> Vec<u32> {
 mod tests {
     use super::*;
 
-    use crate::finite_field::{F2, F2m};
+    use crate::finite_field::{F2m, F2};
     // use crate::finite_field::{FiniteFieldElement, F1024, F2};
 
     // #[test]
@@ -242,7 +290,7 @@ mod tests {
 
         let f2 = &F2 {};
         let f1024 = &F2m::generate(1024);
-        
+
         let zero = Poly::zero(f2, 1);
         assert!(!zero.is_irreducible());
 

@@ -5,7 +5,7 @@ use std::{
 };
 
 use super::Mat;
-use crate::finite_field::{CharacteristicTwo, Field, FiniteField, F2};
+use crate::finite_field::{CharacteristicTwo, Field, FiniteField, F2, F2FiniteExtension};
 
 #[derive(Eq, PartialEq)]
 pub struct RowVec<'a, F: Eq + Field>(Mat<'a, F>);
@@ -178,7 +178,7 @@ impl<'a, F: Eq + Field> IndexMut<usize> for RowVec<'a, F> {
     }
 }
 
-impl<'a, F: Eq + FiniteField> Debug for RowVec<'a, F> {
+impl<'a, F: Eq + F2FiniteExtension> Debug for RowVec<'a, F> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{:?}", self.0)
     }

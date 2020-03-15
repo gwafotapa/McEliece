@@ -45,7 +45,7 @@ fn goppa_f8() {
     // info!("parity check matrix in binary form: {:?}", h2);
     // info!("rank: {}", h2.rank());
     // return;
-    let g = Mat::generator_matrix(&h2);
+    let g = Goppa::generator_matrix(&h2);
     // println!("g: {:?}", g);
 
     // let mut m = Mat::zero(h.rows(), g.rows());
@@ -111,7 +111,7 @@ fn goppa_f1024() {
     let c = Goppa::random(&mut rng, f1024, 30, 2);
     let h = c.parity_check_matrix();
     info!("parity check matrix: {:?}", h);
-    let g = Mat::generator_matrix(&h);
+    let g = Goppa::generator_matrix(&h);
 
     // assert_eq!(Mat::prod(&h, &g.transpose()), Mat::zero(h.rows(), g.rows()));
     assert_eq!(&h * &g.transpose(), Mat::zero(f1024, h.rows(), g.rows()));
@@ -119,7 +119,7 @@ fn goppa_f1024() {
     let h2 = h.binary_form(f2);
     info!("parity check matrix in binary form: {:?}", h2);
     info!("rank: {}", h2.rank());
-    let g = Mat::generator_matrix(&h2);
+    let g = Goppa::generator_matrix(&h2);
     // assert_eq!(Mat::prod(&h, &Mat::from(&g.transpose())), Mat::zero(h.rows(), g.rows()));
 
     // assert_eq!(Mat::prod(&h2, &g.transpose()), Mat::zero(h2.rows(), g.rows()));

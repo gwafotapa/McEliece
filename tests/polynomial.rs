@@ -1,5 +1,3 @@
-// // extern crate mceliece;
-
 use mceliece::finite_field::*;
 use mceliece::polynomial::*;
 
@@ -39,26 +37,6 @@ fn polynomial_f2_gcd() {
 
 #[test]
 fn polynomial_f2_extended_gcd() {
-    // let mut a: Poly<F2> = Poly::new(5);
-    // a[0] = F2::one();
-    // a[1] = F2::one();
-    // a[4] = F2::one();
-    // println!("a(x) = {:?}\n", a);
-    // let mut b: Poly<F2> = Poly::new(3);
-    // b[0] = F2::one();
-    // b[1] = F2::one();
-    // b[2] = F2::one();
-    // println!("b(x) = {:?}\n", b);
-    // let (d, u, v, a1, b1) = Poly::extended_gcd(&a, &b);
-    // println!("d(x) = {:?}", d);
-    // println!("u(x) = {:?}", u);
-    // println!("v(x) = {:?}", v);
-    // println!("a1(x) = {:?}", a1);
-    // println!("b1(x) = {:?}", b1);
-    // assert_eq!(a, Poly::prod(&d, &a1));
-    // assert_eq!(b, Poly::prod(&d, &b1));
-    // assert_eq!(d, Poly::sum(&Poly::prod(&a, &u), &Poly::prod(&b, &v)));
-
     let f = &F2 {};
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(1, 100);
@@ -137,14 +115,6 @@ fn polynomial_f1024_square() {
 fn polynomial_f1024_modulo() {
     let f = &F2m::generate(1024);
     let mut rng = rand::thread_rng();
-    // let deg_a = rng.gen_range(0, 100);
-    // let a: Poly<F1024> = Poly::random(&mut rng, deg_a);
-    // println!("a(x) = {:?}\n", a);
-    // let mut b = a.clone();
-    // let g = Poly::x_n(deg_a + 1);
-    // b.modulo(&g);
-    // assert_eq!(a, b);
-
     let deg_a = rng.gen_range(0, 100);
     let mut a = Poly::random(&mut rng, f, deg_a);
     println!("a(x) = {:?}\n", a);
@@ -165,10 +135,7 @@ fn polynomial_f1024_sq_root_mod() {
     println!("a(x) = {:?}\n", a);
     let aa = &a * &a;
     println!("a^2(x) = {:?}\n", aa);
-    // let deg_g = rng.gen_range(0, 10);
-    // let g = Poly::random(&mut rng, deg_g);
     let g = Poly::support(f, &[0, 2, 11]);
-    // let s = aa.square_root_modulo(&Poly::x_n(100));
     let s = aa.square_root_modulo(&g);
     println!("s(x) = {:?}\n", s);
     assert_eq!(s, a);
@@ -182,7 +149,6 @@ fn polynomial_f1024_inverse_mod() {
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(0, 11);
     let a = Poly::random(&mut rng, f, deg_a);
-    // a.modulo(&g);
     println!("a(x) = {:?}\n", a);
 
     let inv = a.inverse_modulo(&g);
