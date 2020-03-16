@@ -45,7 +45,7 @@ fn goppa_f8() {
     // info!("parity check matrix in binary form: {:?}", h2);
     // info!("rank: {}", h2.rank());
     // return;
-    let g = Goppa::generator_matrix(&h2);
+    let (g, _) = Goppa::generator_matrix(&h2);
     // println!("g: {:?}", g);
 
     // let mut m = Mat::zero(h.rows(), g.rows());
@@ -111,7 +111,7 @@ fn goppa_f1024() {
     let c = Goppa::random(&mut rng, f1024, 30, 2);
     let h = c.parity_check_matrix();
     info!("parity check matrix: {:?}", h);
-    let g = Goppa::generator_matrix(&h);
+    let (g, _) = Goppa::generator_matrix(&h);
 
     // assert_eq!(Mat::prod(&h, &g.transpose()), Mat::zero(h.rows(), g.rows()));
     assert_eq!(&h * &g.transpose(), Mat::zero(f1024, h.rows(), g.rows()));
@@ -119,7 +119,7 @@ fn goppa_f1024() {
     let h2 = h.binary_form(f2);
     info!("parity check matrix in binary form: {:?}", h2);
     info!("rank: {}", h2.rank());
-    let g = Goppa::generator_matrix(&h2);
+    let (g, _) = Goppa::generator_matrix(&h2);
     // assert_eq!(Mat::prod(&h, &Mat::from(&g.transpose())), Mat::zero(h.rows(), g.rows()));
 
     // assert_eq!(Mat::prod(&h2, &g.transpose()), Mat::zero(h2.rows(), g.rows()));
@@ -218,3 +218,35 @@ fn goppa_f256() {
 
     assert_eq!(cdw, dcd);
 }
+
+#[test]
+fn goppa_f128() {
+    setup();
+
+    let m = 7;
+    let n = 1 << m;
+    let t = 10;
+    let k = n - m * t;
+    let f2 = &F2 {};
+    let f128 = &F2m::generate(1 << m);
+    let mut rng = rand::thread_rng();
+    let goppa = Goppa::random(&mut rng, f128, n, t);
+
+    let msg = RowVec::random(&mut rng, f2, k);
+    println!("msg: {}", msg);
+
+    let cdw = goppa.encode(&msg);
+    println!("cdw: {}", cdw);
+
+    let err = RowVec::random_with_weight(&mut rng, f2, n, t);
+    println!("err: {}", err);
+
+    let rcv = &cdw + err;
+    println!("rcv: {}", rcv);
+    
+    let dcd = goppa.decode(&rcv);
+    println!("dcd: {}", dcd);
+
+    assert_eq!(cdw, dcd);
+}
+

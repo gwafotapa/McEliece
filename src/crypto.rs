@@ -1,15 +1,22 @@
 use log::info;
 
-use crate::finite_field::{F2m, F2};
+use std::{
+    fs::File,
+    io::{BufRead, BufReader, Write},
+};
+
+use crate::finite_field::{F2m, Field, F2};
 use crate::goppa::Goppa;
 use crate::matrix::{Mat, RowVec};
 use crate::polynomial::Poly;
 
+#[derive(Debug, Eq, PartialEq)]
 pub struct PublicKey<'a> {
     pub sgp: Mat<'a, F2>, // disguised generator matrix S * G * P
     pub t: u32,           // degree of the goppa polynomial
 }
 
+#[derive(Eq, PartialEq)]
 pub struct SecretKey<'a, 'b> {
     pub s: Mat<'a, F2>,        // singular matrix S
     pub goppa: Goppa<'b, F2m>, // goppa code of generator matrix G
@@ -35,7 +42,7 @@ pub fn keygen<'a, 'b>(
     info!("Parity check matrix:{}", h);
     let h2 = h.binary_form(f2);
     info!("Parity check matrix in binary form:{}", h2);
-    let g = Goppa::generator_matrix(&h2);
+    let (g, _) = Goppa::generator_matrix(&h2);
     info!("Generator matrix G:{}", g);
     let s = Mat::invertible_random(&mut rng, f2, k as usize);
     info!("Singular matrix S:{}", s);
@@ -51,36 +58,93 @@ pub fn keygen<'a, 'b>(
     (pk, sk)
 }
 
-// TODO: Should I implement this as a method of PublicKey and decrypt as method of SecretKey ?
-pub fn encrypt<'a>(pk: &PublicKey<'a>, m: &RowVec<'a, F2>) -> RowVec<'a, F2> {
-    let mut rng = rand::thread_rng();
-    // let cdw = msg * &pk.0;
-    println!("sgp({}, {})", pk.sgp.rows(), pk.sgp.cols());
-    let c = m * &pk.sgp;
-    // let z = RowVec::random_with_weight(&mut rng, f2, msg.cols(), pk.1 as usize);
-    let z = RowVec::random_with_weight(&mut rng, m.field(), pk.sgp.cols(), pk.t as usize);
-    c + z
+impl<'a> PublicKey<'a> {
+    pub fn encrypt(&self, m: &RowVec<'a, F2>) -> RowVec<'a, F2> {
+        let mut rng = rand::thread_rng();
+        // println!("sgp({}, {})", self.sgp.rows(), self.sgp.cols());
+        let c = m * &self.sgp;
+        let z = RowVec::random_with_weight(&mut rng, m.field(), self.sgp.cols(), self.t as usize);
+        c + z
+    }
+
+    pub fn save_public_key(&self, file_name: &str) {
+        // println!("{}\n", self.sgp);
+        let mut f = File::create(file_name).expect("Unable to create file");
+        f.write_all(self.sgp.to_hex_string().as_bytes());
+        f.write_all(format!("\n{:02x}\n", self.t).as_bytes());
+    }
+
+    pub fn load_public_key(file_name: &str, f2: &'a F2) -> Self {
+        let f = File::open(file_name).expect("Unable to open file");
+        let mut f = BufReader::new(f);
+        let mut line = String::new();
+        f.read_line(&mut line)
+            .expect("Unable to read the first line");
+        line.pop(); // Remove terminating newline
+        let sgp = Mat::from_hex_string(&line, f2);
+        // println!("{}\n", sgp);
+        line.clear();
+        f.read_line(&mut line)
+            .expect("Unable to read the second line");
+        line.pop(); // Remove terminating newline
+        let t = u32::from_str_radix(&line, 16).unwrap();
+        PublicKey { sgp, t }
+    }
 }
 
-pub fn decrypt<'a, 'b>(
-    sk: &SecretKey<'a, 'b>,
-    c: &RowVec<'a, F2>, // ciphertext
-) -> RowVec<'a, F2> {
-    // let s = &sk.0;
-    // let goppa = &sk.1;
-    // let p = &sk.2;
-    // let m_s_g = cpt * p.inverse().unwrap();
-    // let m_s = goppa.decode(&m_s_g);
-    // let m = m_s * s.inverse().unwrap();
-    // m
+impl<'a, 'b> SecretKey<'a, 'b> {
+    pub fn decrypt(
+        &self,
+        c: &RowVec<'a, F2>, // ciphertext
+    ) -> RowVec<'a, F2> {
+        let m_s_gp_z = c * self.p.inverse().unwrap(); // msg stands for m * s * g
+        let m_s_gp = self.goppa.decode(&m_s_gp_z);
+        // println!(
+        //     "ms({}, {}), s.inv({}, {})",
+        //     ms.rows(),
+        //     ms.cols(),
+        //     self.s.rows(),
+        //     self.s.cols()
+        // );
+        let f2 = c.field();
+        let h = self.goppa.parity_check_matrix().binary_form(f2);
+        let (g, p) = Goppa::generator_matrix(&h);
+        let m_s_g = m_s_gp * p.inverse().unwrap();
+        let m_s = RowVec::new(f2, m_s_g.data()[0..self.s.rows()].to_vec());
+        let m = m_s * self.s.inverse().unwrap();
+        m
+        // self.goppa.decode(&(cpt * self.p.inverse().unwrap())) * self.s.inverse().unwrap()
+    }
 
-    // sk.1.decode(&(cpt * sk.2.inverse().unwrap())) * sk.0.inverse().unwrap()
+    pub fn save_secret_key(&self, file_name: &str) {
+        let mut f = File::create(file_name).expect("Unable to create file");
+        f.write_all((self.s.to_hex_string() + "\n").as_bytes());
+        f.write_all((self.goppa.to_hex_string() + "\n").as_bytes());
+        f.write_all((self.p.to_hex_string() + "\n").as_bytes());
+    }
 
-    let msg = c * sk.p.inverse().unwrap(); // msg stands for m * s * g
-    let ms = sk.goppa.decode(&msg);
-    println!("ms({}, {}), s.inv({}, {})", ms.rows(), ms.cols(), sk.s.rows(), sk.s.cols());
-    let ms = RowVec::new(c.field(), ms.data()[0..sk.s.rows()].to_vec());
-    let m = ms * sk.s.inverse().unwrap();
-    m
-    // sk.goppa.decode(&(cpt * sk.p.inverse().unwrap())) * sk.s.inverse().unwrap()
+    pub fn load_finite_field(file_name: &str) -> F2m {
+        // TODO: return result and use ? check all expect and unwrap calls
+        let f = File::open(file_name).expect("Unable to open file");
+        let mut f = BufReader::new(f);
+        let mut line = String::new();
+        f.read_line(&mut line)
+            .expect("Unable to read the first line");
+        line.clear();
+        f.read_line(&mut line)
+            .expect("Unable to read the second line");
+        let order = u32::from_str_radix(line.split('#').next().unwrap(), 16).unwrap();
+        let f = Field::generate(order);
+        f
+    }
+
+    pub fn load_secret_key(file_name: &str, f2: &'a F2, f2m: &'b F2m) -> Self {
+        let f = File::open(file_name).expect("Unable to open file");
+        let f = BufReader::new(f);
+        let mut lines = f.lines();
+        let s = Mat::from_hex_string(&lines.next().unwrap().unwrap(), f2); // TODO: double unwrap ??
+        let goppa = Goppa::from_hex_string(&lines.next().unwrap().unwrap(), f2m); // TODO: double unwrap ??
+        let p = Mat::from_hex_string(&lines.next().unwrap().unwrap(), f2); // TODO: double unwrap ??
+        SecretKey { s, goppa, p }
+    }
 }

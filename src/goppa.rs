@@ -3,11 +3,12 @@ use log::info;
 use rand::{rngs::ThreadRng, Rng};
 
 use crate::{
-    finite_field::{F2FiniteExtension, F2m, Field, FiniteField, F2},
+    finite_field::{F2FiniteExtension, Field, F2},
     matrix::{Mat, RowVec},
     polynomial::Poly,
 };
 
+#[derive(Eq, PartialEq)]
 pub struct Goppa<'a, F: Eq + Field> {
     // len: usize,
     poly: Poly<'a, F>,
@@ -129,7 +130,7 @@ where
 
     // pub fn generator_matrix<'b, G>(h: &Mat<'b, G>) -> Mat<'b, G>
     // where G: Eq + F2FiniteExtension {
-    pub fn generator_matrix(h: &Mat<'a, F>) -> Mat<'a, F> {
+    pub fn generator_matrix(h: &Mat<'a, F>) -> (Mat<'a, F>, Mat<'a, F>) {
         let f = h.field();
         let m = h.rows();
         let n = h.cols();
@@ -142,7 +143,9 @@ where
                     gs[(i, j)] = f.neg(hs[(j - k, i)]);
                 }
             }
-            gs * p.transpose()
+            let pt = p.transpose();
+            // let g = gs * q;
+            (gs * &pt, pt)
         } else {
             panic!("Rows of the parity-check matrix aren't independant");
         }
@@ -160,7 +163,7 @@ where
         let f2 = msg.field();
         let h = self.parity_check_matrix();
         let hb = h.binary_form(f2);
-        let g = Goppa::generator_matrix(&hb);
+        let (g, _) = Goppa::generator_matrix(&hb);
         msg * g
         // Self::goppa_encode(&g, msg)
     }

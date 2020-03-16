@@ -1,4 +1,4 @@
-// pub mod crypto;
+pub mod crypto;
 pub mod finite_field;
 pub mod goppa;
 pub mod matrix;

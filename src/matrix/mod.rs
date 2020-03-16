@@ -530,7 +530,7 @@ impl<'a, F: Eq + F2FiniteExtension> Mat<'a, F> {
 
 impl<'a> Mat<'a, F2> {
     pub fn to_hex_string(&self) -> String { // TODO: Should return type be String or str or &str ??
-        if self.rows > 255 || self.cols > 255 {
+        if self.rows > 4095 || self.cols > 4095 {
             panic!("Cannot convert matrix to hex string: dimensions not supported");
         }
         let len = 2 * (4 + 1) + 2 * (self.rows * self.cols / 8 + 1);
@@ -550,6 +550,9 @@ impl<'a> Mat<'a, F2> {
                     shift -= 1;
                 }
             }
+        }
+        if (self.rows * self.cols) % 8 != 0 {
+            s.push_str(format!("{:02x}", byte).as_str());
         }
         s
     }

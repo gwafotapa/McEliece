@@ -258,3 +258,15 @@ fn matrix_f2_rowvec_weight() {
     let vec = RowVec::random_with_weight(&mut rng, f2, 35, 13);
     assert_eq!(vec.weight(), 13);
 }
+
+#[test]
+fn rowvec_f2_save_load() {
+    let f2 = &F2 {};
+    let mut rng = rand::thread_rng();
+    let n = rng.gen_range(10, 1000);
+    let vec_save = RowVec::random(&mut rng, f2, n);
+    let file_name = "vec_save_load_test";
+    vec_save.save_vector(file_name);
+    let vec_load = RowVec::load_vector(file_name, f2);
+    assert_eq!(vec_save, vec_load);
+}
