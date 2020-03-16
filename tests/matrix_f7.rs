@@ -8,7 +8,7 @@ fn matrix_f7_permutation_random() {
     let f7 = &F7 {};
     let mut rng = rand::thread_rng();
     let mat = Mat::permutation_random(&mut rng, f7, 10);
-    println!("{:?}", mat);
+    // println!("{:?}", mat);
     assert!(mat.is_permutation());
 }
 
@@ -17,12 +17,12 @@ fn matrix_f7_is_invertible() {
     let f7 = &F7 {};
 
     let id = Mat::identity(f7, 11);
-    println!("{:?}", id);
+    // println!("{:?}", id);
     assert!(id.is_invertible());
 
     let mut rng = rand::thread_rng();
     let mat = Mat::permutation_random(&mut rng, f7, 20);
-    println!("{:?}", mat);
+    // println!("{:?}", mat);
     assert!(mat.is_invertible());
 }
 
@@ -31,16 +31,16 @@ fn matrix_f7_inverse() {
     let f7 = &F7 {};
 
     let id = Mat::identity(f7, 11);
-    assert_eq!(id.inverse().as_ref(), Some(&id));
+    assert!(id.inverse().as_ref() == Some(&id));
 
     let mut rng = rand::thread_rng();
     let mat = Mat::permutation_random(&mut rng, f7, 11);
-    assert_eq!(
+    assert!(
         mat.inverse()
             .expect("Cannot inverse permutation matrix")
             .inverse()
-            .expect("Cannot inverse permutation matrix"),
-        mat
+            .expect("Cannot inverse permutation matrix")
+            == mat
     );
 }
 
@@ -52,17 +52,17 @@ fn matrix_f7_invertible_random() {
     let mat = Mat::invertible_random(&mut rng, f7, 15);
     assert!(mat.is_invertible());
 
-    assert_eq!(
+    assert!(
         mat.inverse()
             .expect("Cannot inverse invertible matrix")
             .inverse()
-            .expect("Cannot inverse invertible matrix"),
-        mat
+            .expect("Cannot inverse invertible matrix")
+            == mat
     );
 
     let prod = &mat * &mat.inverse().expect("Cannot inverse invertible matrix");
     let id = Mat::identity(f7, 15);
-    assert_eq!(prod, id);
+    assert!(prod == id);
 }
 
 #[test]
@@ -74,23 +74,23 @@ fn matrix_f7_add() {
     let b = Mat::random(&mut rng, f7, 11, 11);
     let c = Mat::random(&mut rng, f7, 11, 11);
     let z = Mat::zero(f7, 11, 11);
-    println!("{:?}", a);
+    // println!("{:?}", a);
 
     // Associativity
-    assert_eq!((&a + &b) + &c, &a + (&b + &c));
+    assert!((&a + &b) + &c == &a + (&b + &c));
 
     // Commutativity
-    assert_eq!(&a + &b, &b + &a);
+    assert!(&a + &b == &b + &a);
 
     // Neutral element
-    assert_eq!(&a + &z, a);
+    assert!(&a + &z == a);
 
     // Characteristic
     let mut s = Mat::zero(f7, 11, 11);
     for _i in 0..7 {
         s += &a;
     }
-    assert_eq!(s, z);
+    assert!(s == z);
 }
 
 #[test]
@@ -114,20 +114,20 @@ fn matrix_f7_mul() {
     let c = Mat::random(&mut rng, f7, 13, 4);
 
     // Associativity
-    assert_eq!((&a * &b) * &c, &a * (&b * &c));
+    assert!((&a * &b) * &c == &a * (&b * &c));
 
     // Neutral element
     let i8 = Mat::identity(f7, 8);
     let i10 = Mat::identity(f7, 10);
-    assert_eq!(&a * &i8, a);
-    assert_eq!(&i10 * &a, a);
+    assert!(&a * &i8 == a);
+    assert!(&i10 * &a == a);
 
     // Zero case
     let z8 = Mat::zero(f7, 8, 8);
     let z10 = Mat::zero(f7, 10, 10);
     let z10_8 = Mat::zero(f7, 10, 8);
-    assert_eq!(&a * &z8, z10_8);
-    assert_eq!(&z10 * &a, z10_8);
+    assert!(&a * &z8 == z10_8);
+    assert!(&z10 * &a == z10_8);
 
     // Distributivity
     let a = Mat::random(&mut rng, f7, 10, 12);
@@ -136,10 +136,10 @@ fn matrix_f7_mul() {
     let d = Mat::random(&mut rng, f7, 12, 9);
 
     // Left: (a + b)c = ac + bc
-    assert_eq!((&a + &b) * &c, &a * &c + &b * &c);
+    assert!((&a + &b) * &c == &a * &c + &b * &c);
 
     // Right: a(b + c) = ab + ac
-    assert_eq!(&a * (&c + &d), &a * &c + &a * &d);
+    assert!(&a * (&c + &d) == &a * &c + &a * &d);
 }
 
 #[test]
@@ -147,14 +147,14 @@ fn matrix_f7_rank() {
     let f7 = &F7 {};
 
     let mat = Mat::zero(f7, 23, 4);
-    assert_eq!(mat.rank(), 0);
+    assert!(mat.rank() == 0);
 
     let mat = Mat::identity(f7, 19);
-    assert_eq!(mat.rank(), 19);
+    assert!(mat.rank() == 19);
 
     let mut rng = rand::thread_rng();
     let mat = Mat::permutation_random(&mut rng, f7, 34);
-    assert_eq!(mat.rank(), 34);
+    assert!(mat.rank() == 34);
 }
 
 #[test]
@@ -169,7 +169,7 @@ fn matrix_f7_standard_form() {
         .standard_form()
         .expect("Cannot recognize the identity matrix as a standard form");
     assert!(u.is_permutation());
-    assert_eq!(h, mat);
+    assert!(h == mat);
     assert!(p.is_permutation());
 
     let mut h = Mat::random(&mut rng, f7, 13, 31);
@@ -183,14 +183,14 @@ fn matrix_f7_standard_form() {
         .standard_form()
         .expect("Failed to put a full rank matrix in standard form");
 
-    println!("{:?}", u);
-    println!("{:?}", s);
-    println!("{:?}", p);
+    // println!("{:?}", u);
+    // println!("{:?}", s);
+    // println!("{:?}", p);
 
     assert!(u.is_invertible());
     assert!(s.is_standard_form());
     assert!(p.is_permutation());
-    assert_eq!(s, u * h * p);
+    assert!(s == u * h * p);
 }
 
 #[test]
@@ -201,7 +201,7 @@ fn matrix_f7_transpose() {
     let rows = rng.gen_range(0, 100);
     let cols = rng.gen_range(0, 100);
     let mat = Mat::random(&mut rng, f7, rows, cols);
-    assert_eq!(mat, mat.transpose().transpose());
+    assert!(mat == mat.transpose().transpose());
 }
 
 #[test]
@@ -212,5 +212,5 @@ fn matrix_f7_rowvec_weight() {
 
     let mut rng = rand::thread_rng();
     let vec = RowVec::random_with_weight(&mut rng, f7, 35, 13);
-    assert_eq!(vec.weight(), 13);
+    assert!(vec.weight() == 13);
 }

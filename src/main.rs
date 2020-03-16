@@ -22,91 +22,6 @@ const GOPPA_M: u32 = 5; // The underlying field of the code is F2^GOPPA_M
 const GOPPA_N: u32 = 1 << GOPPA_M; // Code length
 const GOPPA_T: u32 = 4; // Code correction capacity i.e. degree of the goppa polynomial
 
-// type PublicKey<'a> = (Mat<'a, F2>, u32);
-// type SecretKey<'a, 'b> = (Mat<'a, F2>, Goppa<'b, F2m>, Mat<'a, F2>);
-
-fn save_public_key(pk: &PublicKey, file_name: &str) {
-    println!("{}\n", pk.sgp);
-    let mut f = File::create(file_name).expect("Unable to create file");
-    // f.write_all(format!("{:02x}", pk.sgp.rows()).as_bytes());
-    // f.write_all(format!("{:02x}", pk.sgp.cols()).as_bytes());
-    // for i in 0..pk.sgp.rows() {
-    //     for j in (0..pk.sgp.cols()).step_by(8) {
-    //         let mut tmp = 0;
-    //         for k in 0..8 {
-    //             tmp |= pk.sgp[(i, j + k)] << 7 - k;
-    //         }
-    //         f.write_all(format!("{:02x}", tmp).as_bytes());
-    //     }
-    // }
-    f.write_all(pk.sgp.to_hex_string().as_bytes());
-    f.write_all(format!("\n{:02x}\n", pk.t).as_bytes());
-}
-
-fn save_secret_key(sk: &SecretKey, file_name: &str) {
-    let mut f = File::create(file_name).expect("Unable to create file");
-    f.write_all((sk.s.to_hex_string() + "\n").as_bytes());
-    f.write_all((sk.goppa.to_hex_string() + "\n").as_bytes());
-    f.write_all((sk.p.to_hex_string() + "\n").as_bytes());
-}
-
-fn load_public_key<'a>(file_name: &str, f2: &'a F2) -> PublicKey<'a> {
-    let mut f = File::open(file_name).expect("Unable to open file");
-    let mut f = BufReader::new(f);
-    // let mut buf = String::new();
-    // let mut lines = f.lines();
-    // f.read_to_string(&mut data).expect("Unable to read data");
-    // buf.pop(); // Remove terminating newline character
-    let mut line = String::new();
-    f.read_line(&mut line).expect("Unable to read the first line");
-    line.pop(); // Remove terminating newline
-    let sgp = Mat::from_hex_string(&line, f2);
-                                                                         // let mut data = hex::decode(data).expect("Hex decoding failed");
-                                                                         // let t = data.pop().unwrap() as u32;
-                                                                         // let rows = data[0];
-                                                                         // let cols = data[1];
-                                                                         // println!("rows: {}\ncols: {}\n", rows, cols);
-                                                                         // let mut sgp = Mat::zero(f2, rows.into(), cols as usize); // TODO: into() or as ?
-                                                                         // for i in 2..data.len() {
-                                                                         //     for j in 0..8 {
-                                                                         //         let bit_index = 8 * (i - 2) + j;
-                                                                         //         let row = bit_index / cols as usize;
-                                                                         //         let col = bit_index % cols as usize;
-                                                                         //         sgp[(row, col)] = ((data[i] >> 7 - j) & 1).into();
-                                                                         //     }
-                                                                         // }
-    println!("{}\n", sgp);
-    // f.readline(&mut buf).expect("Cannot read second line");
-    // buf.pop();
-    line.clear();
-    f.read_line(&mut line).expect("Unable to read the second line");
-    line.pop(); // Remove terminating newline
-    let t = u32::from_str_radix(&line, 16).unwrap();
-    PublicKey { sgp, t }
-}
-
-fn load_finite_field(file_name: &str) -> F2m {
-    let mut f = File::open(file_name).expect("Unable to open file"); // TODO: return result and use ?
-    let mut f = BufReader::new(f);
-    let mut line = String::new();
-    f.read_line(&mut line).expect("Unable to read the first line");
-    line.clear();
-    f.read_line(&mut line).expect("Unable to read the second line");
-    let order = u32::from_str_radix(line.split('#').next().unwrap(), 16).unwrap();
-    let f = F2m::generate(order);
-    f
-}
-
-fn load_secret_key<'a, 'b>(file_name: &str, f2: &'a F2, f2m: &'b F2m) -> SecretKey<'a, 'b> {
-    let mut f = File::open(file_name).expect("Unable to open file"); // TODO: return result and use ?
-    let f = BufReader::new(f);
-    let mut lines = f.lines();
-    let s = Mat::from_hex_string(&lines.next().unwrap().unwrap(), f2); // TODO: double unwrap ??
-    let goppa = Goppa::from_hex_string(&lines.next().unwrap().unwrap(), f2m); // TODO: double unwrap ??
-    let p = Mat::from_hex_string(&lines.next().unwrap().unwrap(), f2); // TODO: double unwrap ??
-    SecretKey { s, goppa, p }
-}
-
 fn save_vector(file_name: &str, vec: RowVec<'_, F2>) {
     let mut f = File::create(file_name).expect("Unable to create file");
     let mut s = format!("{:x}#", vec.cols());
@@ -126,7 +41,7 @@ fn save_vector(file_name: &str, vec: RowVec<'_, F2>) {
 }
 
 fn load_vector<'a>(file_name: &str, f2: &'a F2) -> RowVec<'a, F2> {
-    let mut f = File::open(file_name).expect("Unable to open file"); // TODO: return result and use ?
+    let mut f = File::open(file_name).expect("Unable to open file");
     let mut buf = String::new();
     f.read_to_string(&mut buf).expect("Unable to read data");
     let v: Vec<&str> = buf.split('#').collect();
@@ -148,7 +63,7 @@ fn load_vector<'a>(file_name: &str, f2: &'a F2) -> RowVec<'a, F2> {
 }
 
 fn main() {
-    // TODO: deal with all the unwrap()s
+    // TODO: deal with all the unwrap() and expect() calls
     env_logger::init();
     if GOPPA_N > 255 {
         panic!("n should be less than 256");
@@ -191,33 +106,4 @@ fn main() {
         }
         _ => panic!("Unexpected command. Valid commands are 'keygen', 'encrypt' and 'decrypt'."),
     }
-
-    // // TODO: Check the length of data to avoid mul overflow ?
-    // let data = fs::read(&args[1]).expect("Unable to read file");
-    // println!("{:?}", data);
-    // let k = 8 * data.len();
-    // if k != 72 {
-    //     panic!("Plaintext is {} bits and should be 72", k);
-    // }
-    // let f2 = &F2 {};
-    // let mut msg = RowVec::zero(f2, k);
-    // for i in 0..(data.len() - 1) {
-    //     let nbr = char::from(data[i]).to_digit(16).unwrap();
-    //     println!("{} ", nbr);
-    //     for j in 0..8 {
-    //         msg[8 * i + j] = ((nbr >> (7 - j)) & 1).into();
-    //     }
-    // }
-    // println!("{:?}", msg);
-
-    // let file_name = args[1];
-
-    // let mut file = match OpenOptions::new()
-    //     .write(true)
-    //     .create_new(true)
-    //     .open(file_name)
-    // {
-    //     Ok(f) => f,
-    //     Err(e) => panic!("Cannot create file: {}", e),
-    // };
 }

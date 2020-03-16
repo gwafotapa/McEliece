@@ -58,7 +58,4 @@ pub trait F2FiniteExtension: CharacteristicTwo + FiniteField {
     // The u32 binary representation matches the decomposition of 'a' on the canonical basis
     fn elt_to_u32(&self, a: Self::FElt) -> u32;
     fn u32_to_elt(&self, n: u32) -> Self::FElt;
-    // fn elt_to_hexstr(&self, a: Self::FElt) -> String {
-    //     format!("{:x}", self.elt_to_u32(a))
-    // }
 }

@@ -63,19 +63,19 @@ fn polynomial_f7_extended_gcd() {
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(1, 100);
     let a = Poly::random(&mut rng, f, deg_a);
-    println!("a(x) = {:?}\n", a);
+    // println!("a(x) = {:?}\n", a);
     let deg_b = rng.gen_range(0, deg_a);
     let b = Poly::random(&mut rng, f, deg_b);
-    println!("b(x) = {:?}\n", b);
+    // println!("b(x) = {:?}\n", b);
     let (d, u, v, a1, b1) = Poly::extended_gcd(&a, &b);
-    println!("d(x) = {:?}", d);
-    println!("u(x) = {:?}", u);
-    println!("v(x) = {:?}", v);
-    println!("a1(x) = {:?}", a1);
-    println!("b1(x) = {:?}", b1);
-    assert_eq!(a, &d * &a1);
-    assert_eq!(b, &d * &b1);
-    assert_eq!(d, &a * &u + &b * &v);
+    // println!("d(x) = {:?}", d);
+    // println!("u(x) = {:?}", u);
+    // println!("v(x) = {:?}", v);
+    // println!("a1(x) = {:?}", a1);
+    // println!("b1(x) = {:?}", b1);
+    assert!(a == &d * &a1);
+    assert!(b == &d * &b1);
+    assert!(d == &a * &u + &b * &v);
 }
 
 #[test]
