@@ -3,14 +3,14 @@ use rand::Rng;
 use mceliece::finite_field::*;
 use mceliece::matrix::*;
 
-#[test]
-fn matrix_f7_permutation_random() {
-    let f7 = &F7 {};
-    let mut rng = rand::thread_rng();
-    let mat = Mat::permutation_random(&mut rng, f7, 10);
-    // println!("{:?}", mat);
-    assert!(mat.is_permutation());
-}
+// #[test]
+// fn matrix_f7_permutation_random() {
+//     let f7 = &F7 {};
+//     let mut rng = rand::thread_rng();
+//     let mat = Mat::permutation_random(&mut rng, f7, 10);
+//     // println!("{:?}", mat);
+//     assert!(mat.is_permutation());
+// }
 
 #[test]
 fn matrix_f7_is_invertible() {
@@ -20,10 +20,10 @@ fn matrix_f7_is_invertible() {
     // println!("{:?}", id);
     assert!(id.is_invertible());
 
-    let mut rng = rand::thread_rng();
-    let mat = Mat::permutation_random(&mut rng, f7, 20);
-    // println!("{:?}", mat);
-    assert!(mat.is_invertible());
+    // let mut rng = rand::thread_rng();
+    // let mat = Mat::permutation_random(&mut rng, f7, 20);
+    // // println!("{:?}", mat);
+    // assert!(mat.is_invertible());
 }
 
 #[test]
@@ -33,15 +33,15 @@ fn matrix_f7_inverse() {
     let id = Mat::identity(f7, 11);
     assert!(id.inverse().as_ref() == Some(&id));
 
-    let mut rng = rand::thread_rng();
-    let mat = Mat::permutation_random(&mut rng, f7, 11);
-    assert!(
-        mat.inverse()
-            .expect("Cannot inverse permutation matrix")
-            .inverse()
-            .expect("Cannot inverse permutation matrix")
-            == mat
-    );
+    // let mut rng = rand::thread_rng();
+    // let mat = Mat::permutation_random(&mut rng, f7, 11);
+    // assert!(
+    //     mat.inverse()
+    //         .expect("Cannot inverse permutation matrix")
+    //         .inverse()
+    //         .expect("Cannot inverse permutation matrix")
+    //         == mat
+    // );
 }
 
 #[test]
@@ -152,9 +152,9 @@ fn matrix_f7_rank() {
     let mat = Mat::identity(f7, 19);
     assert!(mat.rank() == 19);
 
-    let mut rng = rand::thread_rng();
-    let mat = Mat::permutation_random(&mut rng, f7, 34);
-    assert!(mat.rank() == 34);
+    // let mut rng = rand::thread_rng();
+    // let mat = Mat::permutation_random(&mut rng, f7, 34);
+    // assert!(mat.rank() == 34);
 }
 
 #[test]

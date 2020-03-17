@@ -293,8 +293,8 @@ impl<'a, F: Eq + Field> RowVec<'a, F> {
         true
     }
 
-    pub fn permute_cols(&mut self, cols: &Vec<usize>) {
-        self.0.permute_cols(cols);
+    pub fn extract_cols(&self, perm: &Vec<usize>) -> Self {
+        RowVec(self.0.extract_cols(perm))
     }
 }
 

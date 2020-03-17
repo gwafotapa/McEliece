@@ -7,7 +7,7 @@ use std::{
 
 use crate::finite_field::{F2m, Field, F2};
 use crate::goppa::Goppa;
-use crate::matrix::{Mat, RowVec};
+use crate::matrix::{self, Mat, RowVec};
 use crate::polynomial::Poly;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -20,8 +20,8 @@ pub struct PublicKey<'a> {
 pub struct SecretKey<'a, 'b> {
     pub s: Mat<'a, F2>,        // singular matrix S
     pub goppa: Goppa<'b, F2m>, // goppa code of generator matrix G
-    pub p: Mat<'a, F2>,        // permutation matrix P
     pub info_set: Vec<usize>,  // information set of matrix G
+    pub p: Vec<usize>,         // permutation matrix P
 }
 
 pub fn keygen<'a, 'b>(
@@ -47,16 +47,22 @@ pub fn keygen<'a, 'b>(
     info!("Generator matrix G:{}", g);
     let s = Mat::invertible_random(&mut rng, f2, k as usize);
     info!("Singular matrix S:{}", s);
-    let p = Mat::permutation_random(&mut rng, f2, n as usize);
-    info!("Permutation matrix P:{}", p);
-    let sgp = &s * &g * &p;
+    let p: Vec<usize> = matrix::permutation_random(&mut rng, n as usize);
+    println!("Permutation matrix P:{:?}", p);
+    let sg = &s * &g;
+    let sgp = sg.extract_cols(&p);
     info!("Perturbed generator matrix ~G:{}", sgp);
     // let pk = (gg, t);
     // let sk = (s, goppa, p);
     // (pk, sk)
     let pk = PublicKey { sgp, t };
     println!("{:?}", info_set);
-    let sk = SecretKey { s, goppa, p , info_set };
+    let sk = SecretKey {
+        s,
+        goppa,
+        info_set,
+        p,
+    };
     // let sk = SecretKey { s, goppa, p , info_set: Vec::new() };
     (pk, sk)
 }
@@ -101,14 +107,14 @@ impl<'a, 'b> SecretKey<'a, 'b> {
         c: &RowVec<'a, F2>, // ciphertext
     ) -> RowVec<'a, F2> {
         let f2 = c.field();
-        let m_s_g_z = c * self.p.transpose(); // msg stands for m * s * g
+        let m_s_g_z = c.extract_cols(&matrix::inverse_permutation(&self.p)); // msg stands for m * s * g
         let mut m_s_g = self.goppa.decode(&m_s_g_z);
 
         // let h = self.goppa.parity_check_matrix().binary_form(f2);
         // let (g, p) = Goppa::generator_matrix(&h);
         // let m_s_g = m_s_g * p;
         // let m_s = RowVec::new(f2, m_s_g.data()[0..self.s.rows()].to_vec());
-        
+
         // let k = self.info_set.len();
         // let mut v = Vec::with_capacity(k);
         // for i in 0..k {
@@ -116,9 +122,9 @@ impl<'a, 'b> SecretKey<'a, 'b> {
         // }
         // let m_s = RowVec::new(f2, v);
 
-        m_s_g.permute_cols(&self.info_set);
+        let m_s_g = m_s_g.extract_cols(&self.info_set);
         let m_s = RowVec::new(f2, m_s_g.data()[0..self.s.rows()].to_vec());
-        
+
         let m = m_s * self.s.inverse().unwrap();
         m
         // self.goppa.decode(&(cpt * self.p.inverse().unwrap())) * self.s.inverse().unwrap()
@@ -128,7 +134,16 @@ impl<'a, 'b> SecretKey<'a, 'b> {
         let mut f = File::create(file_name).expect("Unable to create file");
         f.write_all((self.s.to_hex_string() + "\n").as_bytes());
         f.write_all((self.goppa.to_hex_string() + "\n").as_bytes());
-        f.write_all((self.p.to_hex_string() + "\n").as_bytes());
+
+        for i in 0..self.info_set.len() - 1 {
+            f.write_all(format!("{:x} ", self.info_set[i]).as_bytes());
+        }
+        f.write_all(format!("{:x}\n", self.info_set[self.info_set.len() - 1]).as_bytes());
+
+        for i in 0..self.p.len() - 1 {
+            f.write_all(format!("{:x} ", self.p[i]).as_bytes());
+        }
+        f.write_all(format!("{:x}\n", self.p[self.p.len() - 1]).as_bytes());
     }
 
     pub fn load_finite_field(file_name: &str) -> F2m {
@@ -152,7 +167,26 @@ impl<'a, 'b> SecretKey<'a, 'b> {
         let mut lines = f.lines();
         let s = Mat::from_hex_string(&lines.next().unwrap().unwrap(), f2); // TODO: double unwrap ??
         let goppa = Goppa::from_hex_string(&lines.next().unwrap().unwrap(), f2m); // TODO: double unwrap ??
-        let p = Mat::from_hex_string(&lines.next().unwrap().unwrap(), f2); // TODO: double unwrap ??
-        SecretKey { s, goppa, p , info_set: Vec::new() }
+
+        let line = lines.next().unwrap().unwrap();
+        let v: Vec<&str> = line.split(' ').collect();
+        let mut info_set = Vec::new();
+        for i in 0..v.len() {
+            info_set.push(usize::from_str_radix(v[i], 16).unwrap());
+        }
+
+        let line = lines.next().unwrap().unwrap();
+        let v: Vec<&str> = line.split(' ').collect();
+        let mut p = Vec::new();
+        for i in 0..v.len() {
+            p.push(usize::from_str_radix(v[i], 16).unwrap());
+        }
+
+        SecretKey {
+            s,
+            goppa,
+            info_set,
+            p,
+        }
     }
 }

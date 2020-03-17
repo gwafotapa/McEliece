@@ -3,43 +3,7 @@ use rand::rngs::ThreadRng;
 use super::Mat;
 use crate::finite_field::Field;
 
-impl<'a, F: Eq + Field> Mat<'a, F> {
-    pub fn swap_rows(&mut self, row1: usize, row2: usize) {
-        if row1 == row2 {
-            return;
-        }
-
-        let slice = &mut self.data[row1 * self.cols..(row1 + 1) * self.cols].to_vec();
-        slice.swap_with_slice(&mut self.data[row2 * self.cols..(row2 + 1) * self.cols]);
-        slice.swap_with_slice(&mut self.data[row1 * self.cols..(row1 + 1) * self.cols]);
-    }
-
-    pub fn swap_cols(&mut self, col1: usize, col2: usize) {
-        if col1 == col2 {
-            return;
-        }
-
-        for i in 0..self.rows {
-            let tmp = self[(i, col1)];
-            self[(i, col1)] = self[(i, col2)];
-            self[(i, col2)] = tmp;
-        }
-    }
-
-    pub fn permute_cols(&mut self, perm: &Vec<usize>) {
-        for i in 0..perm.len() {
-            self.swap_cols(i, perm[i]);
-        }
-    }
-
-    pub fn inverse_permutation(perm: Vec<usize>) -> Vec<usize> {
-        let mut inv = vec![0, perm.len()];
-        for i in 0..perm.len() {
-            inv[perm[i]] = i;
-        }
-        inv
-    }
-    
+impl<'a, F: Eq + Field> Mat<'a, F> {    
     pub fn combine_rows(&mut self, row1: usize, lambda: F::FElt, row2: usize) {
         let f = self.field;
         for j in 0..self.cols {

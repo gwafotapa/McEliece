@@ -287,12 +287,7 @@ impl<'a, F: Eq + F2FiniteExtension> Debug for Mat<'a, F> {
         write!(f, "\n")?;
         for i in 0..self.rows {
             for j in 0..self.cols - 1 {
-                write!(
-                    f,
-                    "{:>w$x} ",
-                    k.elt_to_u32(self[(i, j)]),
-                    w = width
-                )?;
+                write!(f, "{:>w$x} ", k.elt_to_u32(self[(i, j)]), w = width)?;
             }
             write!(
                 f,
@@ -415,22 +410,36 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         true
     }
 
-    pub fn permutation_random(rng: &mut ThreadRng, f: &'a F, n: usize) -> Self {
-        let mut mat = Self::zero(f, n, n);
-        let mut cols = Vec::with_capacity(n); // remaining column indices
-        for i in 0..n {
-            cols.push(i);
+    pub fn swap_rows(&mut self, row1: usize, row2: usize) {
+        if row1 == row2 {
+            return;
         }
 
-        for i in 0..n {
-            // Draw a random column index j to set the '1' on this row
-            let nbr = rng.gen_range(0, n - i);
-            mat[(i, cols[nbr])] = f.one();
+        let slice = &mut self.data[row1 * self.cols..(row1 + 1) * self.cols].to_vec();
+        slice.swap_with_slice(&mut self.data[row2 * self.cols..(row2 + 1) * self.cols]);
+        slice.swap_with_slice(&mut self.data[row1 * self.cols..(row1 + 1) * self.cols]);
+    }
 
-            // Remove the index from the list by putting it at the end
-            cols.swap(nbr, n - 1 - i);
+    pub fn swap_cols(&mut self, col1: usize, col2: usize) {
+        if col1 == col2 {
+            return;
         }
-        mat
+
+        for i in 0..self.rows {
+            let tmp = self[(i, col1)];
+            self[(i, col1)] = self[(i, col2)];
+            self[(i, col2)] = tmp;
+        }
+    }
+
+    pub fn extract_cols(&self, perm: &Vec<usize>) -> Self {
+        let mut res = Mat::zero(self.field(), self.rows(), perm.len());
+        for j in 0..perm.len() {
+            for i in 0..res.rows() {
+                res[(i, j)] = self[(i, perm[j])];
+            }
+        }
+        res
     }
 
     pub fn identity(f: &'a F, n: usize) -> Self {
@@ -529,7 +538,8 @@ impl<'a, F: Eq + F2FiniteExtension> Mat<'a, F> {
 }
 
 impl<'a> Mat<'a, F2> {
-    pub fn to_hex_string(&self) -> String { // TODO: Should return type be String or str or &str ??
+    pub fn to_hex_string(&self) -> String {
+        // TODO: Should return type be String or str or &str ??
         if self.rows > 4095 || self.cols > 4095 {
             panic!("Cannot convert matrix to hex string: dimensions not supported");
         }
@@ -564,15 +574,15 @@ impl<'a> Mat<'a, F2> {
         let rows = usize::from_str_radix(v[0], 16).unwrap();
         let cols = usize::from_str_radix(v[1], 16).unwrap();
         let data = hex::decode(v[2]).expect("Hex decoding failed"); // TODO: use a result and ?
-                                                                 // if data.len() < 3 {
-                                                                 //     panic!("Cannot convert hex string to matrix: string is too short");
-                                                                 // }
-        // let rows = data[0];
-        // let cols = data[1];
-        // if data.len() != 2 + rows * cols {
-        //     panic!("Cannot convert hex string to matrix: wrong matrix dimensions");
-        // }
-        // println!("rows: {}\ncols: {}\n", rows, cols);
+                                                                    // if data.len() < 3 {
+                                                                    //     panic!("Cannot convert hex string to matrix: string is too short");
+                                                                    // }
+                                                                    // let rows = data[0];
+                                                                    // let cols = data[1];
+                                                                    // if data.len() != 2 + rows * cols {
+                                                                    //     panic!("Cannot convert hex string to matrix: wrong matrix dimensions");
+                                                                    // }
+                                                                    // println!("rows: {}\ncols: {}\n", rows, cols);
         let mut mat = Mat::zero(f2, rows, cols); // TODO: into() or as ?
         let mut d = 0;
         let mut shift = 7;
@@ -602,3 +612,29 @@ impl<'a> Mat<'a, F2> {
 
 mod gauss;
 mod rowvec;
+
+pub fn permutation_random(rng: &mut ThreadRng, n: usize) -> Vec<usize> {
+    let mut vec = vec![0; n];
+    let mut cols = Vec::with_capacity(n); // remaining column indices
+    for i in 0..n {
+        cols.push(i);
+    }
+
+    for i in 0..n {
+        // Draw a random column index j to set the '1' on this row
+        let nbr = rng.gen_range(0, n - i);
+        vec[cols[nbr]] = i;
+
+        // Remove the index from the list by putting it at the end
+        cols.swap(nbr, n - 1 - i);
+    }
+    vec
+}
+
+pub fn inverse_permutation(perm: &Vec<usize>) -> Vec<usize> {
+    let mut inv = vec![0; perm.len()];
+    for i in 0..perm.len() {
+        inv[perm[i]] = i;
+    }
+    inv
+}
