@@ -203,9 +203,10 @@ impl<'a, F: Eq + F2FiniteExtension> Poly<'a, F> {
         let len = 2 * (4 + 1) + 4 * (self.degree() + 1);
         let mut s = String::with_capacity(len);
         s.push_str(format!("{:x}#{:x}#", f.order(), self.degree()).as_str());
-        for i in 0..self.degree() + 1 {
-            s.push_str(format!("{:04x}", f.elt_to_u32(self[i])).as_str());
+        for i in 0..self.degree() {
+            s.push_str(format!("{:x} ", f.elt_to_u32(self[i])).as_str());
         }
+        s.push_str(format!("{:x}", f.elt_to_u32(self[self.degree()])).as_str());
         s
     }
 
@@ -221,11 +222,12 @@ impl<'a, F: Eq + F2FiniteExtension> Poly<'a, F> {
 
         // let t = data[2] as usize;
         // let coeffs = v[2];
+        let v: Vec<&str> = v[2].split(' ').collect();
         let mut poly = Self::zero(&f, t + 1);
         for i in 0..t + 1 {
             // TODO: rewrite using an iterator over data
             // poly[i] = f.u32_to_elt(256 * data[2 * i + 3] as u32 + data[2 * i + 4] as u32);
-            poly[i] = f.u32_to_elt(u32::from_str_radix(&v[2][4*i..4*i+4], 16).unwrap());
+            poly[i] = f.u32_to_elt(u32::from_str_radix(v[i], 16).unwrap());
         }
         poly
     }

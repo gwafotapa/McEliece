@@ -1,4 +1,4 @@
-use rand::{rngs::ThreadRng, Rng};
+use rand::{rngs::ThreadRng};
 use std::{
     fmt::{Debug, Display, Formatter, Result},
     ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign},
@@ -7,6 +7,7 @@ use std::{
 use crate::finite_field::{CharacteristicTwo, F2FiniteExtension, Field, FiniteField, F2};
 
 pub use rowvec::RowVec;
+pub use perm::Perm;
 
 #[derive(Eq, PartialEq)]
 pub struct Mat<'a, F: Eq + Field> {
@@ -362,6 +363,10 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         self.cols
     }
 
+    // TODO: should I return a reference instead ?
+    // It gives more flexibility because I can clone it if I want to
+    // but I don't have to if I just need to read it ?
+    // Might need a lifetime ?
     pub fn data(&self) -> Vec<F::FElt> {
         self.data.clone()
     }
@@ -612,29 +617,40 @@ impl<'a> Mat<'a, F2> {
 
 mod gauss;
 mod rowvec;
+mod perm;
 
-pub fn permutation_random(rng: &mut ThreadRng, n: usize) -> Vec<usize> {
-    let mut vec = vec![0; n];
-    let mut cols = Vec::with_capacity(n); // remaining column indices
-    for i in 0..n {
-        cols.push(i);
+
+impl<'a, F: Eq + Field> Mul<Perm> for Mat<'a, F> {
+    type Output = Self;
+
+    fn mul(self, other: Perm) -> Self::Output {
+        &self * &other
     }
-
-    for i in 0..n {
-        // Draw a random column index j to set the '1' on this row
-        let nbr = rng.gen_range(0, n - i);
-        vec[cols[nbr]] = i;
-
-        // Remove the index from the list by putting it at the end
-        cols.swap(nbr, n - 1 - i);
-    }
-    vec
 }
 
-pub fn inverse_permutation(perm: &Vec<usize>) -> Vec<usize> {
-    let mut inv = vec![0; perm.len()];
-    for i in 0..perm.len() {
-        inv[perm[i]] = i;
+impl<'a, F: Eq + Field> Mul<&Perm> for Mat<'a, F> {
+    type Output = Self;
+
+    fn mul(self, other: &Perm) -> Self::Output {
+        &self * other
     }
-    inv
+}
+
+impl<'a, F: Eq + Field> Mul<Perm> for &Mat<'a, F> {
+    type Output = Mat<'a, F>;
+
+    fn mul(self, other: Perm) -> Self::Output {
+        self * &other
+    }
+}
+
+impl<'a, F: Eq + Field> Mul<&Perm> for &Mat<'a, F> {
+    type Output = Mat<'a, F>;
+
+    fn mul(self, other: &Perm) -> Self::Output {
+        if self.cols() != other.rows() {
+            panic!("Cannot multiply matrices: dimensions don't match");
+        }
+        self.extract_cols(other.data())
+    }
 }

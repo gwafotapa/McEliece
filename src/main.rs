@@ -2,14 +2,14 @@
 
 use std::{
     env,
-    fs::File,
-    io::{BufRead, BufReader, Read, Write},
+    // fs::File,
+    // io::{BufRead, BufReader, Read, Write},
 };
 
 use crypto::{PublicKey, SecretKey};
 use finite_field::{F2m, F2, Field};
-use goppa::Goppa;
-use matrix::{Mat, RowVec};
+// use goppa::Goppa;
+use matrix::RowVec;
 // use polynomial::Poly;
 
 mod crypto;
@@ -27,6 +27,7 @@ const GOPPA_T: u32 = 4; // Code correction capacity i.e. degree of the goppa pol
 fn main() {
     // TODO: deal with all the unwrap() and expect() calls
     env_logger::init();
+    
     if GOPPA_N > 255 {
         panic!("n should be less than 256");
     }
@@ -40,17 +41,16 @@ fn main() {
     if args.len() == 1 {
         panic!("Command expected.");
     }
+    let f2 = &F2 {};
     match args[1].as_str() {
         "keygen" => {
-            let f2 = &F2 {};
             let f2m = &F2m::generate(1 << GOPPA_M);
-            let (pk, sk) = crypto::keygen(f2, f2m, GOPPA_M, GOPPA_N, GOPPA_T);
+            let (pk, sk) = crypto::keygen(f2, f2m, GOPPA_N, GOPPA_T);
             pk.save_public_key("public_key.mce");
             sk.save_secret_key("secret_key.mce");
             ()
         }
         "encrypt" => {
-            let f2 = &F2 {};
             let pk = PublicKey::load_public_key("public_key.mce", f2);
             let m = RowVec::load_vector("message.mce", f2);
             let c = pk.encrypt(&m);
@@ -58,7 +58,6 @@ fn main() {
             ()
         }
         "decrypt" => {
-            let f2 = &F2 {};
             let f2m = &SecretKey::load_finite_field("secret_key.mce"); // &F2m::generate(1 << GOPPA_M);
             let sk = SecretKey::load_secret_key("secret_key.mce", f2, f2m);
             let c = RowVec::load_vector("ciphertext.mce", f2);

@@ -2,7 +2,7 @@ use mceliece::{
     crypto::*,
     finite_field::{F2m, F2, Field},
     goppa::Goppa,
-    matrix::{RowVec, Mat},
+    matrix::RowVec,
 };
 
 #[test]
@@ -12,15 +12,13 @@ fn crypto_keygen_128() {
     let f128 = &F2m::generate(1 << m);
     let n = 1 << m;
     let t = 10;
-    let (pk, sk) = keygen(f2, f128, m, n, t);
+    let (pk, sk) = keygen(f2, f128, n, t);
     let h = sk.goppa.parity_check_matrix().binary_form(&f2);
     let (g, _) = Goppa::generator_matrix(&h);
     assert!(sk.s.is_invertible());
     // assert!(sk.p.is_permutation());
     assert_eq!(g.rank(), g.rows());
-    let sg = sk.s * g;
-    let sgp = sg.extract_cols(&sk.p);
-    assert_eq!(pk.sgp, sgp);
+    assert_eq!(pk.sgp, sk.s * g * sk.p);
 }
 
 #[test]
@@ -30,7 +28,7 @@ fn crypto_pk_save_load() {
     let f256 = &F2m::generate(1 << m);
     let n = 1 << m;
     let t = 19;
-    let (pk_save, _) = keygen(f2, f256, m, n, t);
+    let (pk_save, _) = keygen(f2, f256, n, t);
     let file_name = "pk_save_load_test.mce";
     pk_save.save_public_key(file_name);
     let pk_load = PublicKey::load_public_key(file_name, f2);
@@ -44,13 +42,17 @@ fn crypto_sk_save_load() {
     let f256_save = &F2m::generate(1 << m);
     let n = 1 << m;
     let t = 19;
-    let (_, sk_save) = keygen(f2, f256_save, m, n, t);
+    let (_, sk_save) = keygen(f2, f256_save, n, t);
     let file_name = "sk_save_load_test.mce";
     sk_save.save_secret_key(file_name);
-    let f256_load = &SecretKey::load_finite_field("sk_save_load_test.mce");
-    let skload = SecretKey::load_secret_key(file_name, f2, f256_load);
+    let f256_load = &SecretKey::load_finite_field(file_name);
+    let sk_load = SecretKey::load_secret_key(file_name, f2, f256_load);
     assert!(f256_save == f256_load);
-    assert!(sk_save == skload);
+    // assert!(sk_save == sk_load);
+    assert!(sk_save.s == sk_load.s);
+    assert!(sk_save.goppa == sk_load.goppa);
+    assert!(sk_save.info_set == sk_load.info_set);
+    assert!(sk_save.p == sk_load.p);
 }
 
 #[test]
@@ -66,23 +68,25 @@ fn crypto_encrypt_decrypt_null_message() {
     let f128 = &F2m::generate(1 << m);
     let n = 1 << m;
     let t = 10;
-    let (pk, sk) = keygen(f2, f128, m, n, t);
+    let (pk, sk) = keygen(f2, f128, n, t);
     pk.save_public_key(file_pk);
     sk.save_secret_key(file_sk);
 
-    let k = n - m * t;
-    let msg = RowVec::zero(f2, k as usize);
+    // let k = n - m * t;
+    let k = pk.sgp.rows();
+    assert!(k as u32 >= n - m * t);
+    let msg = RowVec::zero(f2, k);
     msg.save_vector(file_msg);
     
     let pk = PublicKey::load_public_key(file_pk, f2);
-    // let msg = RowVec::load_vector(file_msg, f2);
+    let msg = RowVec::load_vector(file_msg, f2);
     let cpt = pk.encrypt(&msg);
     cpt.save_vector(file_cpt);
     assert_eq!(cpt.weight() as u32, t);
 
     let f2m = &SecretKey::load_finite_field(file_sk);
     let sk = SecretKey::load_secret_key(file_sk, f2, f2m);
-    // let cpt = RowVec::load_vector(file_cpt, f2);
+    let cpt = RowVec::load_vector(file_cpt, f2);
     let dcd_msg = sk.decrypt(&cpt);
     dcd_msg.save_vector(file_dcd_msg);
     assert_eq!(dcd_msg, msg);
@@ -101,13 +105,14 @@ fn crypto_encrypt_decrypt_random_message() {
     let f128 = &F2m::generate(1 << m);
     let n = 1 << m;
     let t = 10;
-    let (pk, sk) = keygen(f2, f128, m, n, t);
+    let (pk, sk) = keygen(f2, f128, n, t);
     pk.save_public_key(file_pk);
     sk.save_secret_key(file_sk);
 
-    let k = n - m * t;
+    let k = pk.sgp.rows();
+    assert!(k as u32 >= n - m * t);
     let mut rng = rand::thread_rng();
-    let msg = RowVec::random(&mut rng, f2, k as usize);
+    let msg = RowVec::random(&mut rng, f2, k);
     msg.save_vector(file_msg);
     
     let pk = PublicKey::load_public_key(file_pk, f2);
@@ -136,14 +141,14 @@ fn crypto_encrypt_decrypt_random_message_without_error() {
     let f128 = &F2m::generate(1 << m);
     let n = 1 << m;
     let t = 10;
-    let (pk, sk) = keygen(f2, f128, m, n, t);
+    let (pk, sk) = keygen(f2, f128, n, t);
     pk.save_public_key(file_pk);
     sk.save_secret_key(file_sk);
 
-    let k = (n - m * t) as usize;
-    assert!(k == pk.sgp.rows());
+    let k = pk.sgp.rows();
+    assert!(k as u32 >= n - m * t);
     let mut rng = rand::thread_rng();
-    let msg = RowVec::random(&mut rng, f2, k as usize);
+    let msg = RowVec::random(&mut rng, f2, k);
     msg.save_vector(file_msg);
     
     // let pk = PublicKey::load_public_key(file_pk, f2);

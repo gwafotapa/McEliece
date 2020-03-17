@@ -27,7 +27,15 @@ where
         if !poly.is_irreducible() {
             return Err("Goppa polynomial is not irreducible");
         }
-
+        let f = poly.field();
+        for i in 0..set.len()-1 {
+            if f.elt_to_u32(set[i]) == f.elt_to_u32(set[i+1]) {
+                return Err("Set elements must be different");
+            }
+            if f.elt_to_u32(set[i]) > f.elt_to_u32(set[i+1]) {
+                return Err("Set elements must be ordered according to their u32 representation");
+            }
+        }
         Ok(Self {
             // len: set.len(),
             poly,
@@ -35,26 +43,24 @@ where
         })
     }
 
-    pub fn random(rng: &mut ThreadRng, field: &'a F, len: usize, degree: usize) -> Self
+    pub fn random(rng: &mut ThreadRng, field: &'a F, n: usize, degree: usize) -> Self
 // where
     //     distributions::Standard: distributions::Distribution<T>,
     //     T: std::fmt::Debug,
     {
-        let q = field.order();
+        let q = field.order() as usize;
         let poly = Poly::random_irreducible(rng, field, degree);
-        let mut set = Vec::new();
-        let mut list = Vec::new();
+        let mut uints = Vec::with_capacity(q);
         for i in 0..q {
-            list.push(i);
+            uints.push(i);
         }
-        for _i in 0..len {
-            let j = list.swap_remove(rng.gen_range(0, list.len()));
-            let elt = if j == q - 1 {
-                field.zero()
-            } else {
-                field.exp(j)
-            };
-            set.push(elt);
+        for _i in 0..q - n {
+            let uint = rng.gen_range(0, uints.len());
+            uints.remove(uint);
+        }
+        let mut set = Vec::with_capacity(n);
+        for i in 0..n {
+            set.push(field.u32_to_elt(uints[i] as u32));
         }
         Self { poly, set }
     }
@@ -131,7 +137,7 @@ where
     // pub fn generator_matrix<'b, G>(h: &Mat<'b, G>) -> Mat<'b, G>
     // where G: Eq + F2FiniteExtension {
     pub fn generator_matrix(h: &Mat<'a, F>) -> (Mat<'a, F>, Vec<usize>) {
-    // pub fn generator_matrix(h: &Mat<'a, F>) -> (Mat<'a, F>, Mat<'a, F>) {
+        // pub fn generator_matrix(h: &Mat<'a, F>) -> (Mat<'a, F>, Mat<'a, F>) {
         let f = h.field();
         let m = h.rows();
         let n = h.cols();
@@ -154,7 +160,7 @@ where
                 information_set.push(i);
             }
             (gs * pt, information_set)
-            // (gs * pt, p)
+        // (gs * pt, p)
         } else {
             panic!("Rows of the parity-check matrix aren't independant");
         }
@@ -272,14 +278,18 @@ where
         // let mut s = String::new();
         // s.push_str(format!("{:04x}", self.field().order()).as_str());
         // s.push_str(format!("{:02x}", self.poly.degree()).as_str());
+        println!("{:?}\n", self.poly);
         let mut s = self.poly.to_hex_string(); // TODO: Does it clone the string or not ?
-        s.push(' ');
+        s.push_str("##");
         let mut byte = 0;
         let mut cnt_mod_8 = 7;
+        let mut j = 0;
         for i in 0..self.field().order() {
-            if self.set.contains(&self.field().u32_to_elt(i)) {
+            if self.set[j] == self.field().u32_to_elt(i) {
+            // if self.set.contains(&self.field().u32_to_elt(i)) {
                 // TODO: rewrite using elt_to_u32
                 byte |= 1 << cnt_mod_8;
+                j += 1;
             }
             if cnt_mod_8 == 0 {
                 s.push_str(format!("{:02x}", byte).as_str());
@@ -288,7 +298,7 @@ where
             } else {
                 cnt_mod_8 -= 1;
             }
-        }
+        } // TODO: if field order is not divisible by 8, elements are missing !
         s
     }
 
@@ -296,9 +306,15 @@ where
         // let order = u32::from_str_radix(&s[0..4], 16).unwrap();
         // let t = u32::from_str_radix(&s[4..6], 16).unwrap();
         // let poly_len = 4 + 2 + 4 * (t as usize + 1);
-        let v: Vec<&str> = s.split(' ').collect();
+        let v: Vec<&str> = s.split("##").collect();
         let poly = Poly::from_hex_string(v[0], f);
         println!("{:?}\n", poly);
+        // let v: Vec<&str> = v[1].split(' ').collect();
+        // let mut set = Vec::<<F as Field>:: FElt>::with_capacity(v.len());
+        // for i in 0..v.len() {
+        //     set.push(f.u32_to_elt(u32::from_str_radix(v[i], 16).unwrap()));
+        // }
+        
         let set_data = hex::decode(v[1]).expect("Hex decoding failed");
         // println!("{:?}", set_data);
         let mut set = Vec::new();

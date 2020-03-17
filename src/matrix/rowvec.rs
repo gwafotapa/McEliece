@@ -6,7 +6,7 @@ use std::{
     io::{Read, Write},
 };
 
-use super::Mat;
+use super::{Mat, Perm};
 use crate::finite_field::{CharacteristicTwo, Field, FiniteField, F2, F2FiniteExtension};
 
 #[derive(Eq, PartialEq)]
@@ -317,13 +317,15 @@ impl<'a> RowVec<'a, F2> {
         if self.cols() % 8 != 0 {
             s.push_str(format!("{:02x}", byte).as_str());
         }
-        f.write_all(s.as_bytes());
+        s.push('\n');
+        f.write_all(s.as_bytes()).expect("Unable to write vector to file");
     }
 
     pub fn load_vector(file_name: &str, f2: &'a F2) -> RowVec<'a, F2> {
         let mut f = File::open(file_name).expect("Unable to open file");
         let mut buf = String::new();
         f.read_to_string(&mut buf).expect("Unable to read data");
+        buf.pop(); // Remove terminating newline character
         let v: Vec<&str> = buf.split('#').collect();
         let cols = u32::from_str_radix(v[0], 16).unwrap() as usize;
         let mut vec = RowVec::zero(f2, cols);
@@ -341,5 +343,37 @@ impl<'a> RowVec<'a, F2> {
             }
         }
         vec
+    }
+}
+
+impl<'a, F: Eq + Field> Mul<Perm> for RowVec<'a, F> {
+    type Output = Self;
+
+    fn mul(self, other: Perm) -> Self::Output {
+        &self * &other
+    }
+}
+
+impl<'a, F: Eq + Field> Mul<&Perm> for RowVec<'a, F> {
+    type Output = Self;
+
+    fn mul(self, other: &Perm) -> Self::Output {
+        &self * other
+    }
+}
+
+impl<'a, F: Eq + Field> Mul<Perm> for &RowVec<'a, F> {
+    type Output = RowVec<'a, F>;
+
+    fn mul(self, other: Perm) -> Self::Output {
+        self * &other
+    }
+}
+
+impl<'a, F: Eq + Field> Mul<&Perm> for &RowVec<'a, F> {
+    type Output = RowVec<'a, F>;
+
+    fn mul(self, other: &Perm) -> Self::Output {
+        self.extract_cols(other.data())
     }
 }

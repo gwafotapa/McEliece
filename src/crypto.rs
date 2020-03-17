@@ -7,8 +7,8 @@ use std::{
 
 use crate::finite_field::{F2m, Field, F2};
 use crate::goppa::Goppa;
-use crate::matrix::{self, Mat, RowVec};
-use crate::polynomial::Poly;
+use crate::matrix::{Mat, Perm, RowVec};
+// use crate::polynomial::Poly;
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct PublicKey<'a> {
@@ -21,36 +21,38 @@ pub struct SecretKey<'a, 'b> {
     pub s: Mat<'a, F2>,        // singular matrix S
     pub goppa: Goppa<'b, F2m>, // goppa code of generator matrix G
     pub info_set: Vec<usize>,  // information set of matrix G
-    pub p: Vec<usize>,         // permutation matrix P
+    pub p: Perm,               // permutation matrix P
 }
 
 pub fn keygen<'a, 'b>(
     f2: &'a F2,
     f2m: &'b F2m,
-    m: u32,
+    // m: u32,
     n: u32,
     t: u32,
 ) -> (PublicKey<'a>, SecretKey<'a, 'b>) {
     let mut rng = rand::thread_rng();
-    let goppa = Goppa::new(
-        // TODO: add a random goppa method
-        Poly::random_irreducible(&mut rng, f2m, t as usize),
-        f2m.as_set(),
-    )
-    .unwrap();
-    let k = n - m * t;
+    let goppa = Goppa::random(&mut rng, f2m, n as usize, t as usize);
+    // let goppa = Goppa::new(
+    //     // TODO: add a random goppa method
+    //     Poly::random_irreducible(&mut rng, f2m, t as usize),
+    //     f2m.as_set(),
+    // )
+    // .unwrap();
+    // let k = n - m * t;
     let h = goppa.parity_check_matrix();
     info!("Parity check matrix:{}", h);
     let h2 = h.binary_form(f2);
     info!("Parity check matrix in binary form:{}", h2);
     let (g, info_set) = Goppa::generator_matrix(&h2);
     info!("Generator matrix G:{}", g);
+    let k = g.rows();
     let s = Mat::invertible_random(&mut rng, f2, k as usize);
     info!("Singular matrix S:{}", s);
-    let p: Vec<usize> = matrix::permutation_random(&mut rng, n as usize);
-    println!("Permutation matrix P:{:?}", p);
-    let sg = &s * &g;
-    let sgp = sg.extract_cols(&p);
+    let p = Perm::random(&mut rng, n as usize);
+    // println!("Permutation matrix P:{:?}", p);
+    let sgp = &s * &g * &p;
+    // let sgp = sg.extract_cols(&p);
     info!("Perturbed generator matrix ~G:{}", sgp);
     // let pk = (gg, t);
     // let sk = (s, goppa, p);
@@ -79,8 +81,10 @@ impl<'a> PublicKey<'a> {
     pub fn save_public_key(&self, file_name: &str) {
         // println!("{}\n", self.sgp);
         let mut f = File::create(file_name).expect("Unable to create file");
-        f.write_all(self.sgp.to_hex_string().as_bytes());
-        f.write_all(format!("\n{:02x}\n", self.t).as_bytes());
+        f.write_all(self.sgp.to_hex_string().as_bytes())
+            .expect("Unable to write file");
+        f.write_all(format!("\n{:02x}\n", self.t).as_bytes())
+            .expect("Unable to write file");
     }
 
     pub fn load_public_key(file_name: &str, f2: &'a F2) -> Self {
@@ -106,9 +110,8 @@ impl<'a, 'b> SecretKey<'a, 'b> {
         &self,
         c: &RowVec<'a, F2>, // ciphertext
     ) -> RowVec<'a, F2> {
-        let f2 = c.field();
-        let m_s_g_z = c.extract_cols(&matrix::inverse_permutation(&self.p)); // msg stands for m * s * g
-        let mut m_s_g = self.goppa.decode(&m_s_g_z);
+        let m_s_g_z = c * self.p.inverse(); // msg stands for m * s * g
+        let m_s_g = self.goppa.decode(&m_s_g_z);
 
         // let h = self.goppa.parity_check_matrix().binary_form(f2);
         // let (g, p) = Goppa::generator_matrix(&h);
@@ -122,8 +125,8 @@ impl<'a, 'b> SecretKey<'a, 'b> {
         // }
         // let m_s = RowVec::new(f2, v);
 
-        let m_s_g = m_s_g.extract_cols(&self.info_set);
-        let m_s = RowVec::new(f2, m_s_g.data()[0..self.s.rows()].to_vec());
+        let m_s = m_s_g.extract_cols(&self.info_set);
+        // let m_s = RowVec::new(f2, m_s_g.data()[0..self.s.rows()].to_vec());
 
         let m = m_s * self.s.inverse().unwrap();
         m
@@ -132,18 +135,24 @@ impl<'a, 'b> SecretKey<'a, 'b> {
 
     pub fn save_secret_key(&self, file_name: &str) {
         let mut f = File::create(file_name).expect("Unable to create file");
-        f.write_all((self.s.to_hex_string() + "\n").as_bytes());
-        f.write_all((self.goppa.to_hex_string() + "\n").as_bytes());
+        f.write_all((self.s.to_hex_string() + "\n").as_bytes())
+            .expect("Unable to write matrix s to file");
+        f.write_all((self.goppa.to_hex_string() + "\n").as_bytes())
+            .expect("Unable to write goppa code to file");
 
         for i in 0..self.info_set.len() - 1 {
-            f.write_all(format!("{:x} ", self.info_set[i]).as_bytes());
+            f.write_all(format!("{:x} ", self.info_set[i]).as_bytes())
+                .expect("Unable to write information set to file");
         }
-        f.write_all(format!("{:x}\n", self.info_set[self.info_set.len() - 1]).as_bytes());
+        f.write_all(format!("{:x}\n", self.info_set[self.info_set.len() - 1]).as_bytes())
+            .expect("Unable to write information set to file");
 
-        for i in 0..self.p.len() - 1 {
-            f.write_all(format!("{:x} ", self.p[i]).as_bytes());
+        for i in 0..self.p.cols() - 1 {
+            f.write_all(format!("{:x} ", self.p[i]).as_bytes())
+                .expect("Unable to write matrix p to file");
         }
-        f.write_all(format!("{:x}\n", self.p[self.p.len() - 1]).as_bytes());
+        f.write_all(format!("{:x}\n", self.p[self.p.cols() - 1]).as_bytes())
+            .expect("Unable to write matrix p to file");
     }
 
     pub fn load_finite_field(file_name: &str) -> F2m {
@@ -186,7 +195,7 @@ impl<'a, 'b> SecretKey<'a, 'b> {
             s,
             goppa,
             info_set,
-            p,
+            p: Perm::new(p),
         }
     }
 }
