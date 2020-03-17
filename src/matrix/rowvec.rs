@@ -292,6 +292,10 @@ impl<'a, F: Eq + Field> RowVec<'a, F> {
         }
         true
     }
+
+    pub fn permute_cols(&mut self, cols: &Vec<usize>) {
+        self.0.permute_cols(cols);
+    }
 }
 
 impl<'a> RowVec<'a, F2> {

@@ -21,6 +21,7 @@ pub struct SecretKey<'a, 'b> {
     pub s: Mat<'a, F2>,        // singular matrix S
     pub goppa: Goppa<'b, F2m>, // goppa code of generator matrix G
     pub p: Mat<'a, F2>,        // permutation matrix P
+    pub info_set: Vec<usize>,  // information set of matrix G
 }
 
 pub fn keygen<'a, 'b>(
@@ -42,7 +43,7 @@ pub fn keygen<'a, 'b>(
     info!("Parity check matrix:{}", h);
     let h2 = h.binary_form(f2);
     info!("Parity check matrix in binary form:{}", h2);
-    let (g, _) = Goppa::generator_matrix(&h2);
+    let (g, info_set) = Goppa::generator_matrix(&h2);
     info!("Generator matrix G:{}", g);
     let s = Mat::invertible_random(&mut rng, f2, k as usize);
     info!("Singular matrix S:{}", s);
@@ -54,7 +55,9 @@ pub fn keygen<'a, 'b>(
     // let sk = (s, goppa, p);
     // (pk, sk)
     let pk = PublicKey { sgp, t };
-    let sk = SecretKey { s, goppa, p };
+    println!("{:?}", info_set);
+    let sk = SecretKey { s, goppa, p , info_set };
+    // let sk = SecretKey { s, goppa, p , info_set: Vec::new() };
     (pk, sk)
 }
 
@@ -97,20 +100,25 @@ impl<'a, 'b> SecretKey<'a, 'b> {
         &self,
         c: &RowVec<'a, F2>, // ciphertext
     ) -> RowVec<'a, F2> {
-        let m_s_gp_z = c * self.p.inverse().unwrap(); // msg stands for m * s * g
-        let m_s_gp = self.goppa.decode(&m_s_gp_z);
-        // println!(
-        //     "ms({}, {}), s.inv({}, {})",
-        //     ms.rows(),
-        //     ms.cols(),
-        //     self.s.rows(),
-        //     self.s.cols()
-        // );
         let f2 = c.field();
-        let h = self.goppa.parity_check_matrix().binary_form(f2);
-        let (g, p) = Goppa::generator_matrix(&h);
-        let m_s_g = m_s_gp * p.inverse().unwrap();
+        let m_s_g_z = c * self.p.transpose(); // msg stands for m * s * g
+        let mut m_s_g = self.goppa.decode(&m_s_g_z);
+
+        // let h = self.goppa.parity_check_matrix().binary_form(f2);
+        // let (g, p) = Goppa::generator_matrix(&h);
+        // let m_s_g = m_s_g * p;
+        // let m_s = RowVec::new(f2, m_s_g.data()[0..self.s.rows()].to_vec());
+        
+        // let k = self.info_set.len();
+        // let mut v = Vec::with_capacity(k);
+        // for i in 0..k {
+        //     v.push(m_s_g[self.info_set[i]]);
+        // }
+        // let m_s = RowVec::new(f2, v);
+
+        m_s_g.permute_cols(&self.info_set);
         let m_s = RowVec::new(f2, m_s_g.data()[0..self.s.rows()].to_vec());
+        
         let m = m_s * self.s.inverse().unwrap();
         m
         // self.goppa.decode(&(cpt * self.p.inverse().unwrap())) * self.s.inverse().unwrap()
@@ -145,6 +153,6 @@ impl<'a, 'b> SecretKey<'a, 'b> {
         let s = Mat::from_hex_string(&lines.next().unwrap().unwrap(), f2); // TODO: double unwrap ??
         let goppa = Goppa::from_hex_string(&lines.next().unwrap().unwrap(), f2m); // TODO: double unwrap ??
         let p = Mat::from_hex_string(&lines.next().unwrap().unwrap(), f2); // TODO: double unwrap ??
-        SecretKey { s, goppa, p }
+        SecretKey { s, goppa, p , info_set: Vec::new() }
     }
 }

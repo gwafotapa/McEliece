@@ -26,6 +26,20 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         }
     }
 
+    pub fn permute_cols(&mut self, perm: &Vec<usize>) {
+        for i in 0..perm.len() {
+            self.swap_cols(i, perm[i]);
+        }
+    }
+
+    pub fn inverse_permutation(perm: Vec<usize>) -> Vec<usize> {
+        let mut inv = vec![0, perm.len()];
+        for i in 0..perm.len() {
+            inv[perm[i]] = i;
+        }
+        inv
+    }
+    
     pub fn combine_rows(&mut self, row1: usize, lambda: F::FElt, row2: usize) {
         let f = self.field;
         for j in 0..self.cols {
@@ -136,13 +150,13 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         mat
     }
 
-    pub fn row_echelon_form(&mut self) -> usize {
+    pub fn row_echelon_form(&mut self) -> Vec<usize> {
         let f = self.field;
         let n = self.rows;
         let m = self.cols;
-        let mut rank = 0;
         let mut row_pivot = 0;
         let mut col_pivot = 0;
+        let mut set_of_cols_with_max_dim = Vec::new();
 
         while row_pivot < self.rows && col_pivot < self.cols {
             // Find pivot
@@ -154,7 +168,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
                 col_pivot += 1;
                 continue;
             }
-            rank += 1;
+            set_of_cols_with_max_dim.push(i);
             self.swap_rows(i, row_pivot);
 
             // Normalize pivot's row
@@ -181,14 +195,14 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
             row_pivot += 1;
             col_pivot += 1;
         }
-        rank
+        set_of_cols_with_max_dim
     }
 
-    pub fn reduced_row_echelon_form(&mut self) -> usize {
+    pub fn reduced_row_echelon_form(&mut self) -> Vec<usize> {
         let f = self.field;
         let n = self.rows;
         let m = self.cols;
-        let rank = self.row_echelon_form(); // note that all pivots are 1
+        let set_of_cols_with_max_dim = self.row_echelon_form(); // note that all pivots are 1
 
         for row_pivot in (0..n).rev() {
             // Find the pivot on this row if any
@@ -214,12 +228,12 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
                 }
             }
         }
-        rank
+        set_of_cols_with_max_dim
     }
 
     pub fn rank(&self) -> usize {
         let mut mat = self.clone();
-        mat.row_echelon_form()
+        mat.row_echelon_form().len()
     }
 
     // Compute, if possible, (U, S, P) with U invertible, S standard form and P permutation

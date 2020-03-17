@@ -130,7 +130,8 @@ where
 
     // pub fn generator_matrix<'b, G>(h: &Mat<'b, G>) -> Mat<'b, G>
     // where G: Eq + F2FiniteExtension {
-    pub fn generator_matrix(h: &Mat<'a, F>) -> (Mat<'a, F>, Mat<'a, F>) {
+    pub fn generator_matrix(h: &Mat<'a, F>) -> (Mat<'a, F>, Vec<usize>) {
+    // pub fn generator_matrix(h: &Mat<'a, F>) -> (Mat<'a, F>, Mat<'a, F>) {
         let f = h.field();
         let m = h.rows();
         let n = h.cols();
@@ -144,8 +145,16 @@ where
                 }
             }
             let pt = p.transpose();
-            // let g = gs * q;
-            (gs * &pt, pt)
+            let mut information_set = Vec::with_capacity(k);
+            for j in 0..k {
+                let mut i = 0;
+                while p[(i, j)] == f.zero() {
+                    i += 1
+                }
+                information_set.push(i);
+            }
+            (gs * pt, information_set)
+            // (gs * pt, p)
         } else {
             panic!("Rows of the parity-check matrix aren't independant");
         }
@@ -248,7 +257,10 @@ where
 
 // Should I generalise from F2m ?
 impl<'a, F: Eq + F2FiniteExtension> Goppa<'a, F>
-where F::FElt: std::fmt::Debug { // TODO: remove the trait ?
+where
+    F::FElt: std::fmt::Debug,
+{
+    // TODO: remove the trait ?
     pub fn to_hex_string(&self) -> String
 // where
     //     F::FElt: std::fmt::LowerHex,
@@ -265,7 +277,8 @@ where F::FElt: std::fmt::Debug { // TODO: remove the trait ?
         let mut byte = 0;
         let mut cnt_mod_8 = 7;
         for i in 0..self.field().order() {
-            if self.set.contains(&self.field().u32_to_elt(i)) { // TODO: rewrite using elt_to_u32
+            if self.set.contains(&self.field().u32_to_elt(i)) {
+                // TODO: rewrite using elt_to_u32
                 byte |= 1 << cnt_mod_8;
             }
             if cnt_mod_8 == 0 {
