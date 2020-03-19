@@ -375,18 +375,27 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
         if b.is_zero() {
             panic!("Euclidean division by the null polynomial");
         }
-
         let f = a.field;
-        let mut q = Self::zero(f, 1);
-        let mut r = a.clone();
-        let d = b.degree();
-        let c = b[d];
-        while r.degree() >= d && !r.is_zero() {
-            let mut s = Self::x_n(f, r.degree() - d);
-            s[r.degree() - d] = f.mul(r[r.degree()], f.inv(c).unwrap());
-            q += &s;
-            r -= &s * b;
+        if a.degree() < b.degree() {
+            return (Self::zero(f, 1), a.clone());
         }
+
+        let mut q = Self::zero(f, a.degree() - b.degree() + 1);
+        let mut r = a.clone();
+        let b_deg = b.degree();
+        let b_lc_inv = f.inv(b[b_deg]).unwrap();
+        while r.degree() >= b_deg && !r.is_zero() {
+            let r_deg = r.degree();
+            let d = r_deg - b_deg;
+            let c = f.mul(r[r_deg], b_lc_inv);
+            q[d] = c;
+            r[r_deg] = f.zero();
+            for i in (0..b_deg).rev() {
+                r[i + d] = f.sub(r[i + d], f.mul(c, b[i]));
+            }
+            r.update_len();
+        }
+
         (q, r)
     }
 

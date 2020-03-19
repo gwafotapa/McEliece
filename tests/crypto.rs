@@ -168,6 +168,7 @@ fn crypto_encrypt_decrypt_random_message_without_error() {
 }
 
 // TODO: (m, n, t) = (3, 7, 1) fails
+// TODO: (m, n, t) = (5, 27, 1) fails
 #[test]
 fn crypto_encrypt_decrypt_random_message_L_not_full() {
     let file_pk = "public_key_test.mce";
