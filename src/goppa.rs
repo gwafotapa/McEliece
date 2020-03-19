@@ -239,14 +239,14 @@ where
         // debug!("this is a debug {}", "message");
         // error!("this is printed by default");
 
-        let mut t = s_x.inverse_modulo(&self.poly);
-        info!("T(x) = s(x)^-1 = {:?}", t);
-        // t.add(&Poly::x_n(1));
-        t += Poly::x_n(f, 1);
-        t.square_root_modulo(&self.poly);
-        info!("square root t(x) of T(x) + x: {:?}", t);
+        s_x.inverse_modulo(&self.poly);
+        info!("T(x) = s(x)^-1 = {:?}", s_x);
+        // s_x.add(&Poly::x_n(1));
+        s_x += Poly::x_n(f, 1);
+        s_x.square_root_modulo(&self.poly);
+        info!("square root t(x) of T(x) + x: {:?}", s_x);
         // let (mut a, mut b, _, _, _) = Poly::extended_gcd(&s, &self.poly);
-        let (mut a, mut b) = Poly::goppa_extended_gcd(&self.poly, &t);
+        let (mut a, mut b) = Poly::goppa_extended_gcd(&self.poly, &s_x);
         info!("a(x) = {:?}", a);
         info!("b(x) = {:?}", b);
         a.square();

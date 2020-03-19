@@ -151,7 +151,8 @@ fn polynomial_f1024_inverse_mod() {
     let a = Poly::random(&mut rng, f, deg_a);
     println!("a(x) = {:?}\n", a);
 
-    let inv = a.inverse_modulo(&g);
+    let mut inv = a.clone();
+    inv.inverse_modulo(&g);
     println!("a^-1(x) = {:?}\n", inv);
     let mut p = &a * &inv;
     p.modulo(&g);

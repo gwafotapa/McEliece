@@ -58,6 +58,8 @@ fn crypto_sk_save_load() {
     // assert!(sk_save.p == sk_load.p);
 }
 
+// TODO: sometimes fails second assert (weight of ciphertext is not t)
+// Is it because of parallel execution ?
 #[test]
 fn crypto_encrypt_decrypt_null_message() {
     let file_pk = "public_key_test.mce";
@@ -75,7 +77,6 @@ fn crypto_encrypt_decrypt_null_message() {
     pk.save_public_key(file_pk);
     sk.save_secret_key(file_sk);
 
-    // let k = n - m * t;
     let k = pk.sgp.rows();
     assert!(k as u32 >= n - m * t);
     let msg = RowVec::zero(f2, k);
@@ -167,8 +168,10 @@ fn crypto_encrypt_decrypt_random_message_without_error() {
     assert_eq!(dcd_msg, msg);
 }
 
-// TODO: (m, n, t) = (3, 7, 1) fails
-// TODO: (m, n, t) = (5, 27, 1) fails
+// TODO:
+// (m, n, t) = (3, 7, 1) fails
+// (m, n, t) = (5, 27, 1) fails
+// (m, n, t) = (4, 8, 1) fails (rows of the parity check matrix aren't independant)
 #[test]
 fn crypto_encrypt_decrypt_random_message_L_not_full() {
     let file_pk = "public_key_test.mce";

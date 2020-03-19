@@ -60,7 +60,7 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
     }
 
     // TODO: shouldn't I simply use euclid algo that also works for odd characteristics
-    pub fn inverse_modulo(&self, modulus: &Self) -> Self
+    pub fn inverse_modulo(&mut self, modulus: &Self)
     where
         F: FiniteField,
     {
@@ -72,20 +72,18 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
             panic!("The null polynom has no inverse");
         }
 
-        let mut res = self.clone();
-        res.square();
-        let mut tmp = res.clone();
+        self.square();
+        let mut tmp = self.clone();
         for _i in 0..m as usize * modulus.degree() - 2 {
             tmp.square();
             // println!("tmp.square() = {:?}\n", tmp);
             tmp.modulo(&modulus);
             // println!("tmp.modulo() = {:?}\n", tmp);
-            res *= &tmp;
-            // println!("res.mul(&tmp) = {:?}\n", res);
-            res.modulo(&modulus);
-            // println!("res.modulo(&modulus) = {:?}\n", res);
+            *self *= &tmp;
+            // println!("self.mul(&tmp) = {:?}\n", self);
+            self.modulo(&modulus);
+            // println!("self.modulo(&modulus) = {:?}\n", self);
         }
-        res
     }
 
     // Computes p^n mod (modulus)
@@ -93,8 +91,8 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
         if self.field != modulus.field {
             panic!("Cannot compute power modulo: fields don't match");
         }
+        self.modulo(modulus);
         let mut tmp = self.clone();
-        tmp.modulo(modulus);
         self.data.truncate(1);
         self[0] = self.field.one();
         if n & 1 == 1 {
@@ -121,29 +119,22 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
             return false;
         }
 
-        // let q = T::characteristic();
-        // let m = T::characteristic_exponent();
         let f = self.field;
-        let qm = f.order();
+        let q = f.order();
         let mut n_prime_factors = trial_division(n);
         n_prime_factors.dedup();
         info!("decomposition of n in prime factors: {:?}", n_prime_factors);
 
-        let k = n_prime_factors.len();
-        let mut n_div_primes = Vec::new();
-        for i in 0..k {
-            n_div_primes.push(n / n_prime_factors[i]);
-        }
+        let n_div_primes: Vec<u32> = n_prime_factors.iter().map(|x| n / x).collect();
         info!(
             "list of n/p where p is a prime factor of n: {:?}",
             n_div_primes
         );
 
-        for i in 0..k {
-            // let mut xqn_x = Self::x_n(q.pow(n_div_primes[i]) as usize);
+        for i in 0..n_prime_factors.len() {
             let mut h = Self::x_n(f, 1);
             for _j in 0..n_div_primes[i] {
-                h.pow_modulo(qm, self);
+                h.pow_modulo(q, self);
             }
             h -= &Self::x_n(f, 1);
             let g = Self::gcd(self, &h);
@@ -155,7 +146,7 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
         let mut g = Self::x_n(f, 1);
         // info!("{:?}", g);
         for _i in 0..n {
-            g.pow_modulo(qm, self);
+            g.pow_modulo(q, self);
             // info!("{:?}", g);
         }
         g -= &Self::x_n(f, 1);
