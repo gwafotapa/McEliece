@@ -1,13 +1,16 @@
 use rand::{rngs::ThreadRng, Rng};
 use std::{
-    fmt::{Debug, Display, Formatter, Result},
-    ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign},
+    error::Error,
+    fmt::{self, Debug, Display, Formatter},
     fs::File,
     io::{Read, Write},
+    ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
 use super::{Mat, Perm};
-use crate::finite_field::{CharacteristicTwo, Field, FiniteField, F2, F2FiniteExtension};
+use crate::finite_field::{CharacteristicTwo, F2FiniteExtension, Field, FiniteField, F2};
+
+type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 #[derive(Eq, PartialEq)]
 pub struct RowVec<'a, F: Eq + Field>(Mat<'a, F>);
@@ -181,13 +184,13 @@ impl<'a, F: Eq + Field> IndexMut<usize> for RowVec<'a, F> {
 }
 
 impl<'a, F: Eq + F2FiniteExtension> Debug for RowVec<'a, F> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", self.0)
     }
 }
 
 impl<'a, F: Eq + FiniteField> Display for RowVec<'a, F> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
     }
 }
@@ -216,7 +219,7 @@ impl<'a, F: Eq + Field> RowVec<'a, F> {
         self.0.cols()
     }
 
-    pub fn data(&self) -> Vec<F::FElt> {
+    pub fn data(&self) -> &Vec<F::FElt> {
         self.0.data()
     }
 
@@ -256,17 +259,17 @@ impl<'a, F: Eq + Field> RowVec<'a, F> {
         vec
     }
 
-    // TODO: Is this function useful ?
-    pub fn sum(&mut self, vec1: &Self, vec2: &Self) {
-        let f = self.field();
-        if f != vec1.field() || f != vec2.field() {
-            panic!("Cannot add vectors: fields don't match");
-        }
-        if self.rows() != vec1.rows() || self.rows() != vec2.rows() {
-            panic!("Cannot add vectors: dimensions don't match");
-        }
-        self.0.sum(&vec1.0, &vec2.0);
-    }
+    // TODO: Remove this function
+    // pub fn sum(&mut self, vec1: &Self, vec2: &Self) {
+    //     let f = self.field();
+    //     if f != vec1.field() || f != vec2.field() {
+    //         panic!("Cannot add vectors: fields don't match");
+    //     }
+    //     if self.rows() != vec1.rows() || self.rows() != vec2.rows() {
+    //         panic!("Cannot add vectors: dimensions don't match");
+    //     }
+    //     self.0.sum(&vec1.0, &vec2.0);
+    // }
 
     pub fn from<'b>(f: &'a F, vec_f2: &RowVec<'b, F2>) -> Self
     where
@@ -278,11 +281,6 @@ impl<'a, F: Eq + Field> RowVec<'a, F> {
     pub fn transpose(&self) -> Mat<'a, F> {
         self.0.transpose()
     }
-
-    // TODO: Is this function useful ?
-    // pub fn transpose(&self) -> ColVec<T> {
-    //     ColVec::new(self.cols(), self.data())
-    // }
 
     pub fn is_zero(&self) -> bool {
         for i in 0..self.cols() {
@@ -299,8 +297,8 @@ impl<'a, F: Eq + Field> RowVec<'a, F> {
 }
 
 impl<'a> RowVec<'a, F2> {
-    pub fn save_vector(&self, file_name: &str) {
-        let mut f = File::create(file_name).expect("Unable to create file");
+    pub fn save_vector(&self, file_name: &str) -> Result<()> {
+        let mut f = File::create(file_name)?;
         let mut s = format!("{:x}#", self.cols());
         let mut byte: u8 = 0;
         let mut cnt_mod_8 = 7;
@@ -318,31 +316,32 @@ impl<'a> RowVec<'a, F2> {
             s.push_str(format!("{:02x}", byte).as_str());
         }
         s.push('\n');
-        f.write_all(s.as_bytes()).expect("Unable to write vector to file");
+        f.write_all(s.as_bytes())?;
+        Ok(())
     }
 
-    pub fn load_vector(file_name: &str, f2: &'a F2) -> RowVec<'a, F2> {
-        let mut f = File::open(file_name).expect("Unable to open file");
+    pub fn load_vector(file_name: &str, f2: &'a F2) -> Result<RowVec<'a, F2>> {
+        let mut f = File::open(file_name)?;
         let mut buf = String::new();
-        f.read_to_string(&mut buf).expect("Unable to read data");
+        f.read_to_string(&mut buf)?;
         buf.pop(); // Remove terminating newline character
         let v: Vec<&str> = buf.split('#').collect();
-        let cols = u32::from_str_radix(v[0], 16).unwrap() as usize;
+        let cols = u32::from_str_radix(v[0], 16)? as usize;
         let mut vec = RowVec::zero(f2, cols);
         let mut cnt_mod_8 = 7;
-        let s = hex::decode(v[1]).unwrap();
+        let s = hex::decode(v[1])?;
         let mut iter = s.iter();
-        let mut byte = iter.next().unwrap();
+        let mut byte = iter.next().ok_or("Missing byte")?;
         for i in 0..cols {
             vec[i] = (*byte as u32 >> cnt_mod_8) & 1_u32;
             if cnt_mod_8 == 0 && i != cols - 1 {
-                byte = iter.next().unwrap();
+                byte = iter.next().ok_or("Missing byte")?;
                 cnt_mod_8 = 7;
             } else {
                 cnt_mod_8 -= 1;
             }
         }
-        vec
+        Ok(vec)
     }
 }
 

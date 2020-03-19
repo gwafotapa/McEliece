@@ -51,16 +51,16 @@ fn main() {
             ()
         }
         "encrypt" => {
-            let pk = PublicKey::load_public_key("public_key.mce", f2);
-            let m = RowVec::load_vector("message.mce", f2);
+            let pk = PublicKey::load_public_key("public_key.mce", f2).unwrap();
+            let m = RowVec::load_vector("message.mce", f2).unwrap();
             let c = pk.encrypt(&m);
             c.save_vector("ciphertext.mce");
             ()
         }
         "decrypt" => {
-            let f2m = &SecretKey::load_finite_field("secret_key.mce"); // &F2m::generate(1 << GOPPA_M);
-            let sk = SecretKey::load_secret_key("secret_key.mce", f2, f2m);
-            let c = RowVec::load_vector("ciphertext.mce", f2);
+            let f2m = &SecretKey::load_finite_field("secret_key.mce").unwrap(); // &F2m::generate(1 << GOPPA_M);
+            let sk = SecretKey::load_secret_key("secret_key.mce", f2, f2m).unwrap();
+            let c = RowVec::load_vector("ciphertext.mce", f2).unwrap();
             let m = sk.decrypt(&c);
             m.save_vector("decoded.mce"); // TODO: pick convention for arguments order
             ()

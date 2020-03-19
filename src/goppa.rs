@@ -1,12 +1,15 @@
 use log::info;
 
 use rand::{rngs::ThreadRng, Rng};
+use std::{error::Error, result};
 
 use crate::{
     finite_field::{F2FiniteExtension, Field, F2},
     matrix::{Mat, RowVec},
     polynomial::Poly,
 };
+
+type Result<T> = result::Result<T, Box<dyn Error>>;
 
 #[derive(Eq, PartialEq)]
 pub struct Goppa<'a, F: Eq + Field> {
@@ -20,7 +23,7 @@ where
     // F: CharacteristicTwo + FiniteField
     F: F2FiniteExtension,
 {
-    pub fn new(poly: Poly<'a, F>, set: Vec<F::FElt>) -> Result<Goppa<'a, F>, &'static str>
+    pub fn new(poly: Poly<'a, F>, set: Vec<F::FElt>) -> result::Result<Goppa<'a, F>, &'static str>
 // where
     //     T: std::fmt::Debug,
     {
@@ -28,11 +31,11 @@ where
             return Err("Goppa polynomial is not irreducible");
         }
         let f = poly.field();
-        for i in 0..set.len()-1 {
-            if f.elt_to_u32(set[i]) == f.elt_to_u32(set[i+1]) {
+        for i in 0..set.len() - 1 {
+            if f.elt_to_u32(set[i]) == f.elt_to_u32(set[i + 1]) {
                 return Err("Set elements must be different");
             }
-            if f.elt_to_u32(set[i]) > f.elt_to_u32(set[i+1]) {
+            if f.elt_to_u32(set[i]) > f.elt_to_u32(set[i + 1]) {
                 return Err("Set elements must be ordered according to their u32 representation");
             }
         }
@@ -174,6 +177,20 @@ where
     //     msg * g
     // }
 
+    pub fn syndrome<'b>(h: &Mat<'a, F>, x: &RowVec<'b, F2>) -> Mat<'a, F> {
+        let f2 = x.field();
+        let f = h.field();
+        let mut s = Mat::zero(f, h.rows(), 1);
+        for i in 0..h.rows() {
+            for j in 0..x.cols() {
+                if x[j] == f2.one() {
+                    s[(i, 0)] = f.add(s[(i, 0)], h[(i, j)]);
+                }
+            }
+        }
+        s
+    }
+
     pub fn encode<'b>(&self, msg: &RowVec<'b, F2>) -> RowVec<'b, F2> {
         let f2 = msg.field();
         let h = self.parity_check_matrix();
@@ -189,16 +206,17 @@ where
         let h = self.parity_check_matrix();
         info!("parity check matrix: {:?}", h);
         // let rcv_fq = Mat::from(rcv);
-        let rcv_fq = RowVec::from(f, rcv);
-        info!("received word: {:?}", rcv_fq);
-        // let syndrome = Mat::prod(&h, &rcv_fq.transpose());
-        let syndrome = h * rcv_fq.transpose();
+        // let rcv_fq = RowVec::from(f, rcv);
+        // info!("received word: {:?}", rcv_fq);
+        // let syndrome = h * rcv_fq.transpose();
+        let syndrome = Goppa::syndrome(&h, &rcv);
         info!("syndrome: {:?}", syndrome);
 
-        let zero = Mat::zero(f, syndrome.rows(), 1);
-        if syndrome == zero {
-            return rcv.clone();
-        }
+        // let zero = Mat::zero(f, syndrome.rows(), 1);
+        // if syndrome == zero {
+        // if syndrome.is_zero() {
+        //     return rcv.clone();
+        // }
 
         let mut deg_s_x = syndrome.rows() - 1;
         for i in 0..syndrome.rows() - 1 {
@@ -207,6 +225,11 @@ where
             }
             deg_s_x -= 1;
         }
+        // If syndrome is zero, we're done.
+        if deg_s_x == 0 && syndrome[(syndrome.rows() - 1, 0)] == f.zero() {
+            return rcv.clone();
+        }
+
         let mut s_x = Poly::zero(f, deg_s_x + 1);
         for i in 0..deg_s_x + 1 {
             s_x[i] = syndrome[(syndrome.rows() - 1 - i, 0)];
@@ -271,22 +294,24 @@ where
 // where
     //     F::FElt: std::fmt::LowerHex,
     {
+        let f = self.field();
         // TODO: add 'use fmt::LowerHex'
-        if self.field().order() > 1 << 16 {
+        if f.order() > 1 << 16 {
             panic!("Cannot convert polynomial to hex string: field order must be at most 2^16");
         }
         // let mut s = String::new();
-        // s.push_str(format!("{:04x}", self.field().order()).as_str());
+        // s.push_str(format!("{:04x}", f.order()).as_str());
         // s.push_str(format!("{:02x}", self.poly.degree()).as_str());
         println!("{:?}\n", self.poly);
         let mut s = self.poly.to_hex_string(); // TODO: Does it clone the string or not ?
+        s.reserve(s.len() + 2 + 2 * (f.order() as usize / 8 + 1) + 1);
         s.push_str("##");
         let mut byte = 0;
         let mut cnt_mod_8 = 7;
         let mut j = 0;
-        for i in 0..self.field().order() {
-            if self.set[j] == self.field().u32_to_elt(i) {
-            // if self.set.contains(&self.field().u32_to_elt(i)) {
+        for i in 0..f.order() {
+            if self.set[j] == f.u32_to_elt(i) {
+                // if self.set.contains(&f.u32_to_elt(i)) {
                 // TODO: rewrite using elt_to_u32
                 byte |= 1 << cnt_mod_8;
                 j += 1;
@@ -302,24 +327,24 @@ where
         s
     }
 
-    pub fn from_hex_string(s: &str, f: &'a F) -> Self {
+    pub fn from_hex_string(s: &str, f: &'a F) -> Result<Self> {
         // let order = u32::from_str_radix(&s[0..4], 16).unwrap();
         // let t = u32::from_str_radix(&s[4..6], 16).unwrap();
         // let poly_len = 4 + 2 + 4 * (t as usize + 1);
         let v: Vec<&str> = s.split("##").collect();
-        let poly = Poly::from_hex_string(v[0], f);
+        let poly = Poly::from_hex_string(v[0], f)?;
         println!("{:?}\n", poly);
         // let v: Vec<&str> = v[1].split(' ').collect();
         // let mut set = Vec::<<F as Field>:: FElt>::with_capacity(v.len());
         // for i in 0..v.len() {
         //     set.push(f.u32_to_elt(u32::from_str_radix(v[i], 16).unwrap()));
         // }
-        
-        let set_data = hex::decode(v[1]).expect("Hex decoding failed");
+
+        let set_data = hex::decode(v[1])?;
         // println!("{:?}", set_data);
         let mut set = Vec::new();
         let mut iter = set_data.iter();
-        let mut byte = iter.next().unwrap();
+        let mut byte = iter.next().ok_or("Missing byte")?;
         let mut cnt_mod_8 = 7;
         for i in 0..f.order() {
             if (*byte >> cnt_mod_8) & 1 == 1 {
@@ -327,12 +352,12 @@ where
             }
             if cnt_mod_8 == 0 && i != f.order() - 1 {
                 cnt_mod_8 = 7;
-                byte = iter.next().unwrap();
+                byte = iter.next().ok_or("Missing byte")?;
             } else {
                 cnt_mod_8 -= 1
             }
         }
         println!("{:?}\n", set);
-        Goppa { poly, set }
+        Ok(Goppa { poly, set })
     }
 }

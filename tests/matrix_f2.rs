@@ -6,15 +6,18 @@ use mceliece::matrix::*;
 #[test]
 fn matrix_f2_new() {
     let f2 = &F2 {};
-    let mut mat = Mat::zero(f2, 3, 4);
-    mat[(2, 2)] = 1;
-    mat[(1, 0)] = 1;
-    mat[(2, 3)] = 1;
+    let mut a = Mat::zero(f2, 3, 4);
+    a[(2, 2)] = 1;
+    a[(1, 0)] = 1;
+    a[(2, 3)] = 1;
+    
     let v: Vec<<F2 as Field>::FElt> = vec![0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1];
+    let b = Mat::new(f2, 3, 4, v);
 
-    assert_eq!(mat.rows(), 3);
-    assert_eq!(mat.cols(), 4);
-    assert_eq!(mat.data(), v);
+    assert_eq!(a.rows(), 3);
+    assert_eq!(a.cols(), 4);
+    assert_eq!(a.data(), b.data());
+    assert_eq!(a, b);
 }
 
 #[test]
@@ -267,6 +270,6 @@ fn rowvec_f2_save_load() {
     let vec_save = RowVec::random(&mut rng, f2, n);
     let file_name = "vec_save_load_test";
     vec_save.save_vector(file_name);
-    let vec_load = RowVec::load_vector(file_name, f2);
+    let vec_load = RowVec::load_vector(file_name, f2).unwrap();
     assert_eq!(vec_save, vec_load);
 }

@@ -1,9 +1,12 @@
 use log::info;
 
 use rand::rngs::ThreadRng;
+use std::error::Error;
 
 use super::{Field, Poly};
 use crate::finite_field::{CharacteristicTwo, F2FiniteExtension, FiniteField};
+
+type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
     pub fn random_irreducible(rng: &mut ThreadRng, f: &'a F, degree: usize) -> Self
@@ -210,26 +213,15 @@ impl<'a, F: Eq + F2FiniteExtension> Poly<'a, F> {
         s
     }
 
-    pub fn from_hex_string(s: &str, f: &'a F) -> Self {
-        // TODO: add 'use fmt::LowerHex'{
+    pub fn from_hex_string(s: &str, f: &'a F) -> Result<Self> {
         let v: Vec<&str> = s.split('#').collect();
-        // let order = u32::from_str_radix(iter.next().unwrap(), 16).unwrap();
-        // let f = F::generate(order);
-        // iter.next();
-        let t = usize::from_str_radix(v[1], 16).unwrap();
-        // let data = hex::decode(iter.next().unwrap()).expect("Hex decoding failed"); // TODO: use a result and ?
-        // let order = 256 * data[0] as u32 + data[1] as u32;
-
-        // let t = data[2] as usize;
-        // let coeffs = v[2];
+        let t = usize::from_str_radix(v[1], 16)?;
         let v: Vec<&str> = v[2].split(' ').collect();
         let mut poly = Self::zero(&f, t + 1);
         for i in 0..t + 1 {
-            // TODO: rewrite using an iterator over data
-            // poly[i] = f.u32_to_elt(256 * data[2 * i + 3] as u32 + data[2 * i + 4] as u32);
-            poly[i] = f.u32_to_elt(u32::from_str_radix(v[i], 16).unwrap());
+            poly[i] = f.u32_to_elt(u32::from_str_radix(v[i], 16)?);
         }
-        poly
+        Ok(poly)
     }
 }
 

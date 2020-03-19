@@ -19,9 +19,20 @@ impl IndexMut<usize> for Perm {
 }
 
 impl Perm {
-    // TODO: Check the vector is licit ?
-    pub fn new(vec: Vec<usize>) -> Self {
-        Perm(vec)
+    pub fn new(vec: Vec<usize>) -> Result<Self, &'static str> {
+        let n = vec.len();
+        let mut list = vec![0; n];
+        for i in 0..n {
+            if vec[i] >= n {
+                return Err("Not a permutation");
+            }
+            if list[vec[i]] == 0 {
+                list[vec[i]] = 1;
+            } else {
+                return Err("Not a permutation");
+            }
+        }
+        Ok(Perm(vec))
     }
 
     pub fn random(rng: &mut ThreadRng, n: usize) -> Self {

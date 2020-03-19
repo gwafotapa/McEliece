@@ -1,13 +1,16 @@
-use rand::{rngs::ThreadRng};
+use rand::rngs::ThreadRng;
 use std::{
-    fmt::{Debug, Display, Formatter, Result},
+    error::Error,
+    fmt::{self, Debug, Display, Formatter},
     ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
 use crate::finite_field::{CharacteristicTwo, F2FiniteExtension, Field, FiniteField, F2};
 
-pub use rowvec::RowVec;
+type Result<T> = std::result::Result<T, Box<dyn Error>>;
+
 pub use perm::Perm;
+pub use rowvec::RowVec;
 
 #[derive(Eq, PartialEq)]
 pub struct Mat<'a, F: Eq + Field> {
@@ -266,22 +269,8 @@ impl<'a, F: Eq + Field> IndexMut<(usize, usize)> for Mat<'a, F> {
     }
 }
 
-// impl<'a> Debug for Mat<'a, F2> {
-//     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-//         let k = self.field;
-//         write!(f, "\n")?;
-//         for i in 0..self.rows {
-//             for j in 0..self.cols - 1 {
-//                 write!(f, "{} ", self[(i, j)].to_string())?;
-//             }
-//             write!(f, "{}\n", self[(i, self.cols - 1)].to_string())?;
-//         }
-//         Ok(())
-//     }
-// }
-
 impl<'a, F: Eq + F2FiniteExtension> Debug for Mat<'a, F> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let k = self.field;
         let chr = k.characteristic_exponent() as usize;
         let width = chr / 4 + if chr % 4 == 0 { 0 } else { 1 };
@@ -302,7 +291,7 @@ impl<'a, F: Eq + F2FiniteExtension> Debug for Mat<'a, F> {
 }
 
 impl<'a, F: Eq + FiniteField> Display for Mat<'a, F> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let k = self.field;
 
         // number of digits of order
@@ -363,12 +352,8 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         self.cols
     }
 
-    // TODO: should I return a reference instead ?
-    // It gives more flexibility because I can clone it if I want to
-    // but I don't have to if I just need to read it ?
-    // Might need a lifetime ?
-    pub fn data(&self) -> Vec<F::FElt> {
-        self.data.clone()
+    pub fn data(&self) -> &Vec<F::FElt> {
+        &self.data
     }
 
     pub fn random(rng: &mut ThreadRng, f: &'a F, n: usize, m: usize) -> Self {
@@ -379,6 +364,17 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
             }
         }
         mat
+    }
+
+    pub fn is_zero(&self) -> bool {
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                if self[(i, j)] != self.field.zero() {
+                    return false;
+                }
+            }
+        }
+        true
     }
 
     pub fn is_permutation(&self) -> bool {
@@ -505,10 +501,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
 }
 
 impl<'a, F: CharacteristicTwo + Eq> Mat<'a, F> {
-    pub fn from<'b>(f: &'a F, mat_f2: &Mat<'b, F2>) -> Self
-// where
-    //     F2: Eq + F2FiniteExtension,
-    {
+    pub fn from<'b>(f: &'a F, mat_f2: &Mat<'b, F2>) -> Self {
         let mut mat_f2m = Mat::zero(f, mat_f2.rows(), mat_f2.cols());
         for i in 0..mat_f2.rows() {
             for j in 0..mat_f2.cols() {
@@ -520,10 +513,7 @@ impl<'a, F: CharacteristicTwo + Eq> Mat<'a, F> {
 }
 
 impl<'a, F: Eq + F2FiniteExtension> Mat<'a, F> {
-    pub fn binary_form<'b>(&self, f2: &'b F2) -> Mat<'b, F2>
-// where
-    //     F2: Eq + F2FiniteExtension,
-    {
+    pub fn binary_form<'b>(&self, f2: &'b F2) -> Mat<'b, F2> {
         let f = self.field();
         let m = f.characteristic_exponent();
         let mut bin = Mat::zero(f2, m as usize * self.rows, self.cols);
@@ -544,18 +534,16 @@ impl<'a, F: Eq + F2FiniteExtension> Mat<'a, F> {
 
 impl<'a> Mat<'a, F2> {
     pub fn to_hex_string(&self) -> String {
-        // TODO: Should return type be String or str or &str ??
         if self.rows > 4095 || self.cols > 4095 {
             panic!("Cannot convert matrix to hex string: dimensions not supported");
         }
-        let len = 2 * (4 + 1) + 2 * (self.rows * self.cols / 8 + 1);
+        let len = 2 * (4 + 1) + 2 * (self.rows * self.cols / 8 + 1) + 1;
         let mut s = String::with_capacity(len);
         s.push_str(format!("{:x}#{:x}#", self.rows, self.cols).as_str());
         let mut byte = 0;
         let mut shift = 7;
         for i in 0..self.rows {
             for j in 0..self.cols {
-                // let shift = (self.cols * i + j) % 8;
                 byte |= self[(i, j)] << shift;
                 if shift == 0 {
                     s.push_str(format!("{:02x}", byte).as_str());
@@ -572,23 +560,12 @@ impl<'a> Mat<'a, F2> {
         s
     }
 
-    // TODO: Shouldn't I create a f2 field and return it along the matrix ?
-    pub fn from_hex_string(s: &str, f2: &'a F2) -> Self {
-        // TODO: how to deal with badly formed input ?
+    pub fn from_hex_string(s: &str, f2: &'a F2) -> Result<Self> {
         let v: Vec<&str> = s.split('#').collect();
-        let rows = usize::from_str_radix(v[0], 16).unwrap();
-        let cols = usize::from_str_radix(v[1], 16).unwrap();
-        let data = hex::decode(v[2]).expect("Hex decoding failed"); // TODO: use a result and ?
-                                                                    // if data.len() < 3 {
-                                                                    //     panic!("Cannot convert hex string to matrix: string is too short");
-                                                                    // }
-                                                                    // let rows = data[0];
-                                                                    // let cols = data[1];
-                                                                    // if data.len() != 2 + rows * cols {
-                                                                    //     panic!("Cannot convert hex string to matrix: wrong matrix dimensions");
-                                                                    // }
-                                                                    // println!("rows: {}\ncols: {}\n", rows, cols);
-        let mut mat = Mat::zero(f2, rows, cols); // TODO: into() or as ?
+        let rows = usize::from_str_radix(v[0], 16)?;
+        let cols = usize::from_str_radix(v[1], 16)?;
+        let data = hex::decode(v[2])?;
+        let mut mat = Mat::zero(f2, rows, cols);
         let mut d = 0;
         let mut shift = 7;
         for i in 0..rows {
@@ -602,23 +579,13 @@ impl<'a> Mat<'a, F2> {
                 }
             }
         }
-        // for i in 0..data.len() {
-        //     for j in 0..8 {
-        //         let bit_index = 8 * i + j;
-        //         let row = bit_index / cols;
-        //         let col = bit_index % cols;
-        //         mat[(row, col)] = ((data[i] >> 7 - j) & 1).into();
-        //     }
-        // }
-        // println!("{}\n", mat);
-        mat
+        Ok(mat)
     }
 }
 
 mod gauss;
-mod rowvec;
 mod perm;
-
+mod rowvec;
 
 impl<'a, F: Eq + Field> Mul<Perm> for Mat<'a, F> {
     type Output = Self;

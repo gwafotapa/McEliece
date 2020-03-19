@@ -67,10 +67,8 @@ impl<'a, F: Eq + Field> AddAssign<Poly<'a, F>> for Poly<'a, F> {
 impl<'a, F: Eq + Field> AddAssign<&Poly<'a, F>> for Poly<'a, F> {
     fn add_assign(&mut self, other: &Self) {
         let f = self.field;
-        self.data.resize(
-            1 + cmp::max(self.degree(), other.degree()),
-            f.zero(),
-        );
+        self.data
+            .resize(1 + cmp::max(self.degree(), other.degree()), f.zero());
 
         for i in 0..other.degree() + 1 {
             self[i] = f.add(self[i], other[i]);
@@ -123,10 +121,8 @@ impl<'a, F: Eq + Field> SubAssign<Poly<'a, F>> for Poly<'a, F> {
 impl<'a, F: Eq + Field> SubAssign<&Poly<'a, F>> for Poly<'a, F> {
     fn sub_assign(&mut self, other: &Self) {
         let f = self.field;
-        self.data.resize(
-            1 + cmp::max(self.degree(), other.degree()),
-            f.zero(),
-        );
+        self.data
+            .resize(1 + cmp::max(self.degree(), other.degree()), f.zero());
 
         for i in 0..other.degree() + 1 {
             self[i] = f.sub(self[i], other[i]);
@@ -330,7 +326,7 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
     pub fn field(&self) -> &'a F {
         self.field
     }
-    
+
     pub fn degree(&self) -> usize {
         let mut degree = self.data.len() - 1;
         while self[degree] == self.field.zero() && degree != 0 {
@@ -396,13 +392,11 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
 
     pub fn modulo(&mut self, modulus: &Self) {
         let f = self.field;
-        let mut q = Self::zero(f, 1);
         let d = modulus.degree();
         let c = modulus[d];
         while self.degree() >= d && !self.is_zero() {
             let mut s = Self::x_n(f, self.degree() - d);
             s[self.degree() - d] = f.mul(self[self.degree()], f.inv(c).unwrap());
-            q += &s;
             *self -= &s * modulus;
         }
 
