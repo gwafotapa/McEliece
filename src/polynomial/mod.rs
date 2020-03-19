@@ -392,12 +392,16 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
 
     pub fn modulo(&mut self, modulus: &Self) {
         let f = self.field;
-        let d = modulus.degree();
-        let c = modulus[d];
-        while self.degree() >= d && !self.is_zero() {
-            let mut s = Self::x_n(f, self.degree() - d);
-            s[self.degree() - d] = f.mul(self[self.degree()], f.inv(c).unwrap());
-            *self -= &s * modulus;
+        let m_deg = modulus.degree();
+        let m_lc_inv = f.inv(modulus[m_deg]).unwrap();
+        while self.degree() >= m_deg && !self.is_zero() {
+            let s_deg = self.degree();
+            let d = s_deg - m_deg;
+            let c = f.mul(self[s_deg], m_lc_inv);
+            self[s_deg] = f.zero();
+            for i in (0..m_deg).rev() {
+                self[i + d] = f.sub(self[i + d], f.mul(c, modulus[i]));
+            }
         }
 
         self.update_len();
