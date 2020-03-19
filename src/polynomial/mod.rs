@@ -395,7 +395,6 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
             }
             r.update_len();
         }
-
         (q, r)
     }
 
@@ -457,12 +456,10 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
         let mut i = 1;
         while !r[i].is_zero() {
             let (q, _r) = Self::euclidean_division(&r[i - 1], &r[i]);
-            // println!("{}\n", q.to_str());
             r.push(&r[i - 1] - &q * &r[i]);
             s.push(&s[i - 1] - &q * &s[i]);
             t.push(&t[i - 1] - &q * &t[i]);
             i += 1;
-            // println!("{}\n", r[i].to_str());
         }
 
         let mut a1 = t.remove(i);
@@ -501,16 +498,14 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
         while a[i].degree() > g.degree() / 2 {
             i += 1;
             let (q, r) = Self::euclidean_division(&a[i - 2], &a[i - 1]);
-            // println!("{}\n", q.to_str());
             b.push(&b[i - 2] + &q * &b[i - 1]);
             a.push(r);
-            // println!("{}\n", r[i].to_str());
 
             // if (Self::prod(&b[i], &t).modulo(&g) != a[i].modulo(&g)) {
             //     panic!("Broken loop invariant between a, b, t and g");
             // }
         }
-
+        
         (a.remove(i), b.remove(i))
     }
 }

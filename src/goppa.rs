@@ -243,10 +243,10 @@ where
         info!("T(x) = s(x)^-1 = {:?}", t);
         // t.add(&Poly::x_n(1));
         t += Poly::x_n(f, 1);
-        let s = t.square_root_modulo(&self.poly);
-        info!("square root t(x) of T(x) + x: {:?}", s);
+        t.square_root_modulo(&self.poly);
+        info!("square root t(x) of T(x) + x: {:?}", t);
         // let (mut a, mut b, _, _, _) = Poly::extended_gcd(&s, &self.poly);
-        let (mut a, mut b) = Poly::goppa_extended_gcd(&self.poly, &s);
+        let (mut a, mut b) = Poly::goppa_extended_gcd(&self.poly, &t);
         info!("a(x) = {:?}", a);
         info!("b(x) = {:?}", b);
         a.square();

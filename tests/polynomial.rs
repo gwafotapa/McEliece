@@ -133,12 +133,12 @@ fn polynomial_f1024_sq_root_mod() {
     let deg_a = rng.gen_range(0, 11);
     let a = Poly::random(&mut rng, f, deg_a);
     println!("a(x) = {:?}\n", a);
-    let aa = &a * &a;
-    println!("a^2(x) = {:?}\n", aa);
+    let mut b = &a * &a;
+    println!("a^2(x) = {:?}\n", b);
     let g = Poly::support(f, &[0, 2, 11]);
-    let s = aa.square_root_modulo(&g);
-    println!("s(x) = {:?}\n", s);
-    assert_eq!(s, a);
+    b.square_root_modulo(&g);
+    println!("b(x) = {:?}\n", b);
+    assert_eq!(a, b);
 }
 
 #[test]

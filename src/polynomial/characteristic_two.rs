@@ -33,9 +33,6 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
 
     // TODO: remove the characteristic 2 bound and modify function accordingly
     pub fn square(&mut self) {
-        // if T::one() + T::one() != T::zero() {
-        //     panic!("Square root is only supported for characteristic 2");
-        // }
         let f = self.field;
         let t = self.degree();
         self.data.resize(2 * t + 1, f.zero());
@@ -47,9 +44,7 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
         self[0] = f.mul(self[0], self[0]);
     }
 
-    // characteristic 2 only
-    // finite field order is 2^m
-    pub fn square_root_modulo(&self, modulus: &Self) -> Self
+    pub fn square_root_modulo(&mut self, modulus: &Self)
     where
         F: FiniteField,
     {
@@ -57,23 +52,14 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
             panic!("Cannot compute square root modulo: fields don't match");
         }
         let m = self.field.characteristic_exponent();
-        // if T::one() + T::one() != T::zero() {
-        //     panic!("Square root is only supported for characteristic 2");
-        // }
 
-        let mut res = self.clone();
         for _i in 0..m as usize * modulus.degree() - 1 {
-            res.square();
-            // println!("Square {}: {:?}\n", _i, res);
-            res.modulo(modulus);
-            // println!("Modulo {}: {:?}\n", _i, res);
+            self.square();
+            self.modulo(modulus);
         }
-        res
     }
 
     // TODO: shouldn't I simply use euclid algo that also works for odd characteristics
-    // characteristic 2 only
-    // finite field order is 2^m
     pub fn inverse_modulo(&self, modulus: &Self) -> Self
     where
         F: FiniteField,
@@ -85,10 +71,6 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
         if self.is_zero() {
             panic!("The null polynom has no inverse");
         }
-
-        // if T::one() + T::one() != T::zero() {
-        //     panic!("Square root is only supported for characteristic 2");
-        // }
 
         let mut res = self.clone();
         res.square();
@@ -186,17 +168,9 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
     }
 }
 
-// TODO: Should I add to_hex_string and from_hex_string method to Field or FiniteField traits ?
-// Or should I add std::fmt::LowerHex and From::u32 traits to F::Elt ?
 impl<'a, F: Eq + F2FiniteExtension> Poly<'a, F> {
-    pub fn to_hex_string(&self) -> String
-// where
-    //     F: FiniteField,
-    //     F::FElt: std::fmt::LowerHex,
-    {
-        // TODO: add 'use fmt::LowerHex'
+    pub fn to_hex_string(&self) -> String {
         let f = self.field();
-        // println!("{}", *self);
         if f.order() > 1 << 16 {
             panic!("Cannot convert polynomial to hex string: field order must be at most 2^16");
         }
