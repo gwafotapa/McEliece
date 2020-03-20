@@ -42,7 +42,7 @@ pub fn keygen<'a, 'b>(
     let mut rng = rand::thread_rng();
     let goppa = Goppa::random(&mut rng, f2m, n as usize, t as usize);
     // let goppa = Goppa::new(
-    //     Poly::random_irreducible(&mut rng, f2m, t as usize),
+    //     Poly::random_monic_irreducible(&mut rng, f2m, t as usize),
     //     f2m.as_set(),
     // )
     // .unwrap();
@@ -51,7 +51,8 @@ pub fn keygen<'a, 'b>(
     info!("Parity check matrix:{}", h);
     let mut h2 = h.binary_form(f2);
     info!("Parity check matrix in binary form:{}", h2);
-    // h2.remove_redundant_rows();
+    h2.remove_redundant_rows();
+    info!("Full rank binary parity check matrix:{}", h2);
     let (g, info_set) = Goppa::generator_matrix(&h2);
     info!("Generator matrix G:{}", g);
     let k = g.rows();
@@ -62,7 +63,7 @@ pub fn keygen<'a, 'b>(
     let sgp = &s * &g * &p;
     info!("Perturbed generator matrix ~G:{}", sgp);
     let pk = PublicKey { sgp, t };
-    info!("Information set of generator matrix G: {:?}\n", info_set);
+    info!("Information set of generator matrix G:\n{:?}\n", info_set);
     let sk = SecretKey {
         s,
         goppa,
@@ -76,9 +77,9 @@ impl<'a> PublicKey<'a> {
     pub fn encrypt(&self, m: &RowVec<'a, F2>) -> RowVec<'a, F2> {
         let mut rng = rand::thread_rng();
         let c = m * &self.sgp;
-        info!("Encoded plaintext:\n{}\n", c);
+        info!("Encoded plaintext:{}", c);
         let z = RowVec::random_with_weight(&mut rng, m.field(), self.sgp.cols(), self.t as usize);
-        info!("Error vector:\n{}\n", z);
+        info!("Error vector:{}", z);
         c + z
     }
 
@@ -108,9 +109,9 @@ impl<'a, 'b> SecretKey<'a, 'b> {
     pub fn decrypt(&self, c: &RowVec<'a, F2>) -> RowVec<'a, F2> {
         let m_s_g_z = c * self.p.inverse();
         let m_s_g = self.goppa.decode(&m_s_g_z);
-        info!("Decoded ciphertext mSG:\n{}\n", m_s_g);
+        info!("Decoded ciphertext mSG:{}", m_s_g);
         let m_s = m_s_g.extract_cols(&self.info_set);
-        info!("Use information set {:?} to extract mS:\n{}\n", self.info_set, m_s);
+        info!("Use information set {:?} to extract mS:{}", self.info_set, m_s);
         let m = m_s * self.s.inverse().unwrap();
         m
     }

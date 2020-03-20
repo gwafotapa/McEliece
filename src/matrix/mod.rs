@@ -281,7 +281,7 @@ impl<'a, F: Eq + F2FiniteExtension> Debug for Mat<'a, F> {
             }
             write!(
                 f,
-                "{:>w$}\n",
+                "{:>w$x}\n",
                 k.elt_to_u32(self[(i, self.cols - 1)]),
                 w = width
             )?;

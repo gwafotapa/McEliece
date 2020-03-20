@@ -49,7 +49,8 @@ where
     F: Eq + F2FiniteExtension,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let q = self.poly.field().order();
+        let fq = self.poly.field();
+        let q = fq.order();
         let n = self.set.len();
         let t = self.poly.degree();
         write!(
@@ -61,10 +62,16 @@ where
         if n == q as usize {
             write!(f, "L = F{}\n", q)
         } else {
+            // write!(f, "L = [")?;
+            // for i in 0..n - 1 {
+            //     write!(f, "{}, ", fq.elt_to_str(self.set[i]))?;
+            // }
+            // write!(f, "{}]\n", fq.elt_to_str(self.set[n - 1]))
+
             let set: Vec<String> = self
                 .set
                 .iter()
-                .map(|x| self.poly.field().elt_to_str(*x))
+                .map(|x| fq.elt_to_str(*x))
                 .collect();
             write!(f, "L = {:?}\n", set)
         }
@@ -92,15 +99,14 @@ where
                 return Err("Set elements must be ordered according to their u32 representation");
             }
         }
-        Ok(Self {
-            // len: set.len(),
-            poly,
-            set,
-        })
+        if poly.degree() == 1 && set.contains(&f.mul(f.inv(poly[1]).unwrap(), poly[0])) {
+            return Err("Set must not contain a root of the Goppa polynomial");
+        }
+        Ok(Self { poly, set })
     }
 
     pub fn random(rng: &mut ThreadRng, f: &'a F, n: usize, degree: usize) -> Self {
-        let poly = Poly::random_irreducible(rng, f, degree);
+        let poly = Poly::random_monic_irreducible(rng, f, degree);
 
         // Build set L of n elements :
         // Start with all q elements of F(2^m) then remove n-q elements.
@@ -118,13 +124,11 @@ where
         }
 
         for _i in 0..elts_to_remove {
-            let uint = rng.gen_range(0, uints.len());
-            uints.remove(uint);
+            let index = rng.gen_range(0, uints.len());
+            uints.remove(index);
         }
-        let mut set = Vec::with_capacity(n);
-        for i in 0..n {
-            set.push(f.u32_to_elt(uints[i] as u32));
-        }
+        let set = uints.iter().map(|x| f.u32_to_elt(*x as u32)).collect();
+
         Self { poly, set }
     }
 
@@ -132,12 +136,10 @@ where
         self.set.len()
     }
 
-    // TODO: Should I return references here or create new objects ?
     pub fn poly(&self) -> &Poly<'a, F> {
         &self.poly
     }
 
-    // TODO: Should I return references here or create new objects ?
     pub fn set(&self) -> &Vec<F::FElt> {
         &self.set
     }
@@ -182,7 +184,6 @@ where
 
         let mut z = Mat::zero(f, n, n);
         for i in 0..n {
-            // println!("{} {}", self.set[i], self.poly.eval(self.set[i]));
             z[(i, i)] = f.inv(self.poly.eval(self.set[i])).unwrap();
         }
         z
@@ -195,14 +196,7 @@ where
         x * y * z
     }
 
-    // TODO: When this method is called after binary_form,
-    // isn't there a problem since the number of rows can exceed the number of columns
-    // thus standard_form stops ???
-
-    // pub fn generator_matrix<'b, G>(h: &Mat<'b, G>) -> Mat<'b, G>
-    // where G: Eq + F2FiniteExtension {
     pub fn generator_matrix(h: &Mat<'a, F>) -> (Mat<'a, F>, Vec<usize>) {
-        // pub fn generator_matrix(h: &Mat<'a, F>) -> (Mat<'a, F>, Mat<'a, F>) {
         let f = h.field();
         let m = h.rows();
         let n = h.cols();
@@ -248,29 +242,19 @@ where
         let f2 = msg.field();
         let h = self.parity_check_matrix();
         let mut hb = h.binary_form(f2);
-        // hb.remove_redundant_rows(); // TODO: Is it necessary or not ?
+        hb.remove_redundant_rows();
         let (g, _) = Goppa::generator_matrix(&hb);
         msg * g
-        // Self::goppa_encode(&g, msg)
     }
 
     pub fn decode<'b>(&self, rcv: &RowVec<'b, F2>) -> RowVec<'b, F2> {
+        info!("Goppa decoding\n");
         let f = self.field();
         let f2 = rcv.field();
         let h = self.parity_check_matrix();
-        info!("parity check matrix: {:?}", h);
-        // let rcv_fq = Mat::from(rcv);
-        // let rcv_fq = RowVec::from(f, rcv);
-        // info!("received word: {:?}", rcv_fq);
-        // let syndrome = h * rcv_fq.transpose();
-        let syndrome = Goppa::syndrome(&h, &rcv);
-        info!("syndrome: {:?}", syndrome);
-
-        // let zero = Mat::zero(f, syndrome.rows(), 1);
-        // if syndrome == zero {
-        // if syndrome.is_zero() {
-        //     return rcv.clone();
-        // }
+        // info!("parity check matrix:{:?}", h);
+        let syndrome = Goppa::syndrome(&h, rcv);
+        info!("syndrome:{:?}", syndrome);
 
         let mut deg_s_x = syndrome.rows() - 1;
         for i in 0..syndrome.rows() - 1 {
@@ -287,52 +271,49 @@ where
         let mut s_x = Poly::zero(f, deg_s_x + 1);
         for i in 0..deg_s_x + 1 {
             s_x[i] = syndrome[(syndrome.rows() - 1 - i, 0)];
-            // s_x[i] = syndrome[(i, 0)];
         }
-        info!("S(x): {:?}", s_x);
-        // debug!("this is a debug {}", "message");
-        // error!("this is printed by default");
+        info!("S(x) = {:?}", s_x);
 
         s_x.inverse_modulo(&self.poly);
         info!("T(x) = s(x)^-1 = {:?}", s_x);
-        // s_x.add(&Poly::x_n(1));
         s_x += Poly::x_n(f, 1);
         s_x.square_root_modulo(&self.poly);
-        info!("square root t(x) of T(x) + x: {:?}", s_x);
-        // let (mut a, mut b, _, _, _) = Poly::extended_gcd(&s, &self.poly);
+        info!("(T(x) + x)^(1/2) = {:?}", s_x);
         let (mut a, mut b) = Poly::goppa_extended_gcd(&self.poly, &s_x);
         info!("a(x) = {:?}", a);
         info!("b(x) = {:?}", b);
         a.square();
         b.square();
-        // b.mul(&Poly::x_n(1));
+        info!("a(x)^2 = {:?}", a);
+        info!("b(x)^2 = {:?}", b);
         b *= Poly::x_n(f, 1);
-        // let aa = Mat::zero(1, n);
-        // for i in 0..a.degree() {
-        //     aa[(1, i)] = a[i];
-        // }
-        // let bb = Mat::zero(1, n);
-        // for i in 0..b.degree() {
-        //     bb[(1, i)] = b[i];
-        // }
-        // let sigma = Poly::sum(&a, &b); // not necessarily monic
         let sigma = &a + &b;
         info!("sigma(x) = {:?}", sigma);
-        let n = self.set.len();
-        // let mut err = Mat::zero(1, n);
-        let mut err = RowVec::zero(f2, n);
 
-        for i in 0..n {
-            // use iterator and map ?
-            // err[(0, i)] = if sigma.eval(self.set[i]) == T::zero() {
-            err[i] = if sigma.eval(self.set[i]) == f.zero() {
-                f2.one()
-            } else {
-                f2.zero()
-            };
-        }
+        let err = RowVec::new(
+            f2,
+            self.set
+                .iter()
+                .map(|x| {
+                    if sigma.eval(*x) == f.zero() {
+                        f2.one()
+                    } else {
+                        f2.zero()
+                    }
+                })
+                .collect(),
+        );
 
-        // let cdw = Mat::sum(rcv, &err);
+        // let n = self.set.len();
+        // let mut err = RowVec::zero(f2, n);
+        // for i in 0..n {
+        //     err[i] = if sigma.eval(self.set[i]) == f.zero() {
+        //         f2.one()
+        //     } else {
+        //         f2.zero()
+        //     };
+        // }
+        info!("Error vector:{}", err);
         let cdw = rcv + err;
         cdw
     }
@@ -340,33 +321,23 @@ where
 
 // Should I generalise from F2m ?
 impl<'a, F: Eq + F2FiniteExtension> Goppa<'a, F>
-where
-    F::FElt: std::fmt::Debug,
-{
-    // TODO: remove the trait ?
-    pub fn to_hex_string(&self) -> String
 // where
-    //     F::FElt: std::fmt::LowerHex,
-    {
+//     F::FElt: std::fmt::Debug,
+{
+    pub fn to_hex_string(&self) -> String {
         let f = self.field();
-        // TODO: add 'use fmt::LowerHex'
         if f.order() > 1 << 16 {
             panic!("Cannot convert polynomial to hex string: field order must be at most 2^16");
         }
-        // let mut s = String::new();
-        // s.push_str(format!("{:04x}", f.order()).as_str());
-        // s.push_str(format!("{:02x}", self.poly.degree()).as_str());
-        println!("{:?}\n", self.poly);
-        let mut s = self.poly.to_hex_string(); // TODO: Does it clone the string or not ?
+        // println!("{:?}\n", self.poly);
+        let mut s = self.poly.to_hex_string();
         s.reserve(s.len() + 2 + 2 * (f.order() as usize / 8 + 1) + 1);
         s.push_str("##");
         let mut byte = 0;
         let mut cnt_mod_8 = 7;
         let mut j = 0;
         for i in 0..f.order() {
-            if self.set[j] == f.u32_to_elt(i) {
-                // if self.set.contains(&f.u32_to_elt(i)) {
-                // TODO: rewrite using elt_to_u32
+            if f.u32_to_elt(i) == self.set[j] {
                 byte |= 1 << cnt_mod_8;
                 j += 1;
             }
@@ -377,22 +348,17 @@ where
             } else {
                 cnt_mod_8 -= 1;
             }
-        } // TODO: if field order is not divisible by 8, elements are missing !
+        }
+        if f.order() % 8 != 0 {
+            s.push_str(format!("{:02x}", byte).as_str());
+        }
         s
     }
 
     pub fn from_hex_string(s: &str, f: &'a F) -> Result<Self> {
-        // let order = u32::from_str_radix(&s[0..4], 16).unwrap();
-        // let t = u32::from_str_radix(&s[4..6], 16).unwrap();
-        // let poly_len = 4 + 2 + 4 * (t as usize + 1);
         let v: Vec<&str> = s.split("##").collect();
         let poly = Poly::from_hex_string(v[0], f)?;
-        println!("{:?}\n", poly);
-        // let v: Vec<&str> = v[1].split(' ').collect();
-        // let mut set = Vec::<<F as Field>:: FElt>::with_capacity(v.len());
-        // for i in 0..v.len() {
-        //     set.push(f.u32_to_elt(u32::from_str_radix(v[i], 16).unwrap()));
-        // }
+        // println!("{:?}\n", poly);
 
         let set_data = hex::decode(v[1])?;
         // println!("{:?}", set_data);
@@ -411,7 +377,7 @@ where
                 cnt_mod_8 -= 1
             }
         }
-        println!("{:?}\n", set);
+        // println!("{:?}\n", set);
         Ok(Goppa { poly, set })
     }
 }

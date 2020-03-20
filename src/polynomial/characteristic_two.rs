@@ -9,23 +9,18 @@ use crate::finite_field::{CharacteristicTwo, F2FiniteExtension, FiniteField};
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
-    pub fn random_irreducible(rng: &mut ThreadRng, f: &'a F, degree: usize) -> Self
+    pub fn random_monic_irreducible(rng: &mut ThreadRng, f: &'a F, degree: usize) -> Self
     where
         F: FiniteField,
     {
         let mut p = Self::zero(f, degree + 1);
+        p[degree] = f.one();
         for i in 0..degree {
             p[i] = f.random_element(rng);
-        }
-        while p[degree] == f.zero() {
-            p[degree] = f.random_element(rng);
         }
         while !p.is_irreducible() {
             for i in 0..degree {
                 p[i] = f.random_element(rng);
-            }
-            while p[degree] == f.zero() {
-                p[degree] = f.random_element(rng);
             }
         }
         p
