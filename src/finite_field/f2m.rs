@@ -42,7 +42,7 @@ impl Field for F2m {
             f.log[elt as usize] = i;
         }
         f
-    }    
+    }
 
     fn zero(&self) -> Self::FElt {
         0
@@ -156,8 +156,6 @@ impl F2m {
             Err(s) => panic!(s),
         }
     }
-
-
 
     pub fn as_set(&self) -> Vec<<F2m as Field>::FElt> {
         let mut set = Vec::with_capacity(self.order as usize);

@@ -433,11 +433,11 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         }
     }
 
-    pub fn extract_cols(&self, perm: &Vec<usize>) -> Self {
-        let mut res = Mat::zero(self.field(), self.rows(), perm.len());
-        for j in 0..perm.len() {
+    pub fn extract_cols(&self, cols: &Vec<usize>) -> Self {
+        let mut res = Mat::zero(self.field(), self.rows(), cols.len());
+        for j in 0..cols.len() {
             for i in 0..res.rows() {
-                res[(i, j)] = self[(i, perm[j])];
+                res[(i, j)] = self[(i, cols[j])];
             }
         }
         res

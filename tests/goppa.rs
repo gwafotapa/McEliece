@@ -1,25 +1,16 @@
 use log::info;
 
-use std::sync::Once;
-
 use mceliece::finite_field::*;
 use mceliece::goppa::*;
 use mceliece::matrix::*;
 use mceliece::polynomial::*;
 
-static INIT: Once = Once::new();
-
-/// Setup function that is only run once, even if called multiple times.
-fn setup() {
-    INIT.call_once(|| {
-        env_logger::init();
-    });
-}
+mod common;
 
 #[ignore]
 #[test]
 fn goppa_f8() {
-    setup();
+    common::setup();
 
     let f2 = &F2 {};
     let f8 = &F2m::generate(8);
@@ -103,7 +94,7 @@ fn goppa_f8() {
 #[ignore]
 #[test]
 fn goppa_f1024() {
-    setup();
+    common::setup();
 
     let f2 = &F2 {};
     let f1024 = &F2m::generate(1024);
@@ -155,7 +146,7 @@ fn goppa_f1024() {
 #[ignore]
 #[test]
 fn goppa_f256() {
-    setup();
+    common::setup();
 
     let f2 = &F2 {};
     let f256 = &F2m::generate(256);
@@ -221,7 +212,7 @@ fn goppa_f256() {
 
 #[test]
 fn goppa_f128() {
-    setup();
+    common::setup();
 
     let m = 7;
     let n = 1 << m;

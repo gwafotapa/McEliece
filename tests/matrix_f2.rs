@@ -273,3 +273,69 @@ fn rowvec_f2_save_load() {
     let vec_load = RowVec::load_vector(file_name, f2).unwrap();
     assert_eq!(vec_save, vec_load);
 }
+
+// #[test]
+// fn matrix_f2_remove_redundant_rows() {
+//     let f2 = &F2 {};
+//     let v = vec![1, 0, 1, 0, 0,
+//                  1, 0, 1, 0, 0,
+//                  1, 1, 1, 0, 0,
+//                  0, 1, 0, 0, 0,
+//                  0, 0, 0, 0, 0];
+//     let mut a = Mat::new(f2, 5, 5, v);
+
+//     let b = Mat::new(f2, 2, 5, vec![1, 0, 1, 0, 0, 1, 1, 1, 0, 0]);
+//     println!("{}", a);
+//     a.remove_redundant_rows();
+//     println!("{}", a);
+//     assert_eq!(a, b);
+
+//     let v = vec![0, 0, 0, 0, 0,
+//                  0, 0, 0, 0, 0,
+//                  0, 0, 0, 1, 0,
+//                  0, 0, 0, 0, 1,
+//                  0, 0, 0, 1, 1,
+//                  0, 0, 0, 1, 0,
+//                  1, 1, 1, 0, 0,
+//                  1, 1, 1, 0, 1,
+//                  1, 1, 1, 1, 0,
+//                  0, 0, 0, 1, 0,
+//                  0, 0, 0, 0, 0,
+//                  0, 0, 0, 0, 1,
+//                  1, 1, 1, 1, 1];
+//     let mut a = Mat::new(f2, 13, 5, v);
+
+//     let b = Mat::new(f2, 3, 5, vec![0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0]);
+//     println!("{}", a);
+//     a.remove_redundant_rows();
+//     println!("{}", a);
+//     assert_eq!(a, b);
+
+//     let v = vec![1, 0, 1, 0, 1, 0, 1,
+//                  1, 0, 1, 1, 0, 1, 0,
+//                  0, 1, 1, 0, 1, 1, 0];
+//     let mut a = Mat::new(f2, 3, 7, v);
+
+//     let b = a.clone();
+//     println!("{}", a);
+//     a.remove_redundant_rows();
+//     println!("{}", a);
+//     assert_eq!(a, b);
+// }
+
+#[test]
+fn matrix_f2_col_echelon_form() {
+    let f2 = &F2 {};
+    let v = vec![1, 0, 1, 0, 0,
+                 1, 0, 1, 0, 0,
+                 1, 1, 1, 0, 0,
+                 0, 1, 0, 0, 0,
+                 0, 0, 0, 0, 0];
+    let mut a = Mat::new(f2, 5, 5, v);
+
+    let b = Mat::new(f2, 2, 5, vec![1, 0, 1, 0, 0, 1, 1, 1, 0, 0]);
+    println!("{}", a);
+    let v = a.col_echelon_form();
+    println!("{}", a);
+    println!("{:?}", v);
+}

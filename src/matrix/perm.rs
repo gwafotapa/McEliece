@@ -1,7 +1,7 @@
 use rand::{rngs::ThreadRng, Rng};
 use std::ops::{Index, IndexMut};
 
-#[derive(Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct Perm(Vec<usize>);
 
 impl Index<usize> for Perm {

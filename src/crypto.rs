@@ -6,7 +6,7 @@ use std::{
     io::{BufRead, BufReader, BufWriter, Write},
 };
 
-use crate::finite_field::{F2m, Field, F2};
+use crate::finite_field::{F2m, Field, FiniteField, F2};
 use crate::goppa::Goppa;
 use crate::matrix::{Mat, Perm, RowVec};
 // use crate::polynomial::Poly;
@@ -30,10 +30,15 @@ pub struct SecretKey<'a, 'b> {
 pub fn keygen<'a, 'b>(
     f2: &'a F2,
     f2m: &'b F2m,
-    // m: u32,
     n: u32,
     t: u32,
 ) -> (PublicKey<'a>, SecretKey<'a, 'b>) {
+    info!(
+        "keygen(m={}, n={}, t={})\n",
+        f2m.characteristic_exponent(),
+        n,
+        t
+    );
     let mut rng = rand::thread_rng();
     let goppa = Goppa::random(&mut rng, f2m, n as usize, t as usize);
     // let goppa = Goppa::new(
@@ -41,20 +46,23 @@ pub fn keygen<'a, 'b>(
     //     f2m.as_set(),
     // )
     // .unwrap();
+    info!("{}", goppa);
     let h = goppa.parity_check_matrix();
     info!("Parity check matrix:{}", h);
-    let h2 = h.binary_form(f2);
+    let mut h2 = h.binary_form(f2);
     info!("Parity check matrix in binary form:{}", h2);
+    // h2.remove_redundant_rows();
     let (g, info_set) = Goppa::generator_matrix(&h2);
     info!("Generator matrix G:{}", g);
     let k = g.rows();
     let s = Mat::invertible_random(&mut rng, f2, k as usize);
     info!("Singular matrix S:{}", s);
     let p = Perm::random(&mut rng, n as usize);
+    info!("Permutation P:\n{:?}\n", p);
     let sgp = &s * &g * &p;
     info!("Perturbed generator matrix ~G:{}", sgp);
     let pk = PublicKey { sgp, t };
-    println!("{:?}", info_set);
+    info!("Information set of generator matrix G: {:?}\n", info_set);
     let sk = SecretKey {
         s,
         goppa,
@@ -68,7 +76,9 @@ impl<'a> PublicKey<'a> {
     pub fn encrypt(&self, m: &RowVec<'a, F2>) -> RowVec<'a, F2> {
         let mut rng = rand::thread_rng();
         let c = m * &self.sgp;
+        info!("Encoded plaintext:\n{}\n", c);
         let z = RowVec::random_with_weight(&mut rng, m.field(), self.sgp.cols(), self.t as usize);
+        info!("Error vector:\n{}\n", z);
         c + z
     }
 
@@ -95,13 +105,12 @@ impl<'a> PublicKey<'a> {
 }
 
 impl<'a, 'b> SecretKey<'a, 'b> {
-    pub fn decrypt(
-        &self,
-        c: &RowVec<'a, F2>,
-    ) -> RowVec<'a, F2> {
+    pub fn decrypt(&self, c: &RowVec<'a, F2>) -> RowVec<'a, F2> {
         let m_s_g_z = c * self.p.inverse();
         let m_s_g = self.goppa.decode(&m_s_g_z);
+        info!("Decoded ciphertext mSG:\n{}\n", m_s_g);
         let m_s = m_s_g.extract_cols(&self.info_set);
+        info!("Use information set {:?} to extract mS:\n{}\n", self.info_set, m_s);
         let m = m_s * self.s.inverse().unwrap();
         m
     }

@@ -7,14 +7,17 @@ use mceliece::{
     matrix::RowVec,
 };
 
+mod common;
+
 #[test]
 fn crypto_keygen_128() {
+    common::setup();
     let f2 = &F2::generate(2);
-    let m = 7;
-    let f128 = &F2m::generate(1 << m);
+    let m = 6;
+    let f2m = &F2m::generate(1 << m);
     let n = 1 << m;
     let t = 10;
-    let (pk, sk) = keygen(f2, f128, n, t);
+    let (pk, sk) = keygen(f2, f2m, n, t);
     let h = sk.goppa.parity_check_matrix().binary_form(&f2);
     let (g, _) = Goppa::generator_matrix(&h);
     assert!(sk.s.is_invertible());
@@ -25,6 +28,7 @@ fn crypto_keygen_128() {
 
 #[test]
 fn crypto_pk_save_load() {
+    common::setup();
     let f2 = &F2::generate(2);
     let m = 8;
     let f256 = &F2m::generate(1 << m);
@@ -39,6 +43,7 @@ fn crypto_pk_save_load() {
 
 #[test]
 fn crypto_sk_save_load() {
+    common::setup();
     let f2 = &F2::generate(2);
     let m = 8;
     let f256_save = &F2m::generate(1 << m);
@@ -62,6 +67,7 @@ fn crypto_sk_save_load() {
 // Is it because of parallel execution ?
 #[test]
 fn crypto_encrypt_decrypt_null_message() {
+    common::setup();
     let file_pk = "public_key_test.mce";
     let file_sk = "secret_key_test.mce";
     let file_msg = "message_test.mce";
@@ -98,6 +104,7 @@ fn crypto_encrypt_decrypt_null_message() {
 
 #[test]
 fn crypto_encrypt_decrypt_random_message() {
+    common::setup();
     let file_pk = "public_key_test.mce";
     let file_sk = "secret_key_test.mce";
     let file_msg = "message_test.mce";
@@ -134,6 +141,7 @@ fn crypto_encrypt_decrypt_random_message() {
 
 #[test]
 fn crypto_encrypt_decrypt_random_message_without_error() {
+    common::setup();
     let file_pk = "public_key_test.mce";
     let file_sk = "secret_key_test.mce";
     let file_msg = "message_test.mce";
@@ -174,6 +182,7 @@ fn crypto_encrypt_decrypt_random_message_without_error() {
 // (m, n, t) = (4, 8, 1) fails (rows of the parity check matrix aren't independant)
 #[test]
 fn crypto_encrypt_decrypt_random_message_L_not_full() {
+    common::setup();
     let file_pk = "public_key_test.mce";
     let file_sk = "secret_key_test.mce";
     let file_msg = "message_test.mce";
@@ -182,9 +191,12 @@ fn crypto_encrypt_decrypt_random_message_L_not_full() {
 
     let mut rng = rand::thread_rng();
     let f2 = &F2::generate(2);
-    let m = rng.gen_range(3, 10);
-    let t = rng.gen_range(1, ((1 << m) - 1) / m);
+    let m = 2;
+    let m = rng.gen_range(3, 5);
+    // let t = rng.gen_range(1, ((1 << m) - 1) / m);
+    let t = 1;
     let f2m = &F2m::generate(1 << m);
+    let n = 3;
     let n = rng.gen_range(m * t + 1, 1 << m);
     println!("m: {}\nn: {}\nt: {}", m, n, t);
     let (pk, sk) = keygen(f2, f2m, n, t);

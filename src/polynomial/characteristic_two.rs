@@ -1,4 +1,4 @@
-use log::info;
+// use log::info;
 
 use rand::rngs::ThreadRng;
 use std::error::Error;
@@ -123,13 +123,13 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
         let q = f.order();
         let mut n_prime_factors = trial_division(n);
         n_prime_factors.dedup();
-        info!("decomposition of n in prime factors: {:?}", n_prime_factors);
+        // info!("decomposition of n in prime factors: {:?}", n_prime_factors);
 
         let n_div_primes: Vec<u32> = n_prime_factors.iter().map(|x| n / x).collect();
-        info!(
-            "list of n/p where p is a prime factor of n: {:?}",
-            n_div_primes
-        );
+        // info!(
+        //     "list of n/p where p is a prime factor of n: {:?}",
+        //     n_div_primes
+        // );
 
         for i in 0..n_prime_factors.len() {
             let mut h = Self::x_n(f, 1);

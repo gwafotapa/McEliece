@@ -1,9 +1,9 @@
 use rand::rngs::ThreadRng;
 
-use super::Mat;
+use super::{Mat, Perm};
 use crate::finite_field::Field;
 
-impl<'a, F: Eq + Field> Mat<'a, F> {    
+impl<'a, F: Eq + Field> Mat<'a, F> {
     pub fn combine_rows(&mut self, row1: usize, lambda: F::FElt, row2: usize) {
         let f = self.field;
         for j in 0..self.cols {
@@ -114,13 +114,13 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         mat
     }
 
-    pub fn row_echelon_form(&mut self) -> Vec<usize> {
+    pub fn row_echelon_form(&mut self) -> usize {
         let f = self.field;
         let n = self.rows;
         let m = self.cols;
         let mut row_pivot = 0;
         let mut col_pivot = 0;
-        let mut set_of_cols_with_max_dim = Vec::new();
+        let mut rank = 0;
 
         while row_pivot < self.rows && col_pivot < self.cols {
             // Find pivot
@@ -132,7 +132,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
                 col_pivot += 1;
                 continue;
             }
-            set_of_cols_with_max_dim.push(i);
+            rank += 1;
             self.swap_rows(i, row_pivot);
 
             // Normalize pivot's row
@@ -159,14 +159,14 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
             row_pivot += 1;
             col_pivot += 1;
         }
-        set_of_cols_with_max_dim
+        rank
     }
 
-    pub fn reduced_row_echelon_form(&mut self) -> Vec<usize> {
+    pub fn reduced_row_echelon_form(&mut self) -> usize {
         let f = self.field;
         let n = self.rows;
         let m = self.cols;
-        let set_of_cols_with_max_dim = self.row_echelon_form(); // note that all pivots are 1
+        let rank = self.row_echelon_form(); // note that all pivots are 1
 
         for row_pivot in (0..n).rev() {
             // Find the pivot on this row if any
@@ -192,12 +192,12 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
                 }
             }
         }
-        set_of_cols_with_max_dim
+        rank
     }
 
     pub fn rank(&self) -> usize {
         let mut mat = self.clone();
-        mat.row_echelon_form().len()
+        mat.row_echelon_form()
     }
 
     // Compute, if possible, (U, S, P) with U invertible, S standard form and P permutation
@@ -294,5 +294,131 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
             }
         }
         true
+    }
+
+    pub fn col_echelon_form(&mut self) -> usize {
+        let f = self.field;
+        let n = self.rows;
+        let m = self.cols;
+        let mut row_pivot = 0;
+        let mut col_pivot = 0;
+        let mut rank = 0;
+
+        while row_pivot < self.rows && col_pivot < self.cols {
+            // Find pivot
+            let mut j = col_pivot;
+            while j < m && self[(row_pivot, j)] == f.zero() {
+                j += 1;
+            }
+            if j == m {
+                row_pivot += 1;
+                continue;
+            }
+            rank += 1;
+            self.swap_cols(j, col_pivot);
+
+            // Normalize pivot's column
+            let pivot_inv = f.inv(self[(row_pivot, col_pivot)]).unwrap();
+            for i in row_pivot + 1..n {
+                self[(i, col_pivot)] = f.mul(pivot_inv, self[(i, col_pivot)]);
+            }
+            self[(row_pivot, col_pivot)] = f.one();
+
+            // Adjust all columns right of pivot's column
+            for l in col_pivot + 1..m {
+                if self[(row_pivot, l)] == f.zero() {
+                    continue;
+                }
+                for k in row_pivot + 1..n {
+                    self[(k, l)] = f.sub(
+                        self[(k, l)],
+                        f.mul(self[(k, col_pivot)], self[(row_pivot, l)]),
+                    );
+                }
+                self[(row_pivot, l)] = f.zero();
+            }
+
+            row_pivot += 1;
+            col_pivot += 1;
+        }
+        rank
+    }
+
+    pub fn max_set_of_independant_rows(&mut self) -> Vec<usize> {
+        let f = self.field;
+        let n = self.rows;
+        let m = self.cols;
+        let mut row_pivot = 0;
+        let mut col_pivot = 0;
+        let mut p = Mat::identity(f, n);
+        let mut rank = 0;
+
+        while row_pivot < self.rows && col_pivot < self.cols {
+            // Find pivot
+            let mut i = row_pivot;
+            while i < n && self[(i, col_pivot)] == f.zero() {
+                i += 1;
+            }
+            if i == n {
+                col_pivot += 1;
+                continue;
+            }
+            self.swap_rows(i, row_pivot);
+            p.swap_rows(i, row_pivot);
+            rank += 1;
+
+            // Normalize pivot's row
+            let pivot_inv = f.inv(self[(row_pivot, col_pivot)]).unwrap();
+            for j in col_pivot + 1..m {
+                self[(row_pivot, j)] = f.mul(pivot_inv, self[(row_pivot, j)]);
+            }
+            self[(row_pivot, col_pivot)] = f.one();
+
+            // Adjust all rows below pivot's row
+            for k in row_pivot + 1..n {
+                if self[(k, col_pivot)] == f.zero() {
+                    continue;
+                }
+                for l in col_pivot + 1..m {
+                    self[(k, l)] = f.sub(
+                        self[(k, l)],
+                        f.mul(self[(k, col_pivot)], self[(row_pivot, l)]),
+                    );
+                }
+                self[(k, col_pivot)] = f.zero();
+            }
+
+            row_pivot += 1;
+            col_pivot += 1;
+        }
+        let mut max_set_of_indep_rows = Vec::new();
+        for i in 0..p.rows() {
+            if rank == i {
+                break;
+            }
+            let mut j = 0;
+            while p[(i, j)] == f.zero() {
+                j += 1;
+            }
+            max_set_of_indep_rows.push(j);
+        }
+        max_set_of_indep_rows
+    }
+
+    fn keep_rows(&mut self, rows: &Vec<usize>) {
+        let m = self.rows;
+        for i in (0..m).rev() {
+            if rows.contains(&i) {
+                continue;
+            }
+            self.data.drain(i * self.cols..(i + 1) * self.cols);
+            self.rows -= 1;
+        }
+    }
+
+    pub fn remove_redundant_rows(&mut self) {
+        let mut tmp = self.clone();
+        let max_set_of_indep_rows = tmp.max_set_of_independant_rows();
+        self.keep_rows(&max_set_of_indep_rows);
     }
 }

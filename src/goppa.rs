@@ -1,7 +1,11 @@
 use log::info;
 
 use rand::{rngs::ThreadRng, Rng};
-use std::{error::Error, result};
+use std::{
+    error::Error,
+    fmt::{self, Debug, Display, Formatter},
+    result,
+};
 
 use crate::{
     finite_field::{F2FiniteExtension, Field, F2},
@@ -13,9 +17,58 @@ type Result<T> = result::Result<T, Box<dyn Error>>;
 
 #[derive(Eq, PartialEq)]
 pub struct Goppa<'a, F: Eq + Field> {
-    // len: usize,
     poly: Poly<'a, F>,
     set: Vec<F::FElt>,
+}
+
+impl<'a, F> Debug for Goppa<'a, F>
+where
+    F: Eq + F2FiniteExtension,
+    F::FElt: Debug,
+{
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let q = self.poly.field().order();
+        let n = self.set.len();
+        let t = self.poly.degree();
+        write!(
+            f,
+            "Goppa code (L, g(x)) from F{} with n={} and t={}\n",
+            q, n, t
+        )?;
+        write!(f, "g(x) = {:?}\n", self.poly)?;
+        if n == q as usize {
+            write!(f, "L = F{}\n", q)
+        } else {
+            write!(f, "L = {:X?}\n", self.set)
+        }
+    }
+}
+
+impl<'a, F> Display for Goppa<'a, F>
+where
+    F: Eq + F2FiniteExtension,
+{
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let q = self.poly.field().order();
+        let n = self.set.len();
+        let t = self.poly.degree();
+        write!(
+            f,
+            "Goppa code (L, g(x)) from F{} with n={} and t={}\n",
+            q, n, t
+        )?;
+        write!(f, "g(x) = {}\n", self.poly)?;
+        if n == q as usize {
+            write!(f, "L = F{}\n", q)
+        } else {
+            let set: Vec<String> = self
+                .set
+                .iter()
+                .map(|x| self.poly.field().elt_to_str(*x))
+                .collect();
+            write!(f, "L = {:?}\n", set)
+        }
+    }
 }
 
 impl<'a, F: Eq + Field> Goppa<'a, F>
@@ -46,24 +99,31 @@ where
         })
     }
 
-    pub fn random(rng: &mut ThreadRng, field: &'a F, n: usize, degree: usize) -> Self
-// where
-    //     distributions::Standard: distributions::Distribution<T>,
-    //     T: std::fmt::Debug,
-    {
-        let q = field.order() as usize;
-        let poly = Poly::random_irreducible(rng, field, degree);
+    pub fn random(rng: &mut ThreadRng, f: &'a F, n: usize, degree: usize) -> Self {
+        let poly = Poly::random_irreducible(rng, f, degree);
+
+        // Build set L of n elements :
+        // Start with all q elements of F(2^m) then remove n-q elements.
+        let q = f.order() as usize;
         let mut uints = Vec::with_capacity(q);
         for i in 0..q {
             uints.push(i);
         }
-        for _i in 0..q - n {
+        let mut elts_to_remove = q - n;
+
+        if poly.degree() == 1 {
+            let root = f.mul(f.inv(poly[1]).unwrap(), poly[0]);
+            uints.remove(f.elt_to_u32(root) as usize);
+            elts_to_remove -= 1;
+        }
+
+        for _i in 0..elts_to_remove {
             let uint = rng.gen_range(0, uints.len());
             uints.remove(uint);
         }
         let mut set = Vec::with_capacity(n);
         for i in 0..n {
-            set.push(field.u32_to_elt(uints[i] as u32));
+            set.push(f.u32_to_elt(uints[i] as u32));
         }
         Self { poly, set }
     }
@@ -132,10 +192,12 @@ where
         let x = self.parity_check_matrix_x();
         let y = self.parity_check_matrix_y();
         let z = self.parity_check_matrix_z();
-        // let xy = Mat::prod(&x, &y);
-        // Mat::prod(&xy, &z)
         x * y * z
     }
+
+    // TODO: When this method is called after binary_form,
+    // isn't there a problem since the number of rows can exceed the number of columns
+    // thus standard_form stops ???
 
     // pub fn generator_matrix<'b, G>(h: &Mat<'b, G>) -> Mat<'b, G>
     // where G: Eq + F2FiniteExtension {
@@ -163,19 +225,10 @@ where
                 information_set.push(i);
             }
             (gs * pt, information_set)
-        // (gs * pt, p)
         } else {
             panic!("Rows of the parity-check matrix aren't independant");
         }
     }
-
-    // TODO: add a syndrome function ?
-    // pub fn syndrome(&self, h: Option<&Mat<'a, F>>, x: &RowVec<'a, F>) -> ColVec<'a, F> {}
-    // pub fn syndrome_poly(&self, h: Option<&Mat<'a, F>>, x: &RowVec<'a, F>) -> Poly<'a, F> {}
-
-    // pub fn goppa_encode(g: &Mat<'a, F2>, msg: &RowVec<'a, F2>) -> RowVec<'a, F2> {
-    //     msg * g
-    // }
 
     pub fn syndrome<'b>(h: &Mat<'a, F>, x: &RowVec<'b, F2>) -> Mat<'a, F> {
         let f2 = x.field();
@@ -194,7 +247,8 @@ where
     pub fn encode<'b>(&self, msg: &RowVec<'b, F2>) -> RowVec<'b, F2> {
         let f2 = msg.field();
         let h = self.parity_check_matrix();
-        let hb = h.binary_form(f2);
+        let mut hb = h.binary_form(f2);
+        // hb.remove_redundant_rows(); // TODO: Is it necessary or not ?
         let (g, _) = Goppa::generator_matrix(&hb);
         msg * g
         // Self::goppa_encode(&g, msg)
