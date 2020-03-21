@@ -9,10 +9,24 @@ use std::{
 
 use crate::finite_field::{F2FiniteExtension, Field, FiniteField};
 
-#[derive(Eq, PartialEq)]
+#[derive(Eq)]
 pub struct Poly<'a, F: Eq + Field> {
     field: &'a F,
     data: Vec<F::FElt>,
+}
+
+impl<'a, F: Eq + Field> PartialEq for Poly<'a, F> {
+    fn eq(&self, other: &Self) -> bool {
+        if self.field != other.field || self.degree() != other.degree() {
+            return false;
+        }
+        for i in 0..self.degree() + 1 {
+            if self[i] != other[i] {
+                return false;
+            }
+        }
+        true
+    }
 }
 
 impl<'a, F: Eq + Field> Clone for Poly<'a, F> {
@@ -455,58 +469,45 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
         t.push(t1);
         let mut i = 1;
         while !r[i].is_zero() {
-            let (q, _r) = Self::euclidean_division(&r[i - 1], &r[i]);
-            r.push(&r[i - 1] - &q * &r[i]);
-            s.push(&s[i - 1] - &q * &s[i]);
-            t.push(&t[i - 1] - &q * &t[i]);
+            let (quo, rem) = Self::euclidean_division(&r[i - 1], &r[i]);
+            r.push(rem);
+            s.push(&s[i - 1] - &quo * &s[i]);
+            t.push(&t[i - 1] - &quo * &t[i]);
             i += 1;
         }
 
-        let mut a1 = t.remove(i);
-        let mut b1 = s.remove(i);
+        // let mut a1 = t.remove(i);
+        // let mut b1 = s.remove(i);
+        let mut a1 = t.pop().unwrap();
+        let mut b1 = s.pop().unwrap();
         if i % 2 == 0 {
             a1.neg_mut();
         } else {
             b1.neg_mut();
         }
-        let u = s.remove(i - 1);
-        let v = t.remove(i - 1);
-        let g = r.remove(i - 1);
+        // let u = s.remove(i - 1);
+        // let v = t.remove(i - 1);
+        let u = s.pop().unwrap();
+        let v = t.pop().unwrap();
+        // let g = r.remove(i - 1);
+        r.pop();
+        let g = r.pop().unwrap();
 
         (g, u, v, a1, b1)
     }
 
-    // TODO: is this algorithm ok outside of characteristic two ?
-    // or should the goppa code be binary in which case it needs to be moved in the submodule
-    pub fn goppa_extended_gcd(g: &Self, t: &Self) -> (Self, Self) {
-        if g.field != t.field {
-            panic!("Cannot compute euclidean division: fields differ")
+    pub fn inverse_modulo(&mut self, modulus: &Self) -> Self {
+        if self.is_zero() {
+            panic!("The null polynom has no inverse");
         }
-
+        self.modulo(modulus);
+        let (g, mut inv, _, _, _) = Self::extended_gcd(self, modulus);
         let f = g.field;
-        let mut i = 1;
-
-        let mut a = Vec::new();
-        let mut b = Vec::new();
-        a.push(g.clone());
-        a.push(t.clone());
-        let b0 = Self::zero(f, 1);
-        let b1 = Self::x_n(f, 0);
-        b.push(b0);
-        b.push(b1);
-
-        while a[i].degree() > g.degree() / 2 {
-            i += 1;
-            let (q, r) = Self::euclidean_division(&a[i - 2], &a[i - 1]);
-            b.push(&b[i - 2] + &q * &b[i - 1]);
-            a.push(r);
-
-            // if (Self::prod(&b[i], &t).modulo(&g) != a[i].modulo(&g)) {
-            //     panic!("Broken loop invariant between a, b, t and g");
-            // }
+        let c = f.inv(g[0]).unwrap();
+        for i in 0..inv.degree() + 1 {
+            inv[i] = f.mul(c, inv[i]);
         }
-        
-        (a.remove(i), b.remove(i))
+        inv
     }
 }
 

@@ -392,10 +392,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
             col_pivot += 1;
         }
         let mut max_set_of_indep_rows = Vec::new();
-        for i in 0..p.rows() {
-            if rank == i {
-                break;
-            }
+        for i in 0..rank {
             let mut j = 0;
             while p[(i, j)] == f.zero() {
                 j += 1;

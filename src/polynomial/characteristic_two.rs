@@ -54,18 +54,17 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
         }
     }
 
-    // TODO: shouldn't I simply use euclid algo that also works for odd characteristics
-    pub fn inverse_modulo(&mut self, modulus: &Self)
+    pub fn inverse_modulo_by_fast_exponentiation(&mut self, modulus: &Self)
     where
         F: FiniteField,
     {
         if self.field != modulus.field {
             panic!("Cannot compute inverse modulo: fields don't match");
         }
-        let m = self.field.characteristic_exponent();
         if self.is_zero() {
             panic!("The null polynom has no inverse");
         }
+        let m = self.field.characteristic_exponent();
 
         self.square();
         let mut tmp = self.clone();
@@ -151,6 +150,33 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
         // info!("{}", g.degree());
         // info!("{:?}", g[0]);
         g.is_zero()
+    }
+
+    pub fn goppa_extended_gcd(g: &Self, t: &Self) -> (Self, Self) {
+        if g.field != t.field {
+            panic!("Cannot compute euclidean division: fields differ")
+        }
+
+        let f = g.field;
+        let mut i = 1;
+
+        let mut a = Vec::new();
+        let mut b = Vec::new();
+        a.push(g.clone());
+        a.push(t.clone());
+        let b0 = Self::zero(f, 1);
+        let b1 = Self::x_n(f, 0);
+        b.push(b0);
+        b.push(b1);
+
+        while a[i].degree() > g.degree() / 2 {
+            i += 1;
+            let (q, r) = Self::euclidean_division(&a[i - 2], &a[i - 1]);
+            b.push(&b[i - 2] + &q * &b[i - 1]);
+            a.push(r);
+        }
+
+        (a.remove(i), b.remove(i))
     }
 }
 

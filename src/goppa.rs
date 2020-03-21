@@ -15,6 +15,8 @@ use crate::{
 
 type Result<T> = result::Result<T, Box<dyn Error>>;
 
+// TODO: Do I want to allow set to be unordered ?
+// If so, equality trait need to be manually implemented and what else ?
 #[derive(Eq, PartialEq)]
 pub struct Goppa<'a, F: Eq + Field> {
     poly: Poly<'a, F>,
@@ -274,7 +276,8 @@ where
         }
         info!("S(x) = {:?}", s_x);
 
-        s_x.inverse_modulo(&self.poly);
+        // s_x.inverse_modulo_by_fast_exponentiation(&self.poly);
+        let mut s_x = s_x.inverse_modulo(&self.poly);
         info!("T(x) = s(x)^-1 = {:?}", s_x);
         s_x += Poly::x_n(f, 1);
         s_x.square_root_modulo(&self.poly);

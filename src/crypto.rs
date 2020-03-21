@@ -50,7 +50,7 @@ pub fn keygen<'a, 'b>(
     let h = goppa.parity_check_matrix();
     info!("Parity check matrix:{}", h);
     let mut h2 = h.binary_form(f2);
-    info!("Parity check matrix in binary form:{}", h2);
+    info!("Binary parity check matrix:{}", h2);
     h2.remove_redundant_rows();
     info!("Full rank binary parity check matrix:{}", h2);
     let (g, info_set) = Goppa::generator_matrix(&h2);
@@ -109,7 +109,7 @@ impl<'a, 'b> SecretKey<'a, 'b> {
     pub fn decrypt(&self, c: &RowVec<'a, F2>) -> RowVec<'a, F2> {
         let m_s_g_z = c * self.p.inverse();
         let m_s_g = self.goppa.decode(&m_s_g_z);
-        info!("Decoded ciphertext mSG:{}", m_s_g);
+        info!("Decoded codeword mSG:{}", m_s_g);
         let m_s = m_s_g.extract_cols(&self.info_set);
         info!("Use information set {:?} to extract mS:{}", self.info_set, m_s);
         let m = m_s * self.s.inverse().unwrap();
