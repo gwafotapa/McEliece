@@ -272,8 +272,8 @@ impl<'a, F: Eq + Field> IndexMut<(usize, usize)> for Mat<'a, F> {
 impl<'a, F: Eq + F2FiniteExtension> Debug for Mat<'a, F> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let k = self.field;
-        let chr = k.characteristic_exponent() as usize;
-        let width = chr / 4 + if chr % 4 == 0 { 0 } else { 1 };
+        let m = k.characteristic_exponent() as usize;
+        let width = div_ceil(m as u32, 4) as usize;
         write!(f, "\n")?;
         for i in 0..self.rows {
             for j in 0..self.cols - 1 {
@@ -615,9 +615,13 @@ impl<'a, F: Eq + Field> Mul<&Perm> for &Mat<'a, F> {
     type Output = Mat<'a, F>;
 
     fn mul(self, other: &Perm) -> Self::Output {
-        if self.cols() != other.rows() {
+        if self.cols() != other.len() {
             panic!("Cannot multiply matrices: dimensions don't match");
         }
         self.extract_cols(other.data())
     }
+}
+
+pub fn div_ceil(a: u32, b: u32) -> u32 {
+    a / b + if a % b == 0 { 0 } else { 1 }
 }

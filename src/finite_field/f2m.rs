@@ -19,31 +19,6 @@ impl PartialEq for F2m {
 impl Field for F2m {
     type FElt = u32;
 
-    fn generate(order: u32) -> Self {
-        let (_, m) = match prime_power(order) {
-            Ok(r) => r,
-            Err(s) => panic!(s),
-        };
-        let mut f = Self {
-            order,
-            m,
-            exp: vec![0; order as usize],
-            log: vec![0; order as usize],
-        };
-        f.exp[0] = 1;
-        f.log[1] = 0;
-        let mut elt = 1;
-        for i in 1..order {
-            elt *= 2;
-            if elt >= order {
-                elt ^= Self::primitive_poly(order);
-            }
-            f.exp[i as usize] = elt;
-            f.log[elt as usize] = i;
-        }
-        f
-    }
-
     fn zero(&self) -> Self::FElt {
         0
     }
@@ -132,6 +107,31 @@ impl F2FiniteExtension for F2m {
 }
 
 impl F2m {
+    pub fn generate(order: u32) -> Self {
+        let (_, m) = match prime_power(order) {
+            Ok(r) => r,
+            Err(s) => panic!(s),
+        };
+        let mut f = Self {
+            order,
+            m,
+            exp: vec![0; order as usize],
+            log: vec![0; order as usize],
+        };
+        f.exp[0] = 1;
+        f.log[1] = 0;
+        let mut elt = 1;
+        for i in 1..order {
+            elt *= 2;
+            if elt >= order {
+                elt ^= Self::primitive_poly(order);
+            }
+            f.exp[i as usize] = elt;
+            f.log[elt as usize] = i;
+        }
+        f
+    }
+
     fn primitive_poly(order: u32) -> u32 {
         match prime_power(order) {
             Ok((_, m)) => match m {
@@ -155,14 +155,6 @@ impl F2m {
             },
             Err(s) => panic!(s),
         }
-    }
-
-    pub fn as_set(&self) -> Vec<<F2m as Field>::FElt> {
-        let mut set = Vec::with_capacity(self.order as usize);
-        for i in 0..self.order {
-            set.push(i);
-        }
-        set
     }
 }
 

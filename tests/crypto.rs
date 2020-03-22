@@ -1,35 +1,59 @@
-use rand::Rng;
+use log::warn;
+use rand::{rngs::ThreadRng, Rng};
 
 use mceliece::{
     crypto::*,
     finite_field::{F2m, Field, F2},
     goppa::Goppa,
-    matrix::RowVec,
+    matrix::{self, RowVec},
 };
 
 mod common;
 
-#[test]
-fn crypto_keygen_128() {
+const GOPPA_N_MIN: u32 = 1;
+const GOPPA_N_MAX: u32 = 128 + 1;
+const GOPPA_N: u32 = 10;
+const GOPPA_T: u32 = 2;
+
+fn setup() -> (u32, u32, u32) {
     common::setup();
-    let f2 = &F2::generate(2);
-    let m = 6;
+    let mut rng = rand::thread_rng();
+    let n = if GOPPA_N != 0 {
+        GOPPA_N
+    } else {
+        rng.gen_range(GOPPA_N_MIN, GOPPA_N_MAX)
+    };
+    let q = n.next_power_of_two();
+    let m = q.trailing_zeros();
+    let t = if GOPPA_T != 0 {
+        GOPPA_T
+    } else {
+        let t_min = if n == q { 2 } else { 1 };
+        let t_max = matrix::div_ceil(n, m) + if n.is_power_of_two() { 1 } else { 0 };
+        rng.gen_range(t_min, t_max)
+    };
+    (m, n, t)
+}
+
+#[test]
+fn crypto_keygen() {
+    let (m, n, t) = setup();
+    warn!("m={}, n={}, t={}", m, n, t);
+    let f2 = &F2 {};
     let f2m = &F2m::generate(1 << m);
-    let n = 1 << m;
-    let t = 10;
     let (pk, sk) = keygen(f2, f2m, n, t);
-    let h = sk.goppa.parity_check_matrix().binary_form(&f2);
+    let mut h = sk.goppa.parity_check_matrix(f2);
     let (g, _) = Goppa::generator_matrix(&h);
     assert!(sk.s.is_invertible());
-    // assert!(sk.p.is_permutation());
     assert_eq!(g.rank(), g.rows());
+    assert!(sk.p.is_permutation());
     assert_eq!(pk.sgp, sk.s * g * sk.p);
 }
 
 #[test]
 fn crypto_pk_save_load() {
     common::setup();
-    let f2 = &F2::generate(2);
+    let f2 = &F2 {};
     let m = 8;
     let f256 = &F2m::generate(1 << m);
     let n = 1 << m;
@@ -44,7 +68,7 @@ fn crypto_pk_save_load() {
 #[test]
 fn crypto_sk_save_load() {
     common::setup();
-    let f2 = &F2::generate(2);
+    let f2 = &F2 {};
     let m = 8;
     let f256_save = &F2m::generate(1 << m);
     let n = 1 << m;
@@ -74,7 +98,7 @@ fn crypto_encrypt_decrypt_null_message() {
     let file_cpt = "ciphertext_test.mce";
     let file_dcd_msg = "decoded_message_test.mce";
 
-    let f2 = &F2::generate(2);
+    let f2 = &F2 {};
     let m = 7;
     let f128 = &F2m::generate(1 << m);
     let n = 1 << m;
@@ -111,7 +135,7 @@ fn crypto_encrypt_decrypt_random_message() {
     let file_cpt = "ciphertext_test.mce";
     let file_dcd_msg = "decoded_message_test.mce";
 
-    let f2 = &F2::generate(2);
+    let f2 = &F2 {};
     let m = 7;
     let f128 = &F2m::generate(1 << m);
     let n = 1 << m;
@@ -148,7 +172,7 @@ fn crypto_encrypt_decrypt_random_message_without_error() {
     let file_cpt = "ciphertext_test.mce";
     let file_dcd_msg = "decoded_message_test.mce";
 
-    let f2 = &F2::generate(2);
+    let f2 = &F2 {};
     let m = 7;
     let f128 = &F2m::generate(1 << m);
     let n = 1 << m;
@@ -186,10 +210,10 @@ fn crypto_encrypt_decrypt_random_message_L_not_full() {
     let file_dcd_msg = "decoded_message_test.mce";
 
     let mut rng = rand::thread_rng();
-    let f2 = &F2::generate(2);
+    let f2 = &F2 {};
     let m = 2;
     // let m = rng.gen_range(2, 6);
-    
+
     // let t = rng.gen_range(1, ((1 << m) - 1) / m);
     let t = 1;
     let f2m = &F2m::generate(1 << m);

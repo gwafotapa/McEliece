@@ -22,10 +22,6 @@ impl PartialEq for F7 {
 impl Field for F7 {
     type FElt = F7Elt;
 
-    fn generate(_: u32) -> Self {
-        F7 {}
-    }
-
     fn zero(&self) -> Self::FElt {
         0
     }

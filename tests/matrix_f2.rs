@@ -269,7 +269,7 @@ fn rowvec_f2_save_load() {
     let n = rng.gen_range(10, 1000);
     let vec_save = RowVec::random(&mut rng, f2, n);
     let file_name = "vec_save_load_test";
-    vec_save.save_vector(file_name);
+    assert!(vec_save.save_vector(file_name).is_ok());
     let vec_load = RowVec::load_vector(file_name, f2).unwrap();
     assert_eq!(vec_save, vec_load);
 }
@@ -323,19 +323,19 @@ fn rowvec_f2_save_load() {
 //     assert_eq!(a, b);
 // }
 
-#[test]
-fn matrix_f2_col_echelon_form() {
-    let f2 = &F2 {};
-    let v = vec![1, 0, 1, 0, 0,
-                 1, 0, 1, 0, 0,
-                 1, 1, 1, 0, 0,
-                 0, 1, 0, 0, 0,
-                 0, 0, 0, 0, 0];
-    let mut a = Mat::new(f2, 5, 5, v);
+// #[test]
+// fn matrix_f2_col_echelon_form() {
+//     let f2 = &F2 {};
+//     let v = vec![1, 0, 1, 0, 0,
+//                  1, 0, 1, 0, 0,
+//                  1, 1, 1, 0, 0,
+//                  0, 1, 0, 0, 0,
+//                  0, 0, 0, 0, 0];
+//     let mut a = Mat::new(f2, 5, 5, v);
 
-    let b = Mat::new(f2, 2, 5, vec![1, 0, 1, 0, 0, 1, 1, 1, 0, 0]);
-    println!("{}", a);
-    let v = a.col_echelon_form();
-    println!("{}", a);
-    println!("{:?}", v);
-}
+//     let b = Mat::new(f2, 2, 5, vec![1, 0, 1, 0, 0, 1, 1, 1, 0, 0]);
+//     println!("{}", a);
+//     let v = a.col_echelon_form();
+//     println!("{}", a);
+//     println!("{:?}", v);
+// }

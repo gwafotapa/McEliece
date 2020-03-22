@@ -47,13 +47,13 @@ pub fn keygen<'a, 'b>(
     // )
     // .unwrap();
     info!("{}", goppa);
-    let h = goppa.parity_check_matrix();
+    let h = goppa.parity_check_matrix(f2);
     info!("Parity check matrix:{}", h);
-    let mut h2 = h.binary_form(f2);
-    info!("Binary parity check matrix:{}", h2);
-    h2.remove_redundant_rows();
-    info!("Full rank binary parity check matrix:{}", h2);
-    let (g, info_set) = Goppa::generator_matrix(&h2);
+    // let mut h2 = h.binary_form(f2);
+    // info!("Binary parity check matrix:{}", h2);
+    // h2.remove_redundant_rows();
+    // info!("Full rank binary parity check matrix:{}", h2);
+    let (g, info_set) = Goppa::generator_matrix(&h);
     info!("Generator matrix G:{}", g);
     let k = g.rows();
     let s = Mat::invertible_random(&mut rng, f2, k as usize);
@@ -127,10 +127,10 @@ impl<'a, 'b> SecretKey<'a, 'b> {
         }
         f.write_all(format!("{:x}\n", self.info_set[self.info_set.len() - 1]).as_bytes())?;
 
-        for i in 0..self.p.cols() - 1 {
+        for i in 0..self.p.len() - 1 {
             f.write_all(format!("{:x} ", self.p[i]).as_bytes())?;
         }
-        f.write_all(format!("{:x}\n", self.p[self.p.cols() - 1]).as_bytes())?;
+        f.write_all(format!("{:x}\n", self.p[self.p.len() - 1]).as_bytes())?;
         Ok(())
     }
 
@@ -142,8 +142,7 @@ impl<'a, 'b> SecretKey<'a, 'b> {
         line.clear();
         f.read_line(&mut line)?;
         let order = u32::from_str_radix(&line[..line.find('#').ok_or("Missing hashtag")?], 16)?;
-        let f = Field::generate(order);
-        Ok(f)
+        Ok(F2m::generate(order))
     }
 
     pub fn load_secret_key(file_name: &str, f2: &'a F2, f2m: &'b F2m) -> Result<Self> {

@@ -442,6 +442,9 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
     }
 
     pub fn neg_mut(&mut self) {
+        if self.field.characteristic() == 2 {
+            return;
+        }
         for i in 0..self.degree() + 1 {
             self[i] = self.field.neg(self[i]);
         }
@@ -476,31 +479,25 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
             i += 1;
         }
 
-        // let mut a1 = t.remove(i);
-        // let mut b1 = s.remove(i);
+        r.pop();
+        let g = r.pop().unwrap();
         let mut a1 = t.pop().unwrap();
+        let v = t.pop().unwrap();
         let mut b1 = s.pop().unwrap();
+        let u = s.pop().unwrap();
         if i % 2 == 0 {
             a1.neg_mut();
         } else {
             b1.neg_mut();
         }
-        // let u = s.remove(i - 1);
-        // let v = t.remove(i - 1);
-        let u = s.pop().unwrap();
-        let v = t.pop().unwrap();
-        // let g = r.remove(i - 1);
-        r.pop();
-        let g = r.pop().unwrap();
 
         (g, u, v, a1, b1)
     }
 
-    pub fn inverse_modulo(&mut self, modulus: &Self) -> Self {
+    pub fn inverse_modulo(&self, modulus: &Self) -> Self {
         if self.is_zero() {
             panic!("The null polynom has no inverse");
         }
-        self.modulo(modulus);
         let (g, mut inv, _, _, _) = Self::extended_gcd(self, modulus);
         let f = g.field;
         let c = f.inv(g[0]).unwrap();

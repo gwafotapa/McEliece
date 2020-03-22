@@ -1,6 +1,6 @@
 use rand::rngs::ThreadRng;
 
-use super::{Mat, Perm};
+use super::Mat;
 use crate::finite_field::Field;
 
 impl<'a, F: Eq + Field> Mat<'a, F> {

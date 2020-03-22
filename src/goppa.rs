@@ -15,8 +15,6 @@ use crate::{
 
 type Result<T> = result::Result<T, Box<dyn Error>>;
 
-// TODO: Do I want to allow set to be unordered ?
-// If so, equality trait need to be manually implemented and what else ?
 #[derive(Eq, PartialEq)]
 pub struct Goppa<'a, F: Eq + Field> {
     poly: Poly<'a, F>,
@@ -64,18 +62,14 @@ where
         if n == q as usize {
             write!(f, "L = F{}\n", q)
         } else {
-            // write!(f, "L = [")?;
-            // for i in 0..n - 1 {
-            //     write!(f, "{}, ", fq.elt_to_str(self.set[i]))?;
-            // }
-            // write!(f, "{}]\n", fq.elt_to_str(self.set[n - 1]))
+            write!(f, "L = [")?;
+            for i in 0..n - 1 {
+                write!(f, "{}, ", fq.elt_to_str(self.set[i]))?;
+            }
+            write!(f, "{}]\n", fq.elt_to_str(self.set[n - 1]))
 
-            let set: Vec<String> = self
-                .set
-                .iter()
-                .map(|x| fq.elt_to_str(*x))
-                .collect();
-            write!(f, "L = {:?}\n", set)
+            // let set: Vec<String> = self.set.iter().map(|x| fq.elt_to_str(*x)).collect();
+            // write!(f, "L = {:?}\n", set)
         }
     }
 }
@@ -102,35 +96,40 @@ where
             }
         }
         if poly.degree() == 1 && set.contains(&f.mul(f.inv(poly[1]).unwrap(), poly[0])) {
-            return Err("Set must not contain a root of the Goppa polynomial");
+            return Err("Set contains a root of the Goppa polynomial");
         }
         Ok(Self { poly, set })
     }
 
-    pub fn random(rng: &mut ThreadRng, f: &'a F, n: usize, degree: usize) -> Self {
-        let poly = Poly::random_monic_irreducible(rng, f, degree);
-
-        // Build set L of n elements :
-        // Start with all q elements of F(2^m) then remove n-q elements.
+    pub fn random(rng: &mut ThreadRng, f: &'a F, n: usize, t: usize) -> Self {
         let q = f.order() as usize;
-        let mut uints = Vec::with_capacity(q);
-        for i in 0..q {
-            uints.push(i);
+        if n > q {
+            panic!("n must be at most q");
         }
-        let mut elts_to_remove = q - n;
-
+        let m = f.characteristic_exponent() as usize;
+        if n < m * t {
+            panic!("m * t must be at most n");
+        }
+        let poly = Poly::random_monic_irreducible(rng, f, t);
+        if poly.degree() == 1 && n > q - 1 {
+            panic!("n must be (strictly) less than q when goppa polynomial is of degree 1");
+        }
+        let mut pool = Vec::<u32>::with_capacity(q);
+        for i in 0..q {
+            pool.push(i as u32);
+        }
         if poly.degree() == 1 {
             let root = f.mul(f.inv(poly[1]).unwrap(), poly[0]);
-            uints.remove(f.elt_to_u32(root) as usize);
-            elts_to_remove -= 1;
+            pool.swap_remove(f.elt_to_u32(root) as usize);
         }
-
-        for _i in 0..elts_to_remove {
-            let index = rng.gen_range(0, uints.len());
-            uints.remove(index);
+        let mut set = Vec::with_capacity(n);
+        for _i in 0..n {
+            let index = rng.gen_range(0, pool.len());
+            set.push(pool[index]);
+            pool.swap_remove(index);
         }
-        let set = uints.iter().map(|x| f.u32_to_elt(*x as u32)).collect();
-
+        set.sort();
+        let set = set.iter().map(|x| f.u32_to_elt(*x)).collect();
         Self { poly, set }
     }
 
@@ -191,11 +190,21 @@ where
         z
     }
 
-    pub fn parity_check_matrix(&self) -> Mat<'a, F> {
+    pub fn parity_check_matrix_xyz(&self) -> Mat<'a, F> {
         let x = self.parity_check_matrix_x();
         let y = self.parity_check_matrix_y();
         let z = self.parity_check_matrix_z();
         x * y * z
+    }
+    
+    pub fn parity_check_matrix<'b>(&self, f2: &'b F2) -> Mat<'b, F2> {
+        let x = self.parity_check_matrix_x();
+        let y = self.parity_check_matrix_y();
+        let z = self.parity_check_matrix_z();
+        let xyz = x * y * z;
+        let mut h = xyz.binary_form(f2);
+        h.remove_redundant_rows();
+        h
     }
 
     pub fn generator_matrix(h: &Mat<'a, F>) -> (Mat<'a, F>, Vec<usize>) {
@@ -242,10 +251,10 @@ where
 
     pub fn encode<'b>(&self, msg: &RowVec<'b, F2>) -> RowVec<'b, F2> {
         let f2 = msg.field();
-        let h = self.parity_check_matrix();
-        let mut hb = h.binary_form(f2);
-        hb.remove_redundant_rows();
-        let (g, _) = Goppa::generator_matrix(&hb);
+        let h = self.parity_check_matrix(f2);
+        // let mut hb = h.binary_form(f2);
+        // hb.remove_redundant_rows();
+        let (g, _) = Goppa::generator_matrix(&h);
         msg * g
     }
 
@@ -253,7 +262,7 @@ where
         info!("Goppa decoding\n");
         let f = self.field();
         let f2 = rcv.field();
-        let h = self.parity_check_matrix();
+        let h = self.parity_check_matrix_xyz();
         // info!("parity check matrix:{:?}", h);
         let syndrome = Goppa::syndrome(&h, rcv);
         info!("syndrome:{:?}", syndrome);

@@ -11,7 +11,6 @@ pub mod f7;
 pub trait Field {
     type FElt: Copy + Eq; // Field Element
 
-    fn generate(order: u32) -> Self;
     fn zero(&self) -> Self::FElt;
     fn one(&self) -> Self::FElt;
     fn characteristic(&self) -> u32;

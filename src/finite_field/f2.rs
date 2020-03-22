@@ -8,10 +8,6 @@ pub struct F2 {}
 impl Field for F2 {
     type FElt = u32;
 
-    fn generate(_: u32) -> Self {
-        F2 {}
-    }
-
     fn zero(&self) -> Self::FElt {
         0
     }

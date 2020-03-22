@@ -36,28 +36,21 @@ impl Perm {
     }
 
     pub fn random(rng: &mut ThreadRng, n: usize) -> Self {
-        let mut vec = vec![0; n];
-        let mut cols = Vec::with_capacity(n); // remaining column indices
+        let mut cols = Vec::with_capacity(n);
         for i in 0..n {
             cols.push(i);
         }
 
+        let mut vec = vec![0; n];
         for i in 0..n {
-            // Draw a random column index j to set the '1' on this row
-            let nbr = rng.gen_range(0, n - i);
-            vec[cols[nbr]] = i;
-
-            // Remove the index from the list by putting it at the end
-            cols.swap(nbr, n - 1 - i);
+            let index = rng.gen_range(0, cols.len());
+            vec[i] = cols[index];
+            cols.swap_remove(index);
         }
         Perm(vec)
     }
 
-    pub fn rows(&self) -> usize {
-        self.0.len()
-    }
-
-    pub fn cols(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.0.len()
     }
 
@@ -66,10 +59,24 @@ impl Perm {
     }
 
     pub fn inverse(&self) -> Self {
-        let mut inv = vec![0; self.cols()];
-        for i in 0..self.cols() {
+        let mut inv = vec![0; self.len()];
+        for i in 0..self.len() {
             inv[self[i]] = i;
         }
         Perm(inv)
+    }
+
+    pub fn is_permutation(&self) -> bool {
+        let n = self.len();
+        let mut list = vec![false; n];
+        for i in 0..n {
+            match list.get(self[i]) {
+                Some(false) => {
+                    list[self[i]] = true;
+                }
+                _ => return false,
+            }
+        }
+        true
     }
 }

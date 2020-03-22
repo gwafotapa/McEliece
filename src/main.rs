@@ -4,6 +4,8 @@ use std::{
     env,
     // fs::File,
     // io::{BufRead, BufReader, Read, Write},
+    error::Error,
+    result,
 };
 
 use crypto::{PublicKey, SecretKey};
@@ -22,10 +24,9 @@ const GOPPA_M: u32 = 5; // The underlying field of the code is F2^GOPPA_M
 const GOPPA_N: u32 = 1 << GOPPA_M; // Code length
 const GOPPA_T: u32 = 4; // Code correction capacity i.e. degree of the goppa polynomial
 
+type Result<T> = result::Result<T, Box<dyn Error>>;
 
-
-fn main() {
-    // TODO: deal with all the unwrap() and expect() calls
+fn main() -> Result<()> {
     env_logger::init();
     
     if GOPPA_N > 255 {
@@ -46,24 +47,24 @@ fn main() {
         "keygen" => {
             let f2m = &F2m::generate(1 << GOPPA_M);
             let (pk, sk) = crypto::keygen(f2, f2m, GOPPA_N, GOPPA_T);
-            pk.save_public_key("public_key.mce");
-            sk.save_secret_key("secret_key.mce");
-            ()
+            pk.save_public_key("public_key.mce")?;
+            sk.save_secret_key("secret_key.mce")?;
+            Ok(())
         }
         "encrypt" => {
-            let pk = PublicKey::load_public_key("public_key.mce", f2).unwrap();
-            let m = RowVec::load_vector("message.mce", f2).unwrap();
+            let pk = PublicKey::load_public_key("public_key.mce", f2)?;
+            let m = RowVec::load_vector("message.mce", f2)?;
             let c = pk.encrypt(&m);
-            c.save_vector("ciphertext.mce");
-            ()
+            c.save_vector("ciphertext.mce")?;
+            Ok(())
         }
         "decrypt" => {
-            let f2m = &SecretKey::load_finite_field("secret_key.mce").unwrap(); // &F2m::generate(1 << GOPPA_M);
-            let sk = SecretKey::load_secret_key("secret_key.mce", f2, f2m).unwrap();
-            let c = RowVec::load_vector("ciphertext.mce", f2).unwrap();
+            let f2m = &SecretKey::load_finite_field("secret_key.mce")?;
+            let sk = SecretKey::load_secret_key("secret_key.mce", f2, f2m)?;
+            let c = RowVec::load_vector("ciphertext.mce", f2)?;
             let m = sk.decrypt(&c);
-            m.save_vector("decoded.mce"); // TODO: pick convention for arguments order
-            ()
+            m.save_vector("decoded.mce")?;
+            Ok(())
         }
         _ => panic!("Unexpected command. Valid commands are 'keygen', 'encrypt' and 'decrypt'."),
     }

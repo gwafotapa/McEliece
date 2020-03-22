@@ -176,7 +176,7 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
             a.push(r);
         }
 
-        (a.remove(i), b.remove(i))
+        (a.pop().unwrap(), b.pop().unwrap())
     }
 }
 
