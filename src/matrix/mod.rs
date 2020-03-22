@@ -513,7 +513,7 @@ impl<'a, F: CharacteristicTwo + Eq> Mat<'a, F> {
 }
 
 impl<'a, F: Eq + F2FiniteExtension> Mat<'a, F> {
-    pub fn binary_form<'b>(&self, f2: &'b F2) -> Mat<'b, F2> {
+    pub fn binary<'b>(&self, f2: &'b F2) -> Mat<'b, F2> {
         let f = self.field();
         let m = f.characteristic_exponent();
         let mut bin = Mat::zero(f2, m as usize * self.rows, self.cols);

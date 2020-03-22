@@ -297,7 +297,7 @@ impl<'a, F: Eq + Field> RowVec<'a, F> {
 }
 
 impl<'a> RowVec<'a, F2> {
-    pub fn save_vector(&self, file_name: &str) -> Result<()> {
+    pub fn write(&self, file_name: &str) -> Result<()> {
         let mut f = File::create(file_name)?;
         let mut s = format!("{:x}#", self.cols());
         let mut byte: u8 = 0;
@@ -320,7 +320,7 @@ impl<'a> RowVec<'a, F2> {
         Ok(())
     }
 
-    pub fn load_vector(file_name: &str, f2: &'a F2) -> Result<RowVec<'a, F2>> {
+    pub fn read_vector(file_name: &str, f2: &'a F2) -> Result<RowVec<'a, F2>> {
         let mut f = File::open(file_name)?;
         let mut buf = String::new();
         f.read_to_string(&mut buf)?;

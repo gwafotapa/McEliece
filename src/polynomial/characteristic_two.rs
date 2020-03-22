@@ -26,7 +26,6 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
         p
     }
 
-    // TODO: remove the characteristic 2 bound and modify function accordingly
     pub fn square(&mut self) {
         let f = self.field;
         let t = self.degree();
@@ -251,18 +250,6 @@ mod tests {
 
     use crate::finite_field::{F2m, F2};
     // use crate::finite_field::{FiniteFieldElement, F1024, F2};
-
-    // #[test]
-    // fn print() {
-    //     env_logger::init();
-
-    //     let f2 = &F2 {};
-    //     let p = Poly::support(f, &[0, 4, 5]);
-    //     println!("{:?}", p);
-
-    //     let q = Poly::support(f, &[2, 3]);
-    //     println!("{:?}", q);
-    // }
 
     #[test]
     fn is_irreducible() {

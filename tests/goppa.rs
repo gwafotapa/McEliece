@@ -7,7 +7,6 @@ use mceliece::polynomial::*;
 
 mod common;
 
-#[ignore]
 #[test]
 fn goppa_f8() {
     common::setup();
@@ -17,26 +16,23 @@ fn goppa_f8() {
 
     let p = Poly::support(f8, &[2, 1, 0]);
     println!("{:?}", p);
-    let c = Goppa::new(
-        p,
-        [0, 1, 2, 4, 3, 6, 7, 5].to_vec(),
-    )
-    .unwrap();
-    // let x = c.parity_check_matrix_x();
+    let c = Goppa::new(p, [0, 1, 2, 3, 4, 5, 6, 7].to_vec());
+    // let x = c.parity_check_x();
     // println!("{:?}", x);
-    // let y = c.parity_check_matrix_y();
+    // let y = c.parity_check_y();
     // println!("{:?}", y);
-    // let z = c.parity_check_matrix_z();
+    // let z = c.parity_check_z();
     // println!("{:?}", z);
     let h = c.parity_check_matrix(f2);
     // println!("h: {:?}", h);
 
     // info!("test");
-    // let h2 = h.binary_form(f2);
+    // let h2 = h.binary(f2);
     // info!("parity check matrix in binary form: {:?}", h2);
     // info!("rank: {}", h2.rank());
     // return;
-    let (g, _) = Goppa::generator_matrix(&h);
+    // let (g, _) = Goppa::generator_matrix(&h);
+    let (g, _) = Goppa::generator_from_parity_check(&h);
     // println!("g: {:?}", g);
 
     // let mut m = Mat::zero(h.rows(), g.rows());
@@ -57,7 +53,7 @@ fn goppa_f8() {
     // let z = Mat::zero(f8, h.rows(), gg.rows());
     // assert_eq!(m, z);
     // return;
-    // let h_bin_form = h.binary_form(3);
+    // let h_bin_form = h.binary(3);
     // println!("{:?}", h_bin_form);
 
     let mut rng = rand::thread_rng();
@@ -91,7 +87,6 @@ fn goppa_f8() {
     assert_eq!(cdw, dcd);
 }
 
-#[ignore]
 #[test]
 fn goppa_f1024() {
     common::setup();
@@ -102,12 +97,13 @@ fn goppa_f1024() {
     let c = Goppa::random(&mut rng, f1024, 30, 2);
     let h = c.parity_check_matrix(f2);
     info!("parity check matrix: {:?}", h);
-    let (g, _) = Goppa::generator_matrix(&h);
+    // let (g, _) = Goppa::generator_matrix(&h);
+    let (g, _) = Goppa::generator_from_parity_check(&h);
 
     // assert_eq!(Mat::prod(&h, &g.transpose()), Mat::zero(h.rows(), g.rows()));
     assert_eq!(&h * &g.transpose(), Mat::zero(f2, h.rows(), g.rows()));
 
-    // let h2 = h.binary_form(f2);
+    // let h2 = h.binary(f2);
     // info!("parity check matrix in binary form: {:?}", h2);
     // info!("rank: {}", h2.rank());
     // let (g, _) = Goppa::generator_matrix(&h2);
@@ -144,7 +140,6 @@ fn goppa_f1024() {
     // assert_eq!(cdw, dcd);
 }
 
-#[ignore]
 #[test]
 fn goppa_f256() {
     common::setup();
@@ -156,12 +151,11 @@ fn goppa_f256() {
     println!("{}", g);
     assert!(g.is_irreducible());
 
-    let mut f256_elements = Vec::new();
-    f256_elements.push(f256.zero());
-    for i in 0..255 {
-        f256_elements.push(f256.exp(i));
+    let mut f256_elements = Vec::with_capacity(256);
+    for i in 0..256 {
+        f256_elements.push(i);
     }
-    let c = Goppa::new(g, f256_elements).unwrap();
+    let c = Goppa::new(g, f256_elements);
 
     // let w = [
     //     0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1,
@@ -181,7 +175,7 @@ fn goppa_f256() {
     //     .collect();
 
     // println!("{:?}", rcv);
-    
+
     // let rcv = RowVec::new(rcv);
     // let cdw = c.decode(&rcv);
     // let err = rcv + cdw;
@@ -204,7 +198,7 @@ fn goppa_f256() {
 
     let rcv = &cdw + err;
     println!("rcv: {}", rcv);
-    
+
     let dcd = c.decode(&rcv);
     println!("dcd: {}", dcd);
 
@@ -235,10 +229,9 @@ fn goppa_f128() {
 
     let rcv = &cdw + err;
     println!("rcv: {}", rcv);
-    
+
     let dcd = goppa.decode(&rcv);
     println!("dcd: {}", dcd);
 
     assert_eq!(cdw, dcd);
 }
-

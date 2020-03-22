@@ -9,7 +9,7 @@ use std::{
 };
 
 use crypto::{PublicKey, SecretKey};
-use finite_field::{F2m, F2, Field};
+use finite_field::{F2m, F2};
 // use goppa::Goppa;
 use matrix::RowVec;
 // use polynomial::Poly;
@@ -47,23 +47,23 @@ fn main() -> Result<()> {
         "keygen" => {
             let f2m = &F2m::generate(1 << GOPPA_M);
             let (pk, sk) = crypto::keygen(f2, f2m, GOPPA_N, GOPPA_T);
-            pk.save_public_key("public_key.mce")?;
-            sk.save_secret_key("secret_key.mce")?;
+            pk.write("public_key.mce")?;
+            sk.write("secret_key.mce")?;
             Ok(())
         }
         "encrypt" => {
-            let pk = PublicKey::load_public_key("public_key.mce", f2)?;
-            let m = RowVec::load_vector("message.mce", f2)?;
+            let pk = PublicKey::read_public_key("public_key.mce", f2)?;
+            let m = RowVec::read_vector("message.mce", f2)?;
             let c = pk.encrypt(&m);
-            c.save_vector("ciphertext.mce")?;
+            c.write("ciphertext.mce")?;
             Ok(())
         }
         "decrypt" => {
-            let f2m = &SecretKey::load_finite_field("secret_key.mce")?;
-            let sk = SecretKey::load_secret_key("secret_key.mce", f2, f2m)?;
-            let c = RowVec::load_vector("ciphertext.mce", f2)?;
+            let f2m = &SecretKey::read_finite_field("secret_key.mce")?;
+            let sk = SecretKey::read_secret_key("secret_key.mce", f2, f2m)?;
+            let c = RowVec::read_vector("ciphertext.mce", f2)?;
             let m = sk.decrypt(&c);
-            m.save_vector("decoded.mce")?;
+            m.write("decoded.mce")?;
             Ok(())
         }
         _ => panic!("Unexpected command. Valid commands are 'keygen', 'encrypt' and 'decrypt'."),

@@ -24,10 +24,10 @@ pub struct Goppa<'a, F: Eq + Field> {
 impl<'a, F> Debug for Goppa<'a, F>
 where
     F: Eq + F2FiniteExtension,
-    F::FElt: Debug,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let q = self.poly.field().order();
+        let fq = self.poly.field();
+        let q = fq.order();
         let n = self.set.len();
         let t = self.poly.degree();
         write!(
@@ -39,7 +39,11 @@ where
         if n == q as usize {
             write!(f, "L = F{}\n", q)
         } else {
-            write!(f, "L = {:X?}\n", self.set)
+            write!(f, "L = [")?;
+            for i in 0..n - 1 {
+                write!(f, "{:X}, ", fq.elt_to_u32(self.set[i]))?;
+            }
+            write!(f, "{:X}]\n", fq.elt_to_u32(self.set[n - 1]))
         }
     }
 }
@@ -67,38 +71,31 @@ where
                 write!(f, "{}, ", fq.elt_to_str(self.set[i]))?;
             }
             write!(f, "{}]\n", fq.elt_to_str(self.set[n - 1]))
-
-            // let set: Vec<String> = self.set.iter().map(|x| fq.elt_to_str(*x)).collect();
-            // write!(f, "L = {:?}\n", set)
         }
     }
 }
 
 impl<'a, F: Eq + Field> Goppa<'a, F>
 where
-    // F: CharacteristicTwo + FiniteField
     F: F2FiniteExtension,
 {
-    pub fn new(poly: Poly<'a, F>, set: Vec<F::FElt>) -> result::Result<Goppa<'a, F>, &'static str>
-// where
-    //     T: std::fmt::Debug,
-    {
+    pub fn new(poly: Poly<'a, F>, set: Vec<F::FElt>) -> Self {
         if !poly.is_irreducible() {
-            return Err("Goppa polynomial is not irreducible");
+            panic!("Goppa polynomial is not irreducible");
         }
         let f = poly.field();
         for i in 0..set.len() - 1 {
             if f.elt_to_u32(set[i]) == f.elt_to_u32(set[i + 1]) {
-                return Err("Set elements must be different");
+                panic!("Set elements must be different");
             }
             if f.elt_to_u32(set[i]) > f.elt_to_u32(set[i + 1]) {
-                return Err("Set elements must be ordered according to their u32 representation");
+                panic!("Set elements must be ordered according to their u32 representation");
             }
         }
         if poly.degree() == 1 && set.contains(&f.mul(f.inv(poly[1]).unwrap(), poly[0])) {
-            return Err("Set contains a root of the Goppa polynomial");
+            panic!("Set contains a root of the Goppa polynomial");
         }
-        Ok(Self { poly, set })
+        Self { poly, set }
     }
 
     pub fn random(rng: &mut ThreadRng, f: &'a F, n: usize, t: usize) -> Self {
@@ -149,7 +146,7 @@ where
         self.poly.field()
     }
 
-    pub fn parity_check_matrix_x(&self) -> Mat<'a, F> {
+    pub fn parity_check_x(&self) -> Mat<'a, F> {
         let f = self.field();
         let t = self.poly.degree();
         let mut x = Mat::zero(f, t, t);
@@ -161,7 +158,7 @@ where
         x
     }
 
-    pub fn parity_check_matrix_y(&self) -> Mat<'a, F> {
+    pub fn parity_check_y(&self) -> Mat<'a, F> {
         let f = self.field();
         let n = self.len();
         let t = self.poly.degree();
@@ -179,7 +176,7 @@ where
         y
     }
 
-    pub fn parity_check_matrix_z(&self) -> Mat<'a, F> {
+    pub fn parity_check_z(&self) -> Mat<'a, F> {
         let f = self.field();
         let n = self.len();
 
@@ -190,36 +187,43 @@ where
         z
     }
 
-    pub fn parity_check_matrix_xyz(&self) -> Mat<'a, F> {
-        let x = self.parity_check_matrix_x();
-        let y = self.parity_check_matrix_y();
-        let z = self.parity_check_matrix_z();
+    pub fn parity_check_xyz(&self) -> Mat<'a, F> {
+        let x = self.parity_check_x();
+        let y = self.parity_check_y();
+        let z = self.parity_check_z();
         x * y * z
     }
-    
+
     pub fn parity_check_matrix<'b>(&self, f2: &'b F2) -> Mat<'b, F2> {
-        let x = self.parity_check_matrix_x();
-        let y = self.parity_check_matrix_y();
-        let z = self.parity_check_matrix_z();
+        let x = self.parity_check_x();
+        let y = self.parity_check_y();
+        let z = self.parity_check_z();
         let xyz = x * y * z;
-        let mut h = xyz.binary_form(f2);
+        let mut h = xyz.binary(f2);
         h.remove_redundant_rows();
         h
     }
 
-    pub fn generator_matrix(h: &Mat<'a, F>) -> (Mat<'a, F>, Vec<usize>) {
+    pub fn generator_from_parity_check_standard(h: &Mat<'a, F>) -> Mat<'a, F> {
         let f = h.field();
-        let m = h.rows();
         let n = h.cols();
-        let k = n - m;
-        if let Some((_u, hs, p)) = h.standard_form() {
-            let mut gs = Mat::zero(f, k, n);
-            for i in 0..k {
-                gs[(i, i)] = f.one();
-                for j in k..n {
-                    gs[(i, j)] = f.neg(hs[(j - k, i)]);
-                }
+        let k = n - h.rows();
+        let mut g = Mat::zero(f, k, n);
+        for i in 0..k {
+            g[(i, i)] = f.one();
+            for j in k..n {
+                g[(i, j)] = f.neg(h[(j - k, i)]);
             }
+        }
+        g
+    }
+
+    pub fn generator_from_parity_check(h: &Mat<'a, F>) -> (Mat<'a, F>, Vec<usize>) {
+        let f = h.field();
+        let n = h.cols();
+        let k = n - h.rows();
+        if let Some((_u, hs, p)) = h.standard_form() {
+            let gs = Goppa::generator_from_parity_check_standard(&hs);
             let pt = p.transpose();
             let mut information_set = Vec::with_capacity(k);
             for j in 0..k {
@@ -235,14 +239,24 @@ where
         }
     }
 
-    pub fn syndrome<'b>(h: &Mat<'a, F>, x: &RowVec<'b, F2>) -> Mat<'a, F> {
-        let f2 = x.field();
-        let f = h.field();
-        let mut s = Mat::zero(f, h.rows(), 1);
-        for i in 0..h.rows() {
-            for j in 0..x.cols() {
-                if x[j] == f2.one() {
-                    s[(i, 0)] = f.add(s[(i, 0)], h[(i, j)]);
+    pub fn generator_matrix<'b>(&self, f2: &'b F2) -> Mat<'b, F2> {
+        let h = self.parity_check_matrix(f2);
+        Goppa::generator_from_parity_check(&h).0
+    }
+
+    pub fn syndrome<'b>(&self, r: &RowVec<'b, F2>) -> Mat<'a, F> {
+        let xyz = self.parity_check_xyz();
+        Self::xyz_syndrome(&xyz, r)
+    }
+
+    pub fn xyz_syndrome<'b>(xyz: &Mat<'a, F>, r: &RowVec<'b, F2>) -> Mat<'a, F> {
+        let f2 = r.field();
+        let f = xyz.field();
+        let mut s = Mat::zero(f, xyz.rows(), 1);
+        for i in 0..xyz.rows() {
+            for j in 0..r.cols() {
+                if r[j] == f2.one() {
+                    s[(i, 0)] = f.add(s[(i, 0)], xyz[(i, j)]);
                 }
             }
         }
@@ -251,20 +265,23 @@ where
 
     pub fn encode<'b>(&self, msg: &RowVec<'b, F2>) -> RowVec<'b, F2> {
         let f2 = msg.field();
-        let h = self.parity_check_matrix(f2);
-        // let mut hb = h.binary_form(f2);
-        // hb.remove_redundant_rows();
-        let (g, _) = Goppa::generator_matrix(&h);
+        let g = self.generator_matrix(f2);
+        Self::g_encode(&g, msg)
+    }
+
+    pub fn g_encode<'b>(g: &Mat<'b, F2>, msg: &RowVec<'b, F2>) -> RowVec<'b, F2> {
         msg * g
     }
 
     pub fn decode<'b>(&self, rcv: &RowVec<'b, F2>) -> RowVec<'b, F2> {
-        info!("Goppa decoding\n");
+        let xyz = self.parity_check_xyz();
+        self.xyz_decode(&xyz, rcv)
+    }
+
+    pub fn xyz_decode<'b>(&self, xyz: &Mat<'a, F>, rcv: &RowVec<'b, F2>) -> RowVec<'b, F2> {
         let f = self.field();
         let f2 = rcv.field();
-        let h = self.parity_check_matrix_xyz();
-        // info!("parity check matrix:{:?}", h);
-        let syndrome = Goppa::syndrome(&h, rcv);
+        let syndrome = Self::xyz_syndrome(xyz, rcv);
         info!("syndrome:{:?}", syndrome);
 
         let mut deg_s_x = syndrome.rows() - 1;
@@ -315,27 +332,13 @@ where
                 })
                 .collect(),
         );
-
-        // let n = self.set.len();
-        // let mut err = RowVec::zero(f2, n);
-        // for i in 0..n {
-        //     err[i] = if sigma.eval(self.set[i]) == f.zero() {
-        //         f2.one()
-        //     } else {
-        //         f2.zero()
-        //     };
-        // }
         info!("Error vector:{}", err);
         let cdw = rcv + err;
         cdw
     }
 }
 
-// Should I generalise from F2m ?
-impl<'a, F: Eq + F2FiniteExtension> Goppa<'a, F>
-// where
-//     F::FElt: std::fmt::Debug,
-{
+impl<'a, F: Eq + F2FiniteExtension> Goppa<'a, F> {
     pub fn to_hex_string(&self) -> String {
         let f = self.field();
         if f.order() > 1 << 16 {
@@ -349,7 +352,7 @@ impl<'a, F: Eq + F2FiniteExtension> Goppa<'a, F>
         let mut cnt_mod_8 = 7;
         let mut j = 0;
         for i in 0..f.order() {
-            if f.u32_to_elt(i) == self.set[j] {
+            if Some(&f.u32_to_elt(i)) == self.set.get(j) {
                 byte |= 1 << cnt_mod_8;
                 j += 1;
             }
