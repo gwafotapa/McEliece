@@ -282,8 +282,7 @@ where
         let f = self.field();
         let f2 = rcv.field();
         let syndrome = Self::xyz_syndrome(xyz, rcv);
-        info!("syndrome:{:?}", syndrome);
-
+        info!("syndrome:{}", syndrome);
         let mut deg_s_x = syndrome.rows() - 1;
         for i in 0..syndrome.rows() - 1 {
             if syndrome[(i, 0)] != f.zero() {
@@ -300,24 +299,24 @@ where
         for i in 0..deg_s_x + 1 {
             s_x[i] = syndrome[(syndrome.rows() - 1 - i, 0)];
         }
-        info!("S(x) = {:?}", s_x);
+        info!("S(x) = {}", s_x);
 
         // s_x.inverse_modulo_by_fast_exponentiation(&self.poly);
         let mut s_x = s_x.inverse_modulo(&self.poly);
-        info!("T(x) = s(x)^-1 = {:?}", s_x);
+        info!("T(x) = s(x)^-1 = {}", s_x);
         s_x += Poly::x_n(f, 1);
         s_x.square_root_modulo(&self.poly);
-        info!("(T(x) + x)^(1/2) = {:?}", s_x);
+        info!("(T(x) + x)^(1/2) = {}", s_x);
         let (mut a, mut b) = Poly::goppa_extended_gcd(&self.poly, &s_x);
-        info!("a(x) = {:?}", a);
-        info!("b(x) = {:?}", b);
+        info!("a(x) = {}", a);
+        info!("b(x) = {}", b);
         a.square();
         b.square();
-        info!("a(x)^2 = {:?}", a);
-        info!("b(x)^2 = {:?}", b);
+        info!("a(x)^2 = {}", a);
+        info!("b(x)^2 = {}", b);
         b *= Poly::x_n(f, 1);
         let sigma = &a + &b;
-        info!("sigma(x) = {:?}", sigma);
+        info!("sigma(x) = {}", sigma);
 
         let err = RowVec::new(
             f2,
@@ -341,10 +340,6 @@ where
 impl<'a, F: Eq + F2FiniteExtension> Goppa<'a, F> {
     pub fn to_hex_string(&self) -> String {
         let f = self.field();
-        if f.order() > 1 << 16 {
-            panic!("Cannot convert polynomial to hex string: field order must be at most 2^16");
-        }
-        // println!("{:?}\n", self.poly);
         let mut s = self.poly.to_hex_string();
         s.reserve(s.len() + 2 + 2 * (f.order() as usize / 8 + 1) + 1);
         s.push_str("##");
@@ -373,10 +368,9 @@ impl<'a, F: Eq + F2FiniteExtension> Goppa<'a, F> {
     pub fn from_hex_string(s: &str, f: &'a F) -> Result<Self> {
         let v: Vec<&str> = s.split("##").collect();
         let poly = Poly::from_hex_string(v[0], f)?;
-        // println!("{:?}\n", poly);
+        info!("Read polynomial:{}", s);
 
         let set_data = hex::decode(v[1])?;
-        // println!("{:?}", set_data);
         let mut set = Vec::new();
         let mut iter = set_data.iter();
         let mut byte = iter.next().ok_or("Missing byte")?;
@@ -392,7 +386,6 @@ impl<'a, F: Eq + F2FiniteExtension> Goppa<'a, F> {
                 cnt_mod_8 -= 1
             }
         }
-        // println!("{:?}\n", set);
         Ok(Goppa { poly, set })
     }
 }

@@ -10,205 +10,98 @@ mod common;
 #[test]
 fn goppa_f8() {
     common::setup();
-
     let f2 = &F2 {};
     let f8 = &F2m::generate(8);
-
     let p = Poly::support(f8, &[2, 1, 0]);
-    println!("{:?}", p);
     let c = Goppa::new(p, [0, 1, 2, 3, 4, 5, 6, 7].to_vec());
-    // let x = c.parity_check_x();
-    // println!("{:?}", x);
-    // let y = c.parity_check_y();
-    // println!("{:?}", y);
-    // let z = c.parity_check_z();
-    // println!("{:?}", z);
+    info!("{}", c);
+    let x = c.parity_check_x();
+    assert_eq!(x, Mat::new(f8, 2, 2, [1, 0, 1, 1].to_vec()));
+    
+    let y = c.parity_check_y();
+    assert_eq!(y, Mat::new(f8, 2, 8, [1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 2, 3, 4, 5, 6, 7].to_vec()));
+    
     let h = c.parity_check_matrix(f2);
-    // println!("h: {:?}", h);
-
-    // info!("test");
-    // let h2 = h.binary(f2);
-    // info!("parity check matrix in binary form: {:?}", h2);
-    // info!("rank: {}", h2.rank());
-    // return;
-    // let (g, _) = Goppa::generator_matrix(&h);
+    info!("h:{}", h);
     let (g, _) = Goppa::generator_from_parity_check(&h);
-    // println!("g: {:?}", g);
-
-    // let mut m = Mat::zero(h.rows(), g.rows());
-    // m.as_prod(&h, &g.transpose());
-
-    // let m2 = Mat::prod(&h2, &g.transpose());
-    let m2 = &h * &g.transpose();
-
-    // warn!("h2.g^T: {:?}", m2);
-    let z2 = Mat::zero(f2, h.rows(), g.rows());
-    assert_eq!(m2, z2);
-
-    // let gg = Mat::from(f8, &g);
-    // let m = Mat::prod(&h, &gg.transpose());
-    // let m = &h * &gg.transpose();
-
-    // warn!("h.g^T: {:?}", m);
-    // let z = Mat::zero(f8, h.rows(), gg.rows());
-    // assert_eq!(m, z);
-    // return;
-    // let h_bin_form = h.binary(3);
-    // println!("{:?}", h_bin_form);
+    info!("g:{}", g);
+    let z = &h * &g.transpose();
+    assert!(z.is_zero());
 
     let mut rng = rand::thread_rng();
-    // let msg = Mat::random(&mut rng, 1, 2);
     let msg = RowVec::random(&mut rng, f2, 2);
-
-    // // let mut msg = Mat::zero(1, 2);
-    // // msg[(0, 0)] = F2::one();
-    // println!("msg: {:?}", msg);
-    // // let cdw = Mat::prod(&msg, &g);
-    // // println!("cdw: {:?}", cdw);
-    // let cdw = c.encode(&msg);
-    // println!("cdw: {:?}", cdw);
-    // let dcd = c.decode(&cdw);
-    // println!("dcd: {:?}", dcd);
-    // assert_eq!(cdw, dcd);
-
+    info!("Message:{}", msg);
     let cdw = c.encode(&msg);
-    println!("cdw: {:?}", cdw);
-    // let err = Mat::weighted_vector_random(&mut rng, 8, 2);
+    info!("cdw:{}", cdw);
     let err = RowVec::random_with_weight(&mut rng, f2, 8, 2);
-
-    // // let mut err = Mat::zero(1, 8);
-    // // err[(0, 1)] = F2::one();
-    println!("err: {:?}", err);
-    // let rcv = Mat::sum(&cdw, &err);
+    info!("err:{}", err);
     let rcv = &cdw + err;
-    println!("rcv: {:?}", rcv);
-    let dcd = c.decode(&rcv);
-    println!("dcd: {:?}", dcd);
-    assert_eq!(cdw, dcd);
+    info!("rcv:{}", rcv);
+    let dcdw = c.decode(&rcv);
+    info!("dcdw:{}", dcdw);
+    assert_eq!(cdw, dcdw);
 }
 
 #[test]
 fn goppa_f1024() {
     common::setup();
-
     let f2 = &F2 {};
     let f1024 = &F2m::generate(1024);
     let mut rng = rand::thread_rng();
     let c = Goppa::random(&mut rng, f1024, 30, 2);
+    info!("{}", c);
     let h = c.parity_check_matrix(f2);
-    info!("parity check matrix: {:?}", h);
-    // let (g, _) = Goppa::generator_matrix(&h);
+    info!("parity check matrix:{}", h);
     let (g, _) = Goppa::generator_from_parity_check(&h);
+    assert!((&h * &g.transpose()).is_zero());
 
-    // assert_eq!(Mat::prod(&h, &g.transpose()), Mat::zero(h.rows(), g.rows()));
-    assert_eq!(&h * &g.transpose(), Mat::zero(f2, h.rows(), g.rows()));
+    let cdw = RowVec::new(f2, g.data()[0..30].to_vec());
+    info!("codeword: {}", cdw);
+    let syndrome = Goppa::xyz_syndrome(&h, &cdw);
+    assert!(syndrome.is_zero());
 
-    // let h2 = h.binary(f2);
-    // info!("parity check matrix in binary form: {:?}", h2);
-    // info!("rank: {}", h2.rank());
-    // let (g, _) = Goppa::generator_matrix(&h2);
-    // // assert_eq!(Mat::prod(&h, &Mat::from(&g.transpose())), Mat::zero(h.rows(), g.rows()));
-
-    // // assert_eq!(Mat::prod(&h2, &g.transpose()), Mat::zero(h2.rows(), g.rows()));
-    // assert_eq!(&h2 * &g.transpose(), Mat::zero(f2, h2.rows(), g.rows()));
-
-    // info!("generator matrix: {:?}", g2);
-    // let g = Mat::from(&g2);
-    // assert_eq!(Mat::prod(&h, &g.transpose()), Mat::zero(h.rows(), g.rows()));
-
-    // // let cdw = Mat::new(1, 30, g.data()[0..30].to_vec());
-    // let cdw = RowVec::new(f2, g.data()[0..30].to_vec());
-    // info!("codeword: {:?}", cdw);
-
-    // // let syndrome_cdw = Mat::prod(&h, &Mat::from(&cdw.transpose()));
-    // // TODO: use syndrome function
-    // let syndrome_cdw = &h * &Mat::from(f1024, &cdw.transpose());
-
-    // let zero = Mat::zero(f1024, syndrome_cdw.rows(), syndrome_cdw.cols());
-    // assert_eq!(syndrome_cdw, zero);
-
-    // // let err: Mat<F2> = Mat::weighted_vector_random(&mut rng, 30, 2);
-    // let err = RowVec::random_with_weight(&mut rng, f2, 30, 2);
-    // info!("error: {:?}", err);
-
-    // // let rcv = Mat::sum(&cdw, &err);
-    // let rcv = &cdw + &err;
-
-    // info!("received word: {:?}", rcv);
-    // let dcd = c.decode(&rcv);
-    // info!("decoded word: {:?}", dcd);
-    // assert_eq!(cdw, dcd);
+    let err = RowVec::random_with_weight(&mut rng, f2, 30, 2);
+    info!("error:{}", err);
+    let rcv = &cdw + &err;
+    info!("received word:{}", rcv);
+    let dcdw = c.decode(&rcv);
+    info!("decoded word:{}", dcdw);
+    assert_eq!(cdw, dcdw);
 }
 
 #[test]
 fn goppa_f256() {
     common::setup();
-
     let f2 = &F2 {};
     let f256 = &F2m::generate(256);
     let mut g = Poly::support(f256, &[22, 17, 15, 12, 5]);
     g[0] = f256.exp(78);
-    println!("{}", g);
-    assert!(g.is_irreducible());
-
-    let mut f256_elements = Vec::with_capacity(256);
+    let mut f256_elts = Vec::with_capacity(256);
     for i in 0..256 {
-        f256_elements.push(i);
+        f256_elts.push(i);
     }
-    let c = Goppa::new(g, f256_elements);
-
-    // let w = [
-    //     0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1,
-    //     1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0,
-    //     1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0,
-    //     0, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1, 1,
-    //     1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0,
-    //     0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0,
-    //     0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1,
-    //     0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0,
-    //     0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0,
-    // ];
-
-    // let rcv: Vec<F2> = w
-    //     .iter()
-    //     .map(|&x| if x == 0 { F2::zero() } else { F2::one() })
-    //     .collect();
-
-    // println!("{:?}", rcv);
-
-    // let rcv = RowVec::new(rcv);
-    // let cdw = c.decode(&rcv);
-    // let err = rcv + cdw;
-    // assert_eq!(err.weight(), 22);
-
+    let c = Goppa::new(g, f256_elts);
+    info!("{}", c);
     let n = f256.order() as usize;
     let m = f256.characteristic_exponent() as usize;
     let t = 22;
     let mut rng = rand::thread_rng();
-    // println!("{:?}", Mat::<F2>::random(&mut rng, 3, 4))
-
     let msg = RowVec::random(&mut rng, f2, n - m * t);
-    println!("msg: {}", msg);
-
+    info!("msg:{}", msg);
     let cdw = c.encode(&msg);
-    println!("cdw: {}", cdw);
-
+    info!("cdw:{}", cdw);
     let err = RowVec::random_with_weight(&mut rng, f2, n, t);
-    println!("err: {}", err);
-
+    info!("err:{}", err);
     let rcv = &cdw + err;
-    println!("rcv: {}", rcv);
-
-    let dcd = c.decode(&rcv);
-    println!("dcd: {}", dcd);
-
-    assert_eq!(cdw, dcd);
+    info!("rcv:{}", rcv);
+    let dcdw = c.decode(&rcv);
+    info!("dcdw:{}", dcdw);
+    assert_eq!(cdw, dcdw);
 }
 
 #[test]
 fn goppa_f128() {
     common::setup();
-
     let m = 7;
     let n = 1 << m;
     let t = 10;
@@ -217,21 +110,16 @@ fn goppa_f128() {
     let f128 = &F2m::generate(1 << m);
     let mut rng = rand::thread_rng();
     let goppa = Goppa::random(&mut rng, f128, n, t);
-
+    info!("{}", goppa);
     let msg = RowVec::random(&mut rng, f2, k);
-    println!("msg: {}", msg);
-
+    info!("msg:{}", msg);
     let cdw = goppa.encode(&msg);
-    println!("cdw: {}", cdw);
-
+    info!("cdw:{}", cdw);
     let err = RowVec::random_with_weight(&mut rng, f2, n, t);
-    println!("err: {}", err);
-
+    info!("err:{}", err);
     let rcv = &cdw + err;
-    println!("rcv: {}", rcv);
-
-    let dcd = goppa.decode(&rcv);
-    println!("dcd: {}", dcd);
-
-    assert_eq!(cdw, dcd);
+    info!("rcv:{}", rcv);
+    let dcdw = goppa.decode(&rcv);
+    info!("dcdw:{}", dcdw);
+    assert_eq!(cdw, dcdw);
 }
