@@ -50,6 +50,14 @@ impl Perm {
         Perm(vec)
     }
 
+    pub fn identity(n: usize) -> Self {
+        let mut vec = Vec::with_capacity(n);
+        for i in 0..n {
+            vec.push(i);
+        }
+        Perm(vec)
+    }
+    
     pub fn len(&self) -> usize {
         self.0.len()
     }
@@ -58,6 +66,10 @@ impl Perm {
         &self.0
     }
 
+    pub fn swap(&mut self, i: usize, j: usize) {
+        self.0.swap(i, j);
+    }
+    
     pub fn inverse(&self) -> Self {
         let mut inv = vec![0; self.len()];
         for i in 0..self.len() {

@@ -9,7 +9,6 @@ mod common;
 #[test]
 fn matrix_f7_permutation_random() {
     common::setup();
-    let f7 = &F7 {};
     let mut rng = rand::thread_rng();
     let p = Perm::random(&mut rng, 10);
     assert!(p.is_permutation());
@@ -28,7 +27,6 @@ fn matrix_f7_is_invertible() {
 fn matrix_f7_inverse() {
     common::setup();
     let f7 = &F7 {};
-
     let id = Mat::identity(f7, 11);
     assert!(id.inverse().as_ref() == Some(&id));
 
@@ -41,7 +39,6 @@ fn matrix_f7_inverse() {
 fn matrix_f7_invertible_random() {
     common::setup();
     let f7 = &F7 {};
-
     let mut rng = rand::thread_rng();
     let mat = Mat::invertible_random(&mut rng, f7, 15);
     assert!(mat.is_invertible());
@@ -62,7 +59,6 @@ fn matrix_f7_invertible_random() {
 fn matrix_f7_add() {
     common::setup();
     let f7 = &F7 {};
-
     let mut rng = rand::thread_rng();
     let a = Mat::random(&mut rng, f7, 11, 11);
     let b = Mat::random(&mut rng, f7, 11, 11);
@@ -92,7 +88,6 @@ fn matrix_f7_add() {
 fn matrix_f7_mul_wrong_dimensions() {
     common::setup();
     let f7 = &F7 {};
-
     let mut prod = Mat::zero(f7, 5, 5);
     let mat1 = Mat::zero(f7, 5, 4);
     let mat2 = Mat::zero(f7, 3, 5);
@@ -103,7 +98,6 @@ fn matrix_f7_mul_wrong_dimensions() {
 fn matrix_f7_mul() {
     common::setup();
     let f7 = &F7 {};
-
     let mut rng = rand::thread_rng();
     let a = Mat::random(&mut rng, f7, 10, 8);
     let b = Mat::random(&mut rng, f7, 8, 13);
@@ -153,7 +147,6 @@ fn matrix_f7_rank() {
 fn matrix_f7_standard_form() {
     common::setup();
     let f7 = &F7 {};
-
     let mat = Mat::identity(f7, 19);
     assert!(mat.is_standard_form());
 
@@ -178,7 +171,7 @@ fn matrix_f7_standard_form() {
 
     info!("{}", u);
     info!("{}", s);
-    info!("{}", p);
+    info!("{:?}", p);
 
     assert!(u.is_invertible());
     assert!(s.is_standard_form());

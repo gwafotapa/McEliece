@@ -1,6 +1,6 @@
 use rand::rngs::ThreadRng;
 
-use super::Mat;
+use super::{Mat, Perm};
 use crate::finite_field::Field;
 
 impl<'a, F: Eq + Field> Mat<'a, F> {
@@ -202,7 +202,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
 
     // Compute, if possible, (U, S, P) with U invertible, S standard form and P permutation
     // such that S = U * self * P
-    pub fn standard_form(&self) -> Option<(Self, Self, Self)> {
+    pub fn standard_form(&self) -> Option<(Self, Self, Perm)> {
         let f = self.field;
         let m = self.rows;
         let n = self.cols;
@@ -211,7 +211,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         }
         let mut u = Mat::identity(f, m);
         let mut h = self.clone();
-        let mut p = Mat::identity(f, n);
+        let mut p = Perm::identity(n);
         let mut col = n; // index of the column to check for a pivot
 
         // j is the index of the column to "standardize":
@@ -244,7 +244,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
 
             // Put pivot column in the adequate position and update P
             h.swap_cols(j, col_pivot);
-            p.swap_cols(j, col_pivot);
+            p.swap(j, col_pivot);
 
             // Put pivot row in the adequate position and update U
             h.swap_rows(j + m - n, row_pivot);
@@ -350,7 +350,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         let m = self.cols;
         let mut row_pivot = 0;
         let mut col_pivot = 0;
-        let mut p = Mat::identity(f, n);
+        let mut p = Perm::identity(n);
         let mut rank = 0;
 
         while row_pivot < self.rows && col_pivot < self.cols {
@@ -364,7 +364,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
                 continue;
             }
             self.swap_rows(i, row_pivot);
-            p.swap_rows(i, row_pivot);
+            p.swap(i, row_pivot);
             rank += 1;
 
             // Normalize pivot's row
@@ -391,15 +391,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
             row_pivot += 1;
             col_pivot += 1;
         }
-        let mut max_set_of_indep_rows = Vec::new();
-        for i in 0..rank {
-            let mut j = 0;
-            while p[(i, j)] == f.zero() {
-                j += 1;
-            }
-            max_set_of_indep_rows.push(j);
-        }
-        max_set_of_indep_rows
+        p.data()[0..rank].to_vec()
     }
 
     fn keep_rows(&mut self, rows: &Vec<usize>) {

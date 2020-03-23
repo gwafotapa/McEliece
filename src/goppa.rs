@@ -219,21 +219,12 @@ where
     }
 
     pub fn generator_from_parity_check(h: &Mat<'a, F>) -> (Mat<'a, F>, Vec<usize>) {
-        let f = h.field();
         let n = h.cols();
         let k = n - h.rows();
         if let Some((_u, hs, p)) = h.standard_form() {
             let gs = Goppa::generator_from_parity_check_standard(&hs);
-            let pt = p.transpose();
-            let mut information_set = Vec::with_capacity(k);
-            for j in 0..k {
-                let mut i = 0;
-                while p[(i, j)] == f.zero() {
-                    i += 1
-                }
-                information_set.push(i);
-            }
-            (gs * pt, information_set)
+            let information_set = p.data()[0..k].to_vec();
+            (gs * p.inverse(), information_set)
         } else {
             panic!("Rows of the parity-check matrix aren't independant");
         }

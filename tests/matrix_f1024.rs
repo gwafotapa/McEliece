@@ -9,7 +9,6 @@ mod common;
 #[test]
 fn matrix_f1024_permutation_random() {
     common::setup();
-    let f1024 = &F2m::generate(1024);
     let mut rng = rand::thread_rng();
     let p = Perm::random(&mut rng, 10);
     assert!(p.is_permutation());
@@ -130,7 +129,6 @@ fn matrix_f1024_mul() {
 fn matrix_f1024_rank() {
     common::setup();
     let f1024 = &F2m::generate(1024);
-
     let mat = Mat::zero(f1024, 23, 4);
     assert_eq!(mat.rank(), 0);
 
