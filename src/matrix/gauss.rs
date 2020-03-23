@@ -1,4 +1,4 @@
-use rand::rngs::ThreadRng;
+use rand::{Rng, rngs::ThreadRng};
 
 use super::{Mat, Perm};
 use crate::finite_field::Field;
@@ -8,6 +8,12 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         let f = self.field;
         for j in 0..self.cols {
             self[(row1, j)] = f.add(self[(row1, j)], f.mul(lambda, self[(row2, j)]));
+        }
+    }
+
+    pub fn mul_row(&mut self, row: usize, lambda: F::FElt) {
+        for j in 0..self.cols {
+            self[(row, j)] = self.field.mul(lambda, self[(row, j)]);
         }
     }
 
@@ -98,20 +104,64 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         Some(inv)
     }
 
-    pub fn invertible_random(rng: &mut ThreadRng, f: &'a F, n: usize) -> Self {
-        let mut mat = Mat::zero(f, n, n);
-        let mut i = 0;
-        while i < n {
-            // Fill line i at random
-            for j in 0..n {
-                mat[(i, j)] = f.random_element(rng);
-            }
+    // pub fn invertible_random(rng: &mut ThreadRng, f: &'a F, n: usize) -> Self {
+    //     let mut mat = Mat::zero(f, n, n);
+    //     let mut i = 0;
+    //     while i < n {
+    //         // Fill line i at random
+    //         for j in 0..n {
+    //             mat[(i, j)] = f.random_element(rng);
+    //         }
 
-            if mat.rank() == i + 1 {
+    //         if mat.rank() == i + 1 {
+    //             i += 1;
+    //         }
+    //     }
+    //     mat
+    // }
+
+    /* Generate a random matrix and put it in standard form with a diagonal of 1.
+     * Keep track of the applied transformations via a matrix u.
+     * Return u is as our random invertible matrix. */
+    pub fn invertible_random(rng: &mut ThreadRng, f: &'a F, n: usize) -> Self {
+        let mut mat = Mat::random(rng, f, n, n);
+        let mut u = Mat::identity(f, n);
+        // Loop on columns
+        for j in 0..n {
+            // Find a pivot in column j
+            let mut i = j;
+            while i < n && mat[(i, j)] == f.zero() {
                 i += 1;
             }
+            // If column j has no pivot, create it
+            if i == n {
+                i = rng.gen_range(j, n);
+                while mat[(i, j)] == f.zero() {
+                    mat[(i, j)] = f.random_element(rng);
+                }
+            }
+            // Put pivot in position (j, j) and mirror operation on matrix u
+            mat.swap_rows(i, j);
+            u.swap_rows(i, j);
+            // Normalize pivot's row and mirror operation on matrix u
+            let pivot = mat[(j, j)];
+            let inv_pivot = f.inv(pivot).unwrap();
+            mat.mul_row(j, inv_pivot);
+            u.mul_row(j, inv_pivot);
+            // Zero coefficients under the pivot and mirror operation on matrix u
+            for i in j + 1..n {
+                if mat[(i, j)] == f.zero() {
+                    continue;
+                }
+                let lambda = mat[(i, j)];
+                mat[(i, j)] = f.zero();
+                for k in j + 1..n {
+                    mat[(i, k)] = f.sub(mat[(i, k)], f.mul(lambda, mat[(j, k)]));
+                }
+                u.combine_rows(i, lambda, j);   
+            }
         }
-        mat
+        u
     }
 
     pub fn row_echelon_form(&mut self) -> usize {

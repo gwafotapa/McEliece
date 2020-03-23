@@ -415,17 +415,19 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         if row1 == row2 {
             return;
         }
-
-        let slice = &mut self.data[row1 * self.cols..(row1 + 1) * self.cols].to_vec();
-        slice.swap_with_slice(&mut self.data[row2 * self.cols..(row2 + 1) * self.cols]);
-        slice.swap_with_slice(&mut self.data[row1 * self.cols..(row1 + 1) * self.cols]);
+        let row1_start = row1 * self.cols;
+        let row1_end = row1_start + self.cols;
+        let row2_start = row2 * self.cols;
+        let row2_end = row2_start + self.cols;
+        let mut slice = self.data[row1_start..row1_end].to_vec();
+        slice.swap_with_slice(&mut self.data[row2_start..row2_end]);
+        slice.swap_with_slice(&mut self.data[row1_start..row1_end]);
     }
 
     pub fn swap_cols(&mut self, col1: usize, col2: usize) {
         if col1 == col2 {
             return;
         }
-
         for i in 0..self.rows {
             let tmp = self[(i, col1)];
             self[(i, col1)] = self[(i, col2)];

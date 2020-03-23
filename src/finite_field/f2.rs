@@ -39,7 +39,7 @@ impl Field for F2 {
     }
 
     fn mul(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt {
-        a * b
+        a & b
     }
 
     fn neg(&self, a: Self::FElt) -> Self::FElt {

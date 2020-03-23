@@ -12,25 +12,25 @@ mod common;
 
 const GOPPA_N_MIN: u32 = 1;
 const GOPPA_N_MAX: u32 = 128 + 1;
-const GOPPA_N: u32 = 125;
-const GOPPA_T: u32 = 14;
+const GOPPA_N: u32 = 1024;
+const GOPPA_T: u32 = 50;
 
 fn setup() -> (u32, u32, u32) {
     common::setup();
     let mut rng = rand::thread_rng();
-    let n = if GOPPA_N != 0 {
-        GOPPA_N
-    } else {
-        rng.gen_range(GOPPA_N_MIN, GOPPA_N_MAX)
+    let n = match GOPPA_N {
+        0 => rng.gen_range(GOPPA_N_MIN, GOPPA_N_MAX),
+        value => value,
     };
     let q = n.next_power_of_two();
     let m = q.trailing_zeros();
-    let t = if GOPPA_T != 0 {
-        GOPPA_T
-    } else {
-        let t_min = if n == q { 2 } else { 1 };
-        let t_max = matrix::div_ceil(n, m) + if n.is_power_of_two() { 1 } else { 0 };
-        rng.gen_range(t_min, t_max)
+    let t = match GOPPA_T {
+        0 => {
+            let t_min = if n == q { 2 } else { 1 };
+            let t_max = matrix::div_ceil(n, m) + if n.is_power_of_two() { 1 } else { 0 };
+            rng.gen_range(t_min, t_max)
+        }
+        value => value,
     };
     (m, n, t)
 }
