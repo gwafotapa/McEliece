@@ -614,11 +614,11 @@ impl<'a, F: Eq + Field> Mul<Perm> for &Mat<'a, F> {
 impl<'a, F: Eq + Field> Mul<&Perm> for &Mat<'a, F> {
     type Output = Mat<'a, F>;
 
-    fn mul(self, other: &Perm) -> Self::Output {
-        if self.cols() != other.len() {
+    fn mul(self, perm: &Perm) -> Self::Output {
+        if self.cols() != perm.len() {
             panic!("Cannot multiply matrices: dimensions don't match");
         }
-        self.extract_cols(other.data())
+        self.extract_cols(perm.data())
     }
 }
 

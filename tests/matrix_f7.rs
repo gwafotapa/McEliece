@@ -1,57 +1,50 @@
+use log::info;
 use rand::Rng;
 
 use mceliece::finite_field::*;
 use mceliece::matrix::*;
 
-// #[test]
-// fn matrix_f7_permutation_random() {
-//     let f7 = &F7 {};
-//     let mut rng = rand::thread_rng();
-//     let mat = Mat::permutation_random(&mut rng, f7, 10);
-//     // println!("{:?}", mat);
-//     assert!(mat.is_permutation());
-// }
+mod common;
+
+#[test]
+fn matrix_f7_permutation_random() {
+    common::setup();
+    let f7 = &F7 {};
+    let mut rng = rand::thread_rng();
+    let p = Perm::random(&mut rng, 10);
+    assert!(p.is_permutation());
+}
 
 #[test]
 fn matrix_f7_is_invertible() {
+    common::setup();
     let f7 = &F7 {};
-
     let id = Mat::identity(f7, 11);
-    // println!("{:?}", id);
+    info!("{}", id);
     assert!(id.is_invertible());
-
-    // let mut rng = rand::thread_rng();
-    // let mat = Mat::permutation_random(&mut rng, f7, 20);
-    // // println!("{:?}", mat);
-    // assert!(mat.is_invertible());
 }
 
 #[test]
 fn matrix_f7_inverse() {
+    common::setup();
     let f7 = &F7 {};
 
     let id = Mat::identity(f7, 11);
     assert!(id.inverse().as_ref() == Some(&id));
 
-    // let mut rng = rand::thread_rng();
-    // let mat = Mat::permutation_random(&mut rng, f7, 11);
-    // assert!(
-    //     mat.inverse()
-    //         .expect("Cannot inverse permutation matrix")
-    //         .inverse()
-    //         .expect("Cannot inverse permutation matrix")
-    //         == mat
-    // );
+    let mut rng = rand::thread_rng();
+    let p = Perm::random(&mut rng, 11);
+    assert_eq!(p, p.inverse().inverse());
 }
 
 #[test]
 fn matrix_f7_invertible_random() {
+    common::setup();
     let f7 = &F7 {};
 
     let mut rng = rand::thread_rng();
     let mat = Mat::invertible_random(&mut rng, f7, 15);
     assert!(mat.is_invertible());
-
     assert!(
         mat.inverse()
             .expect("Cannot inverse invertible matrix")
@@ -67,6 +60,7 @@ fn matrix_f7_invertible_random() {
 
 #[test]
 fn matrix_f7_add() {
+    common::setup();
     let f7 = &F7 {};
 
     let mut rng = rand::thread_rng();
@@ -74,7 +68,7 @@ fn matrix_f7_add() {
     let b = Mat::random(&mut rng, f7, 11, 11);
     let c = Mat::random(&mut rng, f7, 11, 11);
     let z = Mat::zero(f7, 11, 11);
-    // println!("{:?}", a);
+    info!("{}", a);
 
     // Associativity
     assert!((&a + &b) + &c == &a + (&b + &c));
@@ -96,6 +90,7 @@ fn matrix_f7_add() {
 #[test]
 #[should_panic]
 fn matrix_f7_mul_wrong_dimensions() {
+    common::setup();
     let f7 = &F7 {};
 
     let mut prod = Mat::zero(f7, 5, 5);
@@ -106,6 +101,7 @@ fn matrix_f7_mul_wrong_dimensions() {
 
 #[test]
 fn matrix_f7_mul() {
+    common::setup();
     let f7 = &F7 {};
 
     let mut rng = rand::thread_rng();
@@ -144,21 +140,18 @@ fn matrix_f7_mul() {
 
 #[test]
 fn matrix_f7_rank() {
+    common::setup();
     let f7 = &F7 {};
-
     let mat = Mat::zero(f7, 23, 4);
     assert!(mat.rank() == 0);
 
     let mat = Mat::identity(f7, 19);
     assert!(mat.rank() == 19);
-
-    // let mut rng = rand::thread_rng();
-    // let mat = Mat::permutation_random(&mut rng, f7, 34);
-    // assert!(mat.rank() == 34);
 }
 
 #[test]
 fn matrix_f7_standard_form() {
+    common::setup();
     let f7 = &F7 {};
 
     let mat = Mat::identity(f7, 19);
@@ -183,9 +176,9 @@ fn matrix_f7_standard_form() {
         .standard_form()
         .expect("Failed to put a full rank matrix in standard form");
 
-    // println!("{:?}", u);
-    // println!("{:?}", s);
-    // println!("{:?}", p);
+    info!("{}", u);
+    info!("{}", s);
+    info!("{}", p);
 
     assert!(u.is_invertible());
     assert!(s.is_standard_form());
@@ -195,17 +188,23 @@ fn matrix_f7_standard_form() {
 
 #[test]
 fn matrix_f7_transpose() {
+    common::setup();
     let f7 = &F7 {};
-
     let mut rng = rand::thread_rng();
     let rows = rng.gen_range(0, 100);
     let cols = rng.gen_range(0, 100);
     let mat = Mat::random(&mut rng, f7, rows, cols);
-    assert!(mat == mat.transpose().transpose());
+    let tmat = mat.transpose();
+    for i in 0..rows {
+        for j in 0..cols {
+            assert!(mat[(i, j)] == tmat[(j, i)]);
+        }
+    }
 }
 
 #[test]
 fn matrix_f7_rowvec_weight() {
+    common::setup();
     let f7 = &F7 {};
     let vec = RowVec::zero(f7, 4);
     assert!(vec.weight() == 0);
