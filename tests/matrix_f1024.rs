@@ -81,10 +81,9 @@ fn matrix_f1024_add() {
 fn matrix_f1024_mul_wrong_dimensions() {
     common::setup();
     let f1024 = &F2m::generate(1024);
-    let mut prod = Mat::zero(f1024, 5, 5);
     let mat1 = Mat::zero(f1024, 5, 4);
     let mat2 = Mat::zero(f1024, 3, 5);
-    prod.prod(&mat1, &mat2);
+    mat1 * mat2;
 }
 
 #[test]
@@ -140,15 +139,15 @@ fn matrix_f1024_rank() {
 fn matrix_f1024_standard_form() {
     common::setup();
     let f1024 = &F2m::generate(1024);
-    let mat = Mat::identity(f1024, 19);
-    assert!(mat.is_standard_form());
+    let id = Mat::identity(f1024, 19);
+    assert!(id.is_standard_form());
 
     let mut rng = rand::thread_rng();
-    let (u, h, p) = mat
+    let (u, h, p) = id
         .standard_form()
         .expect("Cannot recognize the identity matrix as a standard form");
-    assert!(u.is_permutation());
-    assert_eq!(h, mat);
+    assert_eq!(u, id);
+    assert_eq!(h, id);
     assert!(p.is_permutation());
 
     let mut h = Mat::random(&mut rng, f1024, 13, 31);

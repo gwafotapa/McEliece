@@ -66,6 +66,8 @@ fn main() -> Result<()> {
             m.write("decoded.mce")?;
             Ok(())
         }
+        // "plaintext" => {
+        //     let p = RowVec::random
         _ => panic!("Unexpected command. Valid commands are 'keygen', 'encrypt' and 'decrypt'."),
     }
 }

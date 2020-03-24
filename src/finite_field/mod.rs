@@ -44,13 +44,13 @@ pub trait FiniteField: Field {
 
 pub trait CharacteristicTwo: Field {
     // "Converts" the 0 and 1 of F2 to the 0 and 1 of an extension of F2
-    fn from(&self, f2: &F2, elt: <F2 as Field>::FElt) -> Self::FElt {
-        if elt == f2.zero() {
-            self.zero()
-        } else {
-            self.one()
-        }
-    }
+    // fn from(&self, f2: &F2, elt: <F2 as Field>::FElt) -> Self::FElt {
+    //     if elt == f2.zero() {
+    //         self.zero()
+    //     } else {
+    //         self.one()
+    //     }
+    // }
 }
 
 pub trait F2FiniteExtension: CharacteristicTwo + FiniteField {

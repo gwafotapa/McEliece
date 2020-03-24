@@ -22,50 +22,6 @@ fn matrix_f2_new() {
 }
 
 #[test]
-fn matrix_f2_is_permutation() {
-    common::setup();
-    let f2 = &F2 {};
-    let mut mat = Mat::zero(f2, 5, 6);
-    mat[(0, 4)] = 1;
-    mat[(1, 2)] = 1;
-    mat[(2, 3)] = 1;
-    mat[(3, 5)] = 1;
-    mat[(4, 0)] = 1;
-    info!("{:?}", mat);
-    assert!(!mat.is_permutation());
-
-    let mut mat = Mat::zero(f2, 6, 6);
-    mat[(0, 4)] = 1;
-    mat[(1, 2)] = 1;
-    mat[(3, 3)] = 1;
-    mat[(3, 5)] = 1;
-    mat[(4, 0)] = 1;
-    mat[(5, 1)] = 1;
-    info!("{:?}", mat);
-    assert!(!mat.is_permutation());
-
-    let mut mat = Mat::zero(f2, 6, 6);
-    mat[(0, 4)] = 1;
-    mat[(1, 3)] = 1;
-    mat[(2, 3)] = 1;
-    mat[(3, 5)] = 1;
-    mat[(4, 0)] = 1;
-    mat[(5, 1)] = 1;
-    info!("{:?}", mat);
-    assert!(!mat.is_permutation());
-
-    let mut mat = Mat::zero(f2, 6, 6);
-    mat[(0, 4)] = 1;
-    mat[(1, 2)] = 1;
-    mat[(2, 3)] = 1;
-    mat[(3, 5)] = 1;
-    mat[(4, 0)] = 1;
-    mat[(5, 1)] = 1;
-    info!("{:?}", mat);
-    assert!(mat.is_permutation());
-}
-
-#[test]
 fn matrix_f2_permutation_random() {
     common::setup();
     let mut rng = rand::thread_rng();
@@ -144,10 +100,9 @@ fn matrix_f2_add() {
 fn matrix_f2_mul_wrong_dimensions() {
     common::setup();
     let f2 = &F2 {};
-    let mut prod: Mat<F2> = Mat::zero(f2, 5, 5);
     let mat1 = Mat::zero(f2, 5, 4);
     let mat2 = Mat::zero(f2, 3, 5);
-    prod.prod(&mat1, &mat2);
+    mat1 * mat2;
 }
 
 #[test]

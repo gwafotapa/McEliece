@@ -88,10 +88,9 @@ fn matrix_f7_add() {
 fn matrix_f7_mul_wrong_dimensions() {
     common::setup();
     let f7 = &F7 {};
-    let mut prod = Mat::zero(f7, 5, 5);
     let mat1 = Mat::zero(f7, 5, 4);
     let mat2 = Mat::zero(f7, 3, 5);
-    prod.prod(&mat1, &mat2);
+    mat1 * mat2;
 }
 
 #[test]
@@ -147,15 +146,15 @@ fn matrix_f7_rank() {
 fn matrix_f7_standard_form() {
     common::setup();
     let f7 = &F7 {};
-    let mat = Mat::identity(f7, 19);
-    assert!(mat.is_standard_form());
+    let id = Mat::identity(f7, 19);
+    assert!(id.is_standard_form());
 
     let mut rng = rand::thread_rng();
-    let (u, h, p) = mat
+    let (u, h, p) = id
         .standard_form()
         .expect("Cannot recognize the identity matrix as a standard form");
-    assert!(u.is_permutation());
-    assert!(h == mat);
+    assert!(u == id);
+    assert!(h == id);
     assert!(p.is_permutation());
 
     let mut h = Mat::random(&mut rng, f7, 13, 31);

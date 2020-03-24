@@ -8,7 +8,7 @@ use std::{
 };
 
 use super::{Mat, Perm};
-use crate::finite_field::{CharacteristicTwo, F2FiniteExtension, Field, FiniteField, F2};
+use crate::finite_field::{F2FiniteExtension, Field, FiniteField, F2};
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
@@ -271,12 +271,12 @@ impl<'a, F: Eq + Field> RowVec<'a, F> {
     //     self.0.sum(&vec1.0, &vec2.0);
     // }
 
-    pub fn from<'b>(f: &'a F, vec_f2: &RowVec<'b, F2>) -> Self
-    where
-        F: CharacteristicTwo,
-    {
-        RowVec(Mat::from(f, &vec_f2.0))
-    }
+    // pub fn from<'b>(f: &'a F, vec_f2: &RowVec<'b, F2>) -> Self
+    // where
+    //     F: CharacteristicTwo,
+    // {
+    //     RowVec(Mat::from(f, &vec_f2.0))
+    // }
 
     pub fn transpose(&self) -> Mat<'a, F> {
         self.0.transpose()

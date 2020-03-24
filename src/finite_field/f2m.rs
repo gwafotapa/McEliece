@@ -1,6 +1,6 @@
 use rand::{rngs::ThreadRng, Rng};
 
-use super::{CharacteristicTwo, F2FiniteExtension, Field, FiniteField, F2};
+use super::{CharacteristicTwo, F2FiniteExtension, Field, FiniteField};
 
 #[derive(Eq)]
 pub struct F2m {
@@ -91,9 +91,9 @@ impl FiniteField for F2m {
 }
 
 impl CharacteristicTwo for F2m {
-    fn from(&self, _f2: &F2, elt: <F2 as Field>::FElt) -> Self::FElt {
-        elt
-    }
+    // fn from(&self, _f2: &F2, elt: <F2 as Field>::FElt) -> Self::FElt {
+    //     elt
+    // }
 }
 
 impl F2FiniteExtension for F2m {

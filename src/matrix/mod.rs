@@ -5,7 +5,7 @@ use std::{
     ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
-use crate::finite_field::{CharacteristicTwo, F2FiniteExtension, Field, FiniteField, F2};
+use crate::finite_field::{F2FiniteExtension, Field, FiniteField, F2};
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
@@ -377,40 +377,6 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         true
     }
 
-    pub fn is_permutation(&self) -> bool {
-        if self.rows != self.cols {
-            return false;
-        }
-
-        let f = self.field;
-        let n = self.rows;
-        let mut cols = Vec::with_capacity(n); // indices of columns containing a '1'
-        cols.resize(n, 0);
-
-        for i in 0..n {
-            // loop on rows
-            let mut has_one = false;
-            for j in 0..n {
-                if self[(i, j)] == f.zero() {
-                    continue;
-                } else if self[(i, j)] == f.one() {
-                    if cols[j] == 1 {
-                        return false;
-                    }
-                    cols[j] = 1;
-                    has_one = true;
-                } else {
-                    return false;
-                }
-            }
-            if !has_one {
-                // row contains zeroes only
-                return false;
-            }
-        }
-        true
-    }
-
     pub fn swap_rows(&mut self, row1: usize, row2: usize) {
         if row1 == row2 {
             return;
@@ -453,43 +419,43 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         id
     }
 
-    pub fn sum(&mut self, mat1: &Self, mat2: &Self) {
-        let f = self.field;
-        if f != mat1.field || f != mat2.field {
-            panic!("Cannot add matrices: fields don't match");
-        } else if self.rows != mat1.rows
-            || self.rows != mat2.rows
-            || self.cols != mat1.cols
-            || self.cols != mat2.cols
-        {
-            panic!("Cannot add matrices: dimensions don't match");
-        }
+    // pub fn sum(&mut self, mat1: &Self, mat2: &Self) {
+    //     let f = self.field;
+    //     if f != mat1.field || f != mat2.field {
+    //         panic!("Cannot add matrices: fields don't match");
+    //     } else if self.rows != mat1.rows
+    //         || self.rows != mat2.rows
+    //         || self.cols != mat1.cols
+    //         || self.cols != mat2.cols
+    //     {
+    //         panic!("Cannot add matrices: dimensions don't match");
+    //     }
 
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                self[(i, j)] = f.add(mat1[(i, j)], mat2[(i, j)]);
-            }
-        }
-    }
+    //     for i in 0..self.rows {
+    //         for j in 0..self.cols {
+    //             self[(i, j)] = f.add(mat1[(i, j)], mat2[(i, j)]);
+    //         }
+    //     }
+    // }
 
-    pub fn prod(&mut self, mat1: &Self, mat2: &Self) {
-        let f = self.field;
-        if f != mat1.field || f != mat2.field {
-            panic!("Cannot add matrices: fields don't match");
-        } else if self.rows != mat1.rows || self.cols != mat2.cols || mat1.cols != mat2.rows {
-            panic!("Cannot multiply matrices: dimensions don't match");
-        }
+    // pub fn prod(&mut self, mat1: &Self, mat2: &Self) {
+    //     let f = self.field;
+    //     if f != mat1.field || f != mat2.field {
+    //         panic!("Cannot add matrices: fields don't match");
+    //     } else if self.rows != mat1.rows || self.cols != mat2.cols || mat1.cols != mat2.rows {
+    //         panic!("Cannot multiply matrices: dimensions don't match");
+    //     }
 
-        for i in 0..self.rows {
-            for j in 0..self.cols {
-                let mut sum = f.zero();
-                for k in 0..mat1.cols {
-                    sum = f.add(sum, f.mul(mat1[(i, k)], mat2[(k, j)]));
-                }
-                self[(i, j)] = sum;
-            }
-        }
-    }
+    //     for i in 0..self.rows {
+    //         for j in 0..self.cols {
+    //             let mut sum = f.zero();
+    //             for k in 0..mat1.cols {
+    //                 sum = f.add(sum, f.mul(mat1[(i, k)], mat2[(k, j)]));
+    //             }
+    //             self[(i, j)] = sum;
+    //         }
+    //     }
+    // }
 
     pub fn transpose(&self) -> Self {
         let mut t = Self::zero(self.field, self.cols, self.rows);
@@ -502,17 +468,17 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
     }
 }
 
-impl<'a, F: CharacteristicTwo + Eq> Mat<'a, F> {
-    pub fn from<'b>(f: &'a F, mat_f2: &Mat<'b, F2>) -> Self {
-        let mut mat_f2m = Mat::zero(f, mat_f2.rows(), mat_f2.cols());
-        for i in 0..mat_f2.rows() {
-            for j in 0..mat_f2.cols() {
-                mat_f2m[(i, j)] = f.from(mat_f2.field(), mat_f2[(i, j)]);
-            }
-        }
-        mat_f2m
-    }
-}
+// impl<'a, F: CharacteristicTwo + Eq> Mat<'a, F> {
+//     pub fn from<'b>(f: &'a F, mat_f2: &Mat<'b, F2>) -> Self {
+//         let mut mat_f2m = Mat::zero(f, mat_f2.rows(), mat_f2.cols());
+//         for i in 0..mat_f2.rows() {
+//             for j in 0..mat_f2.cols() {
+//                 mat_f2m[(i, j)] = f.from(mat_f2.field(), mat_f2[(i, j)]);
+//             }
+//         }
+//         mat_f2m
+//     }
+// }
 
 impl<'a, F: Eq + F2FiniteExtension> Mat<'a, F> {
     pub fn binary<'b>(&self, f2: &'b F2) -> Mat<'b, F2> {

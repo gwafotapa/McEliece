@@ -82,9 +82,9 @@ impl FiniteField for F2 {
 }
 
 impl CharacteristicTwo for F2 {
-    fn from(&self, _f2: &F2, elt: <F2 as Field>::FElt) -> Self::FElt {
-        elt
-    }
+    // fn from(&self, _f2: &F2, elt: <F2 as Field>::FElt) -> Self::FElt {
+    //     elt
+    // }
 }
 
 impl F2FiniteExtension for F2 {
