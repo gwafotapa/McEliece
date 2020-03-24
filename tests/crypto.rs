@@ -12,8 +12,8 @@ mod common;
 
 const GOPPA_N_MIN: u32 = 1;
 const GOPPA_N_MAX: u32 = 128 + 1;
-const GOPPA_N: u32 = 1024;
-const GOPPA_T: u32 = 50;
+const GOPPA_N: u32 = 178;
+const GOPPA_T: u32 = 19;
 
 fn setup() -> (u32, u32, u32) {
     common::setup();

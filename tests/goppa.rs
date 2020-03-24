@@ -23,7 +23,7 @@ fn goppa_f8() {
     
     let h = c.parity_check_matrix(f2);
     info!("h:{}", h);
-    let (g, _) = Goppa::generator_from_parity_check(&h);
+    let (g, _) = Goppa::<F2m>::generator_from_parity_check(&h);
     info!("g:{}", g);
     let z = &h * &g.transpose();
     assert!(z.is_zero());
@@ -52,7 +52,7 @@ fn goppa_f1024() {
     info!("{}", c);
     let h = c.parity_check_matrix(f2);
     info!("parity check matrix:{}", h);
-    let (g, _) = Goppa::generator_from_parity_check(&h);
+    let (g, _) = Goppa::<F2m>::generator_from_parity_check(&h);
     assert!((&h * &g.transpose()).is_zero());
 
     let cdw = RowVec::new(f2, g.data()[0..30].to_vec());

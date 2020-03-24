@@ -200,29 +200,29 @@ where
         let z = self.parity_check_z();
         let xyz = x * y * z;
         let mut h = xyz.binary(f2);
-        h.remove_redundant_rows();
+        h.remove_redundant_rows_f2();
         h
     }
 
-    pub fn generator_from_parity_check_standard(h: &Mat<'a, F>) -> Mat<'a, F> {
-        let f = h.field();
+    pub fn generator_from_parity_check_standard<'b>(h: &Mat<'b, F2>) -> Mat<'b, F2> {
+        let f2 = h.field();
         let n = h.cols();
         let k = n - h.rows();
-        let mut g = Mat::zero(f, k, n);
+        let mut g = Mat::zero(f2, k, n);
         for i in 0..k {
-            g[(i, i)] = f.one();
+            g[(i, i)] = f2.one();
             for j in k..n {
-                g[(i, j)] = f.neg(h[(j - k, i)]);
+                g[(i, j)] = f2.neg(h[(j - k, i)]);
             }
         }
         g
     }
 
-    pub fn generator_from_parity_check(h: &Mat<'a, F>) -> (Mat<'a, F>, Vec<usize>) {
+    pub fn generator_from_parity_check<'b>(h: &Mat<'b, F2>) -> (Mat<'b, F2>, Vec<usize>) {
         let n = h.cols();
         let k = n - h.rows();
-        if let Some((_u, hs, p)) = h.standard_form() {
-            let gs = Goppa::generator_from_parity_check_standard(&hs);
+        if let Some((_u, hs, p)) = h.standard_form_f2() {
+            let gs = Goppa::<F>::generator_from_parity_check_standard(&hs);
             let information_set = p.data()[0..k].to_vec();
             (gs * p.inverse(), information_set)
         } else {
@@ -232,7 +232,7 @@ where
 
     pub fn generator_matrix<'b>(&self, f2: &'b F2) -> Mat<'b, F2> {
         let h = self.parity_check_matrix(f2);
-        Goppa::generator_from_parity_check(&h).0
+        Goppa::<F>::generator_from_parity_check(&h).0
     }
 
     pub fn syndrome<'b>(&self, r: &RowVec<'b, F2>) -> Mat<'a, F> {
