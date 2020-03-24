@@ -81,9 +81,10 @@ fn matrix_f1024_add() {
 fn matrix_f1024_mul_wrong_dimensions() {
     common::setup();
     let f1024 = &F2m::generate(1024);
-    let mat1 = Mat::zero(f1024, 5, 4);
-    let mat2 = Mat::zero(f1024, 3, 5);
-    mat1 * mat2;
+    let a = Mat::zero(f1024, 5, 4);
+    let b = Mat::zero(f1024, 3, 5);
+    let ab = a * b;
+    assert!(ab.is_zero());
 }
 
 #[test]

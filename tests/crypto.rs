@@ -5,15 +5,16 @@ use mceliece::{
     crypto::*,
     finite_field::{F2m, F2},
     // goppa::Goppa,
-    matrix::{self, RowVec},
+    matrix::{self, Mat, RowVec},
 };
 
 mod common;
 
 const GOPPA_N_MIN: u32 = 1;
 const GOPPA_N_MAX: u32 = 128 + 1;
-const GOPPA_N: u32 = 178;
-const GOPPA_T: u32 = 19;
+const GOPPA_N: u32 = 128;
+const GOPPA_T: u32 = 17;
+const REPEAT: u32 = 1;
 
 fn setup() -> (u32, u32, u32) {
     common::setup();
@@ -134,4 +135,13 @@ fn crypto_encrypt_decrypt_random_message() {
     let cpt = pk.encrypt(&msg);
     let dmsg = sk.decrypt(&cpt);
     assert_eq!(dmsg, msg);
+}
+
+#[test]
+fn crypto_repeat_encrypt_decrypt() {
+    let mut r = 0;
+    while r < REPEAT {
+        crypto_encrypt_decrypt_random_message();
+        r += 1;
+    }
 }

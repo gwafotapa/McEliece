@@ -100,9 +100,10 @@ fn matrix_f2_add() {
 fn matrix_f2_mul_wrong_dimensions() {
     common::setup();
     let f2 = &F2 {};
-    let mat1 = Mat::zero(f2, 5, 4);
-    let mat2 = Mat::zero(f2, 3, 5);
-    mat1 * mat2;
+    let a = Mat::zero(f2, 5, 4);
+    let b = Mat::zero(f2, 3, 5);
+    let ab = a * b;
+    assert!(ab.is_zero());
 }
 
 #[test]
