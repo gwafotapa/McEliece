@@ -8,7 +8,7 @@ mod common;
 
 #[test]
 fn matrix_f2_new() {
-    common::setup();
+    common::log_setup();
     let f2 = &F2 {};
     let mut a = Mat::zero(f2, 3, 4);
     a[(2, 2)] = 1;
@@ -23,7 +23,7 @@ fn matrix_f2_new() {
 
 #[test]
 fn matrix_f2_permutation_random() {
-    common::setup();
+    common::log_setup();
     let mut rng = rand::thread_rng();
     let p = Perm::random(&mut rng, 10);
     info!("{:?}", p);
@@ -32,7 +32,7 @@ fn matrix_f2_permutation_random() {
 
 #[test]
 fn matrix_f2_is_invertible() {
-    common::setup();
+    common::log_setup();
     let f2 = &F2 {};
     let id = Mat::identity(f2, 11);
     info!("{:?}", id);
@@ -41,7 +41,7 @@ fn matrix_f2_is_invertible() {
 
 #[test]
 fn matrix_f2_inverse() {
-    common::setup();
+    common::log_setup();
     let f2 = &F2 {};
     let id = Mat::identity(f2, 11);
     assert_eq!(id.inverse().as_ref(), Some(&id));
@@ -53,7 +53,7 @@ fn matrix_f2_inverse() {
 
 #[test]
 fn matrix_f2_invertible_random() {
-    common::setup();
+    common::log_setup();
     let f2 = &F2 {};
     let mut rng = rand::thread_rng();
     let mat = Mat::invertible_random(&mut rng, f2, 15);
@@ -73,7 +73,7 @@ fn matrix_f2_invertible_random() {
 
 #[test]
 fn matrix_f2_add() {
-    common::setup();
+    common::log_setup();
     let f2 = &F2 {};
     let mut rng = rand::thread_rng();
     let a = Mat::random(&mut rng, f2, 11, 11);
@@ -98,7 +98,7 @@ fn matrix_f2_add() {
 #[test]
 #[should_panic]
 fn matrix_f2_mul_wrong_dimensions() {
-    common::setup();
+    common::log_setup();
     let f2 = &F2 {};
     let a = Mat::zero(f2, 5, 4);
     let b = Mat::zero(f2, 3, 5);
@@ -108,7 +108,7 @@ fn matrix_f2_mul_wrong_dimensions() {
 
 #[test]
 fn matrix_f2_mul() {
-    common::setup();
+    common::log_setup();
     let f2 = &F2 {};
     let mut rng = rand::thread_rng();
     let a: Mat<F2> = Mat::random(&mut rng, f2, 10, 8);
@@ -146,7 +146,7 @@ fn matrix_f2_mul() {
 
 #[test]
 fn matrix_f2_rank() {
-    common::setup();
+    common::log_setup();
     let f2 = &F2 {};
     let mat: Mat<F2> = Mat::zero(f2, 23, 4);
     assert_eq!(mat.rank(), 0);
@@ -157,7 +157,7 @@ fn matrix_f2_rank() {
 
 #[test]
 fn matrix_f2_standard_form() {
-    common::setup();
+    common::log_setup();
     let f2 = &F2 {};
     let mat = Mat::identity(f2, 19);
     assert!(mat.is_standard_form());
@@ -193,7 +193,7 @@ fn matrix_f2_standard_form() {
 
 #[test]
 fn matrix_f2_transpose() {
-    common::setup();
+    common::log_setup();
     let f2 = &F2 {};
     let mut rng = rand::thread_rng();
     let rows = rng.gen_range(0, 100);
@@ -209,7 +209,7 @@ fn matrix_f2_transpose() {
 
 #[test]
 fn matrix_f2_rowvec_weight() {
-    common::setup();
+    common::log_setup();
     let f2 = &F2 {};
     let vec = RowVec::zero(f2, 4);
     assert!(vec.weight() == 0);
@@ -221,7 +221,7 @@ fn matrix_f2_rowvec_weight() {
 
 #[test]
 fn rowvec_f2_write_read() {
-    common::setup();
+    common::log_setup();
     let f2 = &F2 {};
     let mut rng = rand::thread_rng();
     let n = rng.gen_range(10, 1000);
@@ -234,7 +234,7 @@ fn rowvec_f2_write_read() {
 
 #[test]
 fn matrix_f2_remove_redundant_rows() {
-    common::setup();
+    common::log_setup();
     let f2 = &F2 {};
     let v = vec![
         1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0,

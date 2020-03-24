@@ -8,7 +8,7 @@ mod common;
 
 #[test]
 fn matrix_f7_permutation_random() {
-    common::setup();
+    common::log_setup();
     let mut rng = rand::thread_rng();
     let p = Perm::random(&mut rng, 10);
     assert!(p.is_permutation());
@@ -16,7 +16,7 @@ fn matrix_f7_permutation_random() {
 
 #[test]
 fn matrix_f7_is_invertible() {
-    common::setup();
+    common::log_setup();
     let f7 = &F7 {};
     let id = Mat::identity(f7, 11);
     info!("{}", id);
@@ -25,7 +25,7 @@ fn matrix_f7_is_invertible() {
 
 #[test]
 fn matrix_f7_inverse() {
-    common::setup();
+    common::log_setup();
     let f7 = &F7 {};
     let id = Mat::identity(f7, 11);
     assert!(id.inverse().as_ref() == Some(&id));
@@ -37,7 +37,7 @@ fn matrix_f7_inverse() {
 
 #[test]
 fn matrix_f7_invertible_random() {
-    common::setup();
+    common::log_setup();
     let f7 = &F7 {};
     let mut rng = rand::thread_rng();
     let mat = Mat::invertible_random(&mut rng, f7, 15);
@@ -57,7 +57,7 @@ fn matrix_f7_invertible_random() {
 
 #[test]
 fn matrix_f7_add() {
-    common::setup();
+    common::log_setup();
     let f7 = &F7 {};
     let mut rng = rand::thread_rng();
     let a = Mat::random(&mut rng, f7, 11, 11);
@@ -86,7 +86,7 @@ fn matrix_f7_add() {
 #[test]
 #[should_panic]
 fn matrix_f7_mul_wrong_dimensions() {
-    common::setup();
+    common::log_setup();
     let f7 = &F7 {};
     let a = Mat::zero(f7, 5, 4);
     let b = Mat::zero(f7, 3, 5);
@@ -96,7 +96,7 @@ fn matrix_f7_mul_wrong_dimensions() {
 
 #[test]
 fn matrix_f7_mul() {
-    common::setup();
+    common::log_setup();
     let f7 = &F7 {};
     let mut rng = rand::thread_rng();
     let a = Mat::random(&mut rng, f7, 10, 8);
@@ -134,7 +134,7 @@ fn matrix_f7_mul() {
 
 #[test]
 fn matrix_f7_rank() {
-    common::setup();
+    common::log_setup();
     let f7 = &F7 {};
     let mat = Mat::zero(f7, 23, 4);
     assert!(mat.rank() == 0);
@@ -145,7 +145,7 @@ fn matrix_f7_rank() {
 
 #[test]
 fn matrix_f7_standard_form() {
-    common::setup();
+    common::log_setup();
     let f7 = &F7 {};
     let id = Mat::identity(f7, 19);
     assert!(id.is_standard_form());
@@ -181,7 +181,7 @@ fn matrix_f7_standard_form() {
 
 #[test]
 fn matrix_f7_transpose() {
-    common::setup();
+    common::log_setup();
     let f7 = &F7 {};
     let mut rng = rand::thread_rng();
     let rows = rng.gen_range(0, 100);
@@ -197,7 +197,7 @@ fn matrix_f7_transpose() {
 
 #[test]
 fn matrix_f7_rowvec_weight() {
-    common::setup();
+    common::log_setup();
     let f7 = &F7 {};
     let vec = RowVec::zero(f7, 4);
     assert!(vec.weight() == 0);

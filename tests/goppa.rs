@@ -1,15 +1,16 @@
 use log::info;
+use rand::Rng;
 
 use mceliece::finite_field::*;
 use mceliece::goppa::*;
-use mceliece::matrix::*;
+use mceliece::matrix::{self, *};
 use mceliece::polynomial::*;
 
 mod common;
 
 #[test]
 fn goppa_f8() {
-    common::setup();
+    common::log_setup();
     let f2 = &F2 {};
     let f8 = &F2m::generate(8);
     let p = Poly::support(f8, &[2, 1, 0]);
@@ -17,10 +18,18 @@ fn goppa_f8() {
     info!("{}", c);
     let x = c.parity_check_x();
     assert_eq!(x, Mat::new(f8, 2, 2, [1, 0, 1, 1].to_vec()));
-    
+
     let y = c.parity_check_y();
-    assert_eq!(y, Mat::new(f8, 2, 8, [1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 2, 3, 4, 5, 6, 7].to_vec()));
-    
+    assert_eq!(
+        y,
+        Mat::new(
+            f8,
+            2,
+            8,
+            [1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 2, 3, 4, 5, 6, 7].to_vec()
+        )
+    );
+
     let h = c.parity_check_matrix(f2);
     info!("h:{}", h);
     let (g, _) = Goppa::<F2m>::generator_from_parity_check(&h);
@@ -44,7 +53,7 @@ fn goppa_f8() {
 
 #[test]
 fn goppa_f1024() {
-    common::setup();
+    common::log_setup();
     let f2 = &F2 {};
     let f1024 = &F2m::generate(1024);
     let mut rng = rand::thread_rng();
@@ -57,7 +66,7 @@ fn goppa_f1024() {
 
     let cdw = RowVec::new(f2, g.data()[0..30].to_vec());
     info!("codeword: {}", cdw);
-    let syndrome = Goppa::xyz_syndrome(&h, &cdw);
+    let syndrome = Goppa::syndrome_from_xyz(&h, &cdw);
     assert!(syndrome.is_zero());
 
     let err = RowVec::random_with_weight(&mut rng, f2, 30, 2);
@@ -71,7 +80,7 @@ fn goppa_f1024() {
 
 #[test]
 fn goppa_f256() {
-    common::setup();
+    common::log_setup();
     let f2 = &F2 {};
     let f256 = &F2m::generate(256);
     let mut g = Poly::support(f256, &[22, 17, 15, 12, 5]);
@@ -101,7 +110,7 @@ fn goppa_f256() {
 
 #[test]
 fn goppa_f128() {
-    common::setup();
+    common::log_setup();
     let m = 7;
     let n = 1 << m;
     let t = 10;
@@ -121,5 +130,34 @@ fn goppa_f128() {
     info!("rcv:{}", rcv);
     let dcdw = goppa.decode(&rcv);
     info!("dcdw:{}", dcdw);
+    assert_eq!(cdw, dcdw);
+}
+
+#[test]
+fn goppa_random() {
+    let (m, n, t) = common::goppa_setup();
+    let f2 = &F2 {};
+    let f2m = &F2m::generate(1 << m);
+    let mut rng = rand::thread_rng();
+    let goppa = &Goppa::random(&mut rng, f2m, n as usize, t as usize);
+    info!("{}", goppa);
+    let xyz = &goppa.parity_check_xyz();
+    info!("XYZ:{}", xyz);
+    let h = &Goppa::parity_check_from_xyz(xyz, f2);
+    info!("Parity-check matrix H:{}", h);
+    let (g, _) = &Goppa::<F2m>::generator_from_parity_check(h);
+    info!("Generator matrix G:{}", g);
+    let k = g.rows();
+    info!("Code dimension k = {}", k);
+    let msg = &RowVec::random(&mut rng, f2, k);
+    info!("message:{}", msg);
+    let cdw = &(msg * g);
+    info!("codeword:{}", cdw);
+    let err = &RowVec::random_with_weight(&mut rng, f2, n as usize, t as usize);
+    info!("error:{}", err);
+    let rcv = &(cdw + err);
+    info!("received word:{}", rcv);
+    let dcdw = &goppa.xyz_decode(xyz, rcv);
+    info!("decoded codeword:{}", dcdw);
     assert_eq!(cdw, dcdw);
 }

@@ -8,7 +8,7 @@ mod common;
 
 #[test]
 fn polynomial_f2_division() {
-    common::setup();
+    common::log_setup();
     let f = &F2 {};
     let a = Poly::support(f, &[0, 2, 4]);
     info!("a(x) = {:?}\n", a);
@@ -23,7 +23,7 @@ fn polynomial_f2_division() {
 
 #[test]
 fn polynomial_f2_gcd() {
-    common::setup();
+    common::log_setup();
     let f = &F2 {};
     let a = Poly::support(f, &[0, 1, 4]);
     info!("a(x) = {:?}\n", a);
@@ -42,7 +42,7 @@ fn polynomial_f2_gcd() {
 
 #[test]
 fn polynomial_f2_extended_gcd() {
-    common::setup();
+    common::log_setup();
     let f = &F2 {};
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(1, 100);
@@ -64,7 +64,7 @@ fn polynomial_f2_extended_gcd() {
 
 #[test]
 fn polynomial_f7_extended_gcd() {
-    common::setup();
+    common::log_setup();
     let f = &F7 {};
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(1, 100);
@@ -86,7 +86,7 @@ fn polynomial_f7_extended_gcd() {
 
 #[test]
 fn polynomial_f1024_extended_gcd() {
-    common::setup();
+    common::log_setup();
     let f = &F2m::generate(1024);
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(1, 100);
@@ -108,7 +108,7 @@ fn polynomial_f1024_extended_gcd() {
 
 #[test]
 fn polynomial_f1024_square() {
-    common::setup();
+    common::log_setup();
     let f = &F2m::generate(1024);
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(0, 100);
@@ -121,7 +121,7 @@ fn polynomial_f1024_square() {
 
 #[test]
 fn polynomial_f1024_modulo() {
-    common::setup();
+    common::log_setup();
     let f = &F2m::generate(1024);
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(0, 100);
@@ -137,7 +137,7 @@ fn polynomial_f1024_modulo() {
 
 #[test]
 fn polynomial_f1024_sq_root_mod() {
-    common::setup();
+    common::log_setup();
     let f = &F2m::generate(1024);
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(0, 11);
@@ -153,7 +153,7 @@ fn polynomial_f1024_sq_root_mod() {
 
 #[test]
 fn polynomial_f1024_inverse_mod() {
-    common::setup();
+    common::log_setup();
     let f = &F2m::generate(1024);
     let g = Poly::support(f, &[0, 2, 11]);
     let mut rng = rand::thread_rng();

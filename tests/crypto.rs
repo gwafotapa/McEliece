@@ -16,29 +16,29 @@ const GOPPA_N: u32 = 128;
 const GOPPA_T: u32 = 17;
 const REPEAT: u32 = 1;
 
-fn setup() -> (u32, u32, u32) {
-    common::setup();
-    let mut rng = rand::thread_rng();
-    let n = match GOPPA_N {
-        0 => rng.gen_range(GOPPA_N_MIN, GOPPA_N_MAX),
-        value => value,
-    };
-    let q = n.next_power_of_two();
-    let m = q.trailing_zeros();
-    let t = match GOPPA_T {
-        0 => {
-            let t_min = if n == q { 2 } else { 1 };
-            let t_max = matrix::div_ceil(n, m) + if n.is_power_of_two() { 1 } else { 0 };
-            rng.gen_range(t_min, t_max)
-        }
-        value => value,
-    };
-    (m, n, t)
-}
+// fn setup() -> (u32, u32, u32) {
+//     common::log_setup();
+//     let mut rng = rand::thread_rng();
+//     let n = match GOPPA_N {
+//         0 => rng.gen_range(GOPPA_N_MIN, GOPPA_N_MAX),
+//         value => value,
+//     };
+//     let q = n.next_power_of_two();
+//     let m = q.trailing_zeros();
+//     let t = match GOPPA_T {
+//         0 => {
+//             let t_min = if n == q { 2 } else { 1 };
+//             let t_max = matrix::div_ceil(n, m) + if n.is_power_of_two() { 1 } else { 0 };
+//             rng.gen_range(t_min, t_max)
+//         }
+//         value => value,
+//     };
+//     (m, n, t)
+// }
 
 #[test]
 fn crypto_keygen() {
-    let (m, n, t) = setup();
+    let (m, n, t) = common::goppa_setup();
     warn!("m={}, n={}, t={}", m, n, t);
     let f2 = &F2 {};
     let f2m = &F2m::generate(1 << m);
@@ -52,7 +52,7 @@ fn crypto_keygen() {
 
 #[test]
 fn crypto_pk_write_read() {
-    let (m, n, t) = setup();
+    let (m, n, t) = common::goppa_setup();
     warn!("m={}, n={}, t={}", m, n, t);
     let f2 = &F2 {};
     let f2m = &F2m::generate(1 << m);
@@ -65,7 +65,7 @@ fn crypto_pk_write_read() {
 
 #[test]
 fn crypto_sk_write_read() {
-    let (m, n, t) = setup();
+    let (m, n, t) = common::goppa_setup();
     warn!("m={}, n={}, t={}", m, n, t);
     let f2 = &F2 {};
     let f2m = &F2m::generate(1 << m);
@@ -80,7 +80,7 @@ fn crypto_sk_write_read() {
 
 #[test]
 fn crypto_decrypt_null_ciphertext() {
-    let (m, n, t) = setup();
+    let (m, n, t) = common::goppa_setup();
     warn!("m={}, n={}, t={}", m, n, t);
     let f2 = &F2 {};
     let f2m = &F2m::generate(1 << m);
@@ -94,7 +94,7 @@ fn crypto_decrypt_null_ciphertext() {
 
 #[test]
 fn crypto_decrypt_codeword_ciphertext() {
-    let (m, n, t) = setup();
+    let (m, n, t) = common::goppa_setup();
     warn!("m={}, n={}, t={}", m, n, t);
     let f2 = &F2 {};
     let f2m = &F2m::generate(1 << m);
@@ -109,7 +109,7 @@ fn crypto_decrypt_codeword_ciphertext() {
 
 #[test]
 fn crypto_encrypt_decrypt_null_message() {
-    let (m, n, t) = setup();
+    let (m, n, t) = common::goppa_setup();
     warn!("m={}, n={}, t={}", m, n, t);
     let f2 = &F2 {};
     let f2m = &F2m::generate(1 << m);
@@ -124,7 +124,7 @@ fn crypto_encrypt_decrypt_null_message() {
 
 #[test]
 fn crypto_encrypt_decrypt_random_message() {
-    let (m, n, t) = setup();
+    let (m, n, t) = common::goppa_setup();
     warn!("m={}, n={}, t={}", m, n, t);
     let f2 = &F2 {};
     let f2m = &F2m::generate(1 << m);

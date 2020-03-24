@@ -194,6 +194,12 @@ where
         x * y * z
     }
 
+    pub fn parity_check_from_xyz<'b>(xyz: &Mat<'a, F>, f2: &'b F2) -> Mat<'b, F2> {
+        let mut h = xyz.binary(f2);
+        h.remove_redundant_rows_f2();
+        h
+    }
+    
     pub fn parity_check_matrix<'b>(&self, f2: &'b F2) -> Mat<'b, F2> {
         let x = self.parity_check_x();
         let y = self.parity_check_y();
@@ -237,10 +243,10 @@ where
 
     pub fn syndrome<'b>(&self, r: &RowVec<'b, F2>) -> Mat<'a, F> {
         let xyz = self.parity_check_xyz();
-        Self::xyz_syndrome(&xyz, r)
+        Self::syndrome_from_xyz(&xyz, r)
     }
 
-    pub fn xyz_syndrome<'b>(xyz: &Mat<'a, F>, r: &RowVec<'b, F2>) -> Mat<'a, F> {
+    pub fn syndrome_from_xyz<'b>(xyz: &Mat<'a, F>, r: &RowVec<'b, F2>) -> Mat<'a, F> {
         let f2 = r.field();
         let f = xyz.field();
         let mut s = Mat::zero(f, xyz.rows(), 1);
@@ -272,7 +278,7 @@ where
     pub fn xyz_decode<'b>(&self, xyz: &Mat<'a, F>, rcv: &RowVec<'b, F2>) -> RowVec<'b, F2> {
         let f = self.field();
         let f2 = rcv.field();
-        let syndrome = Self::xyz_syndrome(xyz, rcv);
+        let syndrome = Self::syndrome_from_xyz(xyz, rcv);
         info!("syndrome:{}", syndrome);
         let mut deg_s_x = syndrome.rows() - 1;
         for i in 0..syndrome.rows() - 1 {
