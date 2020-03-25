@@ -455,6 +455,14 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         }
     }
 
+    // row indices must be sorted in increasing order
+    fn remove_rows(&mut self, rows: &Vec<usize>) {
+        for i in (0..rows.len()).rev() {
+            self.data.drain(i * self.cols..(i + 1) * self.cols);
+            self.rows -= 1;
+        }
+    }
+    
     pub fn remove_redundant_rows(&mut self) {
         let mut tmp = self.clone();
         let max_set_of_indep_rows = tmp.max_set_of_independant_rows();
@@ -755,5 +763,64 @@ impl<'a> Mat<'a, F2> {
         let mut tmp = self.clone();
         let max_set_of_indep_rows = tmp.max_set_of_independant_rows_f2();
         self.keep_rows(&max_set_of_indep_rows);
+    }
+
+    pub fn standard_form_non_full_rank_f2(&self) -> (Self, Perm) {
+        let f = self.field;
+        let m = self.rows;
+        let n = self.cols;
+        if m > n {
+            panic!("Matrix must have at most as many rows as columns for standard form");
+        }
+        let mut h = self.clone();
+        let mut p = Perm::identity(n);
+        let mut col = n; // index of the column to check for a pivot
+
+        // j is the index of the column to "standardize":
+        // The first iteration sets a 1 at the last position (m-1) of column n-1.
+        // The second iteration sets a 1 at position m-2 of column n-2.
+        // ...
+        // The last iteration sets a 1 at position 0 of column n-m.
+        for j in (n - m..n).rev() {
+            // Among the remaining columns, select one with a pivot
+            let mut pivot = false;
+            let mut row_pivot = 0;
+            let mut col_pivot = 0;
+            while !pivot && col != 0 {
+                col -= 1;
+
+                // Check column 'col' for a pivot
+                for row in (0..j + m - n + 1).rev() {
+                    if h[(row, col)] != f.zero() {
+                        pivot = true;
+                        row_pivot = row;
+                        col_pivot = col;
+                        break;
+                    }
+                }
+            }
+
+            if !pivot {
+                h.remove_rows(&(0..j - (n - m) + 1).collect());
+                return (h, p);
+            }
+
+            // Put pivot column in the adequate position and update P
+            h.swap_cols(j, col_pivot);
+            p.swap(j, col_pivot);
+
+            // Put pivot row in the adequate position
+            h.swap_rows(j + m - n, row_pivot);
+
+            // Pivot is now at (j+m-n, j)
+
+            // Nullify the rest of the column
+            for i in 0..m {
+                if h[(i, j)] != f.zero() && i != j + m - n {
+                    h.add_rows(i, j + m - n);
+                }
+            }
+        }
+        (h, p)
     }
 }

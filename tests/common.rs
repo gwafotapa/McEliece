@@ -6,8 +6,10 @@ use mceliece::matrix;
 static INIT: Once = Once::new();
 const GOPPA_N_MIN: u32 = 1;
 const GOPPA_N_MAX: u32 = 1024 + 1;
-const GOPPA_N: u32 = 1024;
-const GOPPA_T: u32 = 50;
+// const GOPPA_N: u32 = 1024;
+// const GOPPA_T: u32 = 50;
+const GOPPA_N: u32 = 97;
+const GOPPA_T: u32 = 11;
 const REPEAT: u32 = 1;
 
 /// Setup function that is only run once, even if called multiple times.

@@ -483,16 +483,13 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
 impl<'a, F: Eq + F2FiniteExtension> Mat<'a, F> {
     pub fn binary<'b>(&self, f2: &'b F2) -> Mat<'b, F2> {
         let f = self.field();
-        let m = f.characteristic_exponent();
-        let mut bin = Mat::zero(f2, m as usize * self.rows, self.cols);
+        let m = f.characteristic_exponent() as usize;
+        let mut bin = Mat::zero(f2, m * self.rows, self.cols);
         for j in 0..self.cols {
             for i in 0..self.rows {
-                for k in 0..m as usize {
-                    bin[(m as usize * i + k, j)] = match (f.elt_to_u32(self[(i, j)]) >> k) & 1 {
-                        0 => f2.zero(),
-                        1 => f2.one(),
-                        _ => panic!("Unexpected value"),
-                    }
+                let elt_as_u32 = f.elt_to_u32(self[(i, j)]);
+                for k in 0..m {
+                    bin[(m * i + k, j)] = (elt_as_u32 >> k) & 1;
                 }
             }
         }

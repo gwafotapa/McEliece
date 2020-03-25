@@ -36,9 +36,13 @@ pub fn keygen<'a, 'b>(
     let mut rng = rand::thread_rng();
     let goppa = Goppa::random(&mut rng, f2m, n as usize, t as usize);
     info!("{}", goppa);
-    let h = goppa.parity_check_matrix(f2);
-    info!("Parity check matrix:{}", h);
-    let (g, info_set) = Goppa::<F2m>::generator_from_parity_check(&h);
+    
+    let xyz = goppa.parity_check_xyz();
+    let (g, info_set) = Goppa::generator_from_xyz(&xyz, f2);
+    // let h = goppa.parity_check_matrix(f2);
+    // info!("Parity check matrix:{}", h);
+    // let (g, info_set) = Goppa::<F2m>::generator_from_parity_check(&h);
+
     info!("Generator matrix G:{}", g);
     info!("Information set of generator matrix G:\n{:?}\n", info_set);
     let k = g.rows();

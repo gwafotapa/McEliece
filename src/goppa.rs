@@ -199,7 +199,7 @@ where
         h.remove_redundant_rows_f2();
         h
     }
-    
+
     pub fn parity_check_matrix<'b>(&self, f2: &'b F2) -> Mat<'b, F2> {
         let x = self.parity_check_x();
         let y = self.parity_check_y();
@@ -208,6 +208,15 @@ where
         let mut h = xyz.binary(f2);
         h.remove_redundant_rows_f2();
         h
+    }
+
+    pub fn generator_from_xyz<'b>(xyz: &Mat<'a, F>, f2: &'b F2) -> (Mat<'b, F2>, Vec<usize>) {
+        let xyz2 = xyz.binary(f2);
+        let (hs, p) = xyz2.standard_form_non_full_rank_f2();
+        let gs = Self::generator_from_parity_check_standard(&hs);
+        let k = hs.cols() - hs.rows();
+        let information_set = p.data()[0..k].to_vec();
+        (gs * p.inverse(), information_set)
     }
 
     pub fn generator_from_parity_check_standard<'b>(h: &Mat<'b, F2>) -> Mat<'b, F2> {
