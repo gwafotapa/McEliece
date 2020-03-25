@@ -196,23 +196,18 @@ where
 
     pub fn parity_check_from_xyz<'b>(xyz: &Mat<'a, F>, f2: &'b F2) -> Mat<'b, F2> {
         let mut h = xyz.binary(f2);
-        h.remove_redundant_rows_f2();
+        h.remove_redundant_rows();
         h
     }
 
     pub fn parity_check_matrix<'b>(&self, f2: &'b F2) -> Mat<'b, F2> {
-        let x = self.parity_check_x();
-        let y = self.parity_check_y();
-        let z = self.parity_check_z();
-        let xyz = x * y * z;
-        let mut h = xyz.binary(f2);
-        h.remove_redundant_rows_f2();
-        h
+        let xyz = self.parity_check_xyz();
+        Self::parity_check_from_xyz(&xyz, f2)
     }
 
     pub fn generator_from_xyz<'b>(xyz: &Mat<'a, F>, f2: &'b F2) -> (Mat<'b, F2>, Vec<usize>) {
         let xyz2 = xyz.binary(f2);
-        let (hs, p) = xyz2.standard_form_non_full_rank_f2();
+        let (hs, p) = xyz2.standard_parity_check_equivalent();
         let gs = Self::generator_from_parity_check_standard(&hs);
         let k = hs.cols() - hs.rows();
         let information_set = p.data()[0..k].to_vec();
@@ -236,18 +231,15 @@ where
     pub fn generator_from_parity_check<'b>(h: &Mat<'b, F2>) -> (Mat<'b, F2>, Vec<usize>) {
         let n = h.cols();
         let k = n - h.rows();
-        if let Some((_u, hs, p)) = h.standard_form_f2() {
-            let gs = Goppa::<F>::generator_from_parity_check_standard(&hs);
-            let information_set = p.data()[0..k].to_vec();
-            (gs * p.inverse(), information_set)
-        } else {
-            panic!("Rows of the parity-check matrix aren't independant");
-        }
+        let (hs, p) = h.standard_parity_check_equivalent();
+        let gs = Goppa::<F>::generator_from_parity_check_standard(&hs);
+        let information_set = p.data()[0..k].to_vec();
+        (gs * p.inverse(), information_set)
     }
 
     pub fn generator_matrix<'b>(&self, f2: &'b F2) -> Mat<'b, F2> {
-        let h = self.parity_check_matrix(f2);
-        Goppa::<F>::generator_from_parity_check(&h).0
+        let xyz = self.parity_check_xyz();
+        Self::generator_from_xyz(&xyz, f2).0
     }
 
     pub fn syndrome<'b>(&self, r: &RowVec<'b, F2>) -> Mat<'a, F> {

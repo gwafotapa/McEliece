@@ -1,0 +1,496 @@
+
+src/polynomial/characteristic_two.rs,1125
+type Result<T> = std::result::Result<T, Box<dyn Error>>;Result9,175
+impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {Poly11,233
+    pub fn random_monic_irreducible(rng: &mut ThreadRng, f: &'a F, degree: usize) -> Selfrandom_monic_irreducible12,291
+    pub fn square(&mut self) {square29,734
+    pub fn square_root_modulo(&mut self, modulus: &Self)square_root_modulo41,1059
+    pub fn inverse_modulo_by_fast_exponentiation(&mut self, modulus: &Self)inverse_modulo_by_fast_exponentiation56,1474
+    pub fn pow_modulo(&mut self, mut n: u32, modulus: &Self) {pow_modulo83,2384
+    pub fn is_irreducible(&self) -> boolis_irreducible106,3011
+    pub fn goppa_extended_gcd(g: &Self, t: &Self) -> (Self, Self) {goppa_extended_gcd154,4381
+impl<'a, F: Eq + F2FiniteExtension> Poly<'a, F> {Poly182,5116
+    pub fn to_hex_string(&self) -> String {to_hex_string183,5166
+    pub fn from_hex_string(s: &str, f: &'a F) -> Result<Self> {from_hex_string201,5917
+pub fn trial_division(mut n: u32) -> Vec<u32> {trial_division222,6709
+mod tests {tests248,7217
+    fn is_irreducible() {is_irreducible255,7366
+
+src/polynomial/mod.rs,4623
+pub struct Poly<'a, F: Eq + Field> {Poly13,278
+impl<'a, F: Eq + Field> PartialEq for Poly<'a, F> {Poly18,360
+    fn eq(&self, other: &Self) -> bool {eq19,412
+impl<'a, F: Eq + Field> Clone for Poly<'a, F> {Poly32,716
+    fn clone(&self) -> Self {clone33,764
+impl<'a, F: Eq + Field> Add for Poly<'a, F> {Poly41,915
+    fn add(self, other: Self) -> Self::Output {add44,986
+impl<'a, F: Eq + Field> Add<&Poly<'a, F>> for Poly<'a, F> {Add49,1066
+    fn add(self, other: &Self) -> Self::Output {add52,1151
+impl<'a, F: Eq + Field> Add<Poly<'a, F>> for &Poly<'a, F> {Add57,1231
+    fn add(self, other: Poly<'a, F>) -> Self::Output {add60,1323
+impl<'a, F: Eq + Field> Add for &Poly<'a, F> {Add65,1409
+    fn add(self, other: Self) -> Self::Output {add68,1488
+impl<'a, F: Eq + Field> AddAssign<Poly<'a, F>> for Poly<'a, F> {AddAssign75,1615
+    fn add_assign(&mut self, other: Self) {add_assign76,1680
+impl<'a, F: Eq + Field> AddAssign<&Poly<'a, F>> for Poly<'a, F> {AddAssign81,1758
+    fn add_assign(&mut self, other: &Self) {add_assign82,1824
+impl<'a, F: Eq + Field> Sub for Poly<'a, F> {Poly95,2128
+    fn sub(self, other: Self) -> Self::Output {sub98,2199
+impl<'a, F: Eq + Field> Sub<&Poly<'a, F>> for Poly<'a, F> {Sub103,2279
+    fn sub(self, other: &Self) -> Self::Output {sub106,2364
+impl<'a, F: Eq + Field> Sub<Poly<'a, F>> for &Poly<'a, F> {Sub111,2444
+    fn sub(self, other: Poly<'a, F>) -> Self::Output {sub114,2536
+impl<'a, F: Eq + Field> Sub for &Poly<'a, F> {Sub119,2622
+    fn sub(self, other: Self) -> Self::Output {sub122,2701
+impl<'a, F: Eq + Field> SubAssign<Poly<'a, F>> for Poly<'a, F> {SubAssign129,2831
+    fn sub_assign(&mut self, other: Self) {sub_assign130,2896
+impl<'a, F: Eq + Field> SubAssign<&Poly<'a, F>> for Poly<'a, F> {SubAssign135,2974
+    fn sub_assign(&mut self, other: &Self) {sub_assign136,3040
+impl<'a, F: Eq + Field> Mul for Poly<'a, F> {Poly149,3344
+    fn mul(self, other: Self) -> Self::Output {mul152,3415
+impl<'a, F: Eq + Field> Mul<&Poly<'a, F>> for Poly<'a, F> {Mul157,3495
+    fn mul(self, other: &Self) -> Self::Output {mul160,3580
+impl<'a, F: Eq + Field> Mul<Poly<'a, F>> for &Poly<'a, F> {Mul165,3660
+    fn mul(self, other: Poly<'a, F>) -> Self::Output {mul168,3752
+impl<'a, F: Eq + Field> Mul for &Poly<'a, F> {Mul173,3838
+    fn mul(self, other: Self) -> Self::Output {mul176,3917
+impl<'a, F: Eq + Field> MulAssign<Poly<'a, F>> for Poly<'a, F> {MulAssign191,4303
+    fn mul_assign(&mut self, other: Self) {mul_assign192,4368
+impl<'a, F: Eq + Field> MulAssign<&Poly<'a, F>> for Poly<'a, F> {MulAssign197,4446
+    fn mul_assign(&mut self, other: &Self) {mul_assign198,4512
+impl<'a, F: Eq + Field> Neg for Poly<'a, F> {Poly215,4983
+    fn neg(self) -> Self::Output {neg218,5054
+impl<'a, F: Eq + Field> Neg for &Poly<'a, F> {Neg223,5113
+    fn neg(self) -> Self::Output {neg226,5192
+impl<'a, F: Eq + Field> Index<usize> for Poly<'a, F> {Poly237,5420
+    fn index(&self, index: usize) -> &Self::Output {index240,5503
+impl<'a, F: Eq + Field> IndexMut<usize> for Poly<'a, F> {Poly245,5591
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {index_mut246,5649
+impl<'a, F: Eq + F2FiniteExtension> Debug for Poly<'a, F> {Poly251,5753
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {fmt252,5813
+impl<'a, F: Eq + FiniteField> Display for Poly<'a, F> {Poly278,6520
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {fmt279,6576
+impl<'a, F: Eq + Field> Poly<'a, F> {Poly305,7281
+    pub fn zero(field: &'a F, capacity: usize) -> Self {zero306,7319
+    pub fn x_n(field: &'a F, n: usize) -> Self {x_n316,7566
+    pub fn support(f: &'a F, support: &[usize]) -> Self {support322,7729
+    pub fn field(&self) -> &'a F {field340,8186
+    pub fn degree(&self) -> usize {degree344,8247
+    pub fn is_zero(&self) -> bool {is_zero352,8451
+    pub fn update_len(&mut self) {update_len356,8553
+    pub fn random(rng: &mut ThreadRng, f: &'a F, degree: usize) -> Self {random360,8642
+    pub fn eval(&self, point: F::FElt) -> F::FElt {eval371,8956
+    pub fn euclidean_division(a: &Self, b: &Self) -> (Self, Self) {euclidean_division385,9374
+    pub fn modulo(&mut self, modulus: &Self) {modulo415,10353
+    pub fn gcd(a: &Self, b: &Self) -> Self {gcd432,10910
+    pub fn neg_mut(&mut self) {neg_mut444,11220
+    pub fn extended_gcd(a: &Self, b: &Self) -> (Self, Self, Self, Self, Self) {extended_gcd454,11504
+    pub fn inverse_modulo(&self, modulus: &Self) -> Self {inverse_modulo497,12701
+pub mod characteristic_two;characteristic_two511,13096
+
+src/goppa.rs,2581
+type Result<T> = result::Result<T, Box<dyn Error>>;Result16,255
+pub struct Goppa<'a, F: Eq + Field> {Goppa19,333
+impl<'a, F> Debug for Goppa<'a, F>Goppa24,420
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {fmt28,494
+impl<'a, F> Display for Goppa<'a, F>Goppa51,1174
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {fmt55,1250
+impl<'a, F: Eq + Field> Goppa<'a, F>Goppa78,1924
+    pub fn new(poly: Poly<'a, F>, set: Vec<F::FElt>) -> Self {new82,1995
+    pub fn random(rng: &mut ThreadRng, f: &'a F, n: usize, t: usize) -> Self {random101,2751
+    pub fn len(&self) -> usize {len133,3893
+    pub fn poly(&self) -> &Poly<'a, F> {poly137,3956
+    pub fn set(&self) -> &Vec<F::FElt> {set141,4023
+    pub fn field(&self) -> &'a F {field145,4089
+    pub fn parity_check_x(&self) -> Mat<'a, F> {parity_check_x149,4157
+    pub fn parity_check_y(&self) -> Mat<'a, F> {parity_check_y161,4459
+    pub fn parity_check_z(&self) -> Mat<'a, F> {parity_check_z179,4897
+    pub fn parity_check_xyz(&self) -> Mat<'a, F> {parity_check_xyz190,5165
+    pub fn parity_check_from_xyz<'b>(xyz: &Mat<'a, F>, f2: &'b F2) -> Mat<'b, F2> {parity_check_from_xyz197,5358
+    pub fn parity_check_matrix<'b>(&self, f2: &'b F2) -> Mat<'b, F2> {parity_check_matrix203,5533
+    pub fn generator_from_xyz<'b>(xyz: &Mat<'a, F>, f2: &'b F2) -> (Mat<'b, F2>, Vec<usize>) {generator_from_xyz213,5841
+    pub fn generator_from_parity_check_standard<'b>(h: &Mat<'b, F2>) -> Mat<'b, F2> {generator_from_parity_check_standard222,6243
+    pub fn generator_from_parity_check<'b>(h: &Mat<'b, F2>) -> (Mat<'b, F2>, Vec<usize>) {generator_from_parity_check236,6632
+    pub fn generator_matrix<'b>(&self, f2: &'b F2) -> Mat<'b, F2> {generator_matrix248,7128
+    pub fn syndrome<'b>(&self, r: &RowVec<'b, F2>) -> Mat<'a, F> {syndrome253,7303
+    pub fn syndrome_from_xyz<'b>(xyz: &Mat<'a, F>, r: &RowVec<'b, F2>) -> Mat<'a, F> {syndrome_from_xyz258,7461
+    pub fn encode<'b>(&self, msg: &RowVec<'b, F2>) -> RowVec<'b, F2> {encode272,7882
+    pub fn g_encode<'b>(g: &Mat<'b, F2>, msg: &RowVec<'b, F2>) -> RowVec<'b, F2> {g_encode278,8065
+    pub fn decode<'b>(&self, rcv: &RowVec<'b, F2>) -> RowVec<'b, F2> {decode282,8171
+    pub fn xyz_decode<'b>(&self, xyz: &Mat<'a, F>, rcv: &RowVec<'b, F2>) -> RowVec<'b, F2> {xyz_decode287,8327
+impl<'a, F: Eq + F2FiniteExtension> Goppa<'a, F> {Goppa346,10198
+    pub fn to_hex_string(&self) -> String {to_hex_string347,10249
+    pub fn from_hex_string(s: &str, f: &'a F) -> Result<Self> {from_hex_string374,11061
+
+src/main.rs,892
+mod crypto;crypto17,289
+mod finite_field;finite_field18,301
+mod goppa;goppa19,319
+mod matrix;matrix20,330
+mod polynomial;polynomial21,342
+const GOPPA_M: u32 = 10; // F2^GOPPA_M is the underlying field of the codeGOPPA_M23,359
+const GOPPA_N: u32 = 1024; // Code lengthGOPPA_N24,434
+const GOPPA_K: u32 = 524; // Code dimensionGOPPA_K25,476
+const GOPPA_T: u32 = 50; // Code correction capacityGOPPA_T26,520
+const PLAINTEXT: &str = "plaintext.mce";PLAINTEXT27,573
+const CIPHERTEXT: &str = "ciphertext.mce";CIPHERTEXT28,614
+const DECRYPTED: &str = "decrypted.mce";DECRYPTED29,657
+const PUBLIC_KEY: &str = "public_key.mce";PUBLIC_KEY30,698
+const SECRET_KEY: &str = "secret_key.mce";SECRET_KEY31,741
+type Result<T> = result::Result<T, Box<dyn Error>>;Result33,785
+fn print_usage(program: &str, opts: Options) {print_usage35,838
+fn main() -> Result<()> {main47,1289
+
+src/finite_field/f7.rs,1397
+const CARD: u32 = 7;CARD5,69
+const EXP: [F7Elt; CARD as usize] = [1, 3, 2, 6, 4, 5, 1];EXP7,91
+const LOG: [u32; CARD as usize] = [CARD as u32, 0, 2, 1, 4, 5, 3];LOG9,151
+pub struct F7 {}F714,252
+impl PartialEq for F7 {F716,270
+    fn eq(&self, _other: &Self) -> bool {eq17,294
+impl Field for F7 {F722,358
+    fn zero(&self) -> Self::FElt {zero25,402
+    fn one(&self) -> Self::FElt {one29,454
+    fn characteristic(&self) -> u32 {characteristic33,505
+    fn add(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt {add37,563
+    fn sub(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt {sub41,657
+    fn mul(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt {mul45,758
+    fn neg(&self, a: Self::FElt) -> Self::FElt {neg61,1118
+    fn inv(&self, a: Self::FElt) -> Option<Self::FElt> {inv65,1200
+    fn random_element(&self, rng: &mut ThreadRng) -> Self::FElt {random_element73,1389
+impl FiniteField for F7 {F778,1495
+    fn characteristic_exponent(&self) -> u32 {characteristic_exponent79,1521
+    fn exp(&self, n: u32) -> Self::FElt {exp83,1585
+    fn log(&self, a: Self::FElt) -> Option<u32> {log87,1658
+mod test {test97,1828
+    fn f7_add() {f7_add101,1870
+    fn f7_characteristic() {f7_characteristic115,2280
+    fn f7_sub() {f7_sub129,2585
+    fn f7_mul() {f7_mul140,2831
+    fn f7_neg() {f7_neg158,3454
+    fn f7_inv() {f7_inv171,3798
+
+src/finite_field/f2m.rs,1888
+pub struct F2m {F2m6,121
+impl PartialEq for F2m {F2m13,252
+    fn eq(&self, other: &Self) -> bool {eq14,277
+impl Field for F2m {F2m19,361
+    fn zero(&self) -> Self::FElt {zero22,404
+    fn one(&self) -> Self::FElt {one26,456
+    fn characteristic(&self) -> u32 {characteristic30,507
+    fn add(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt {add34,562
+    fn sub(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt {sub38,647
+    fn mul(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt {mul42,741
+    fn neg(&self, a: Self::FElt) -> Self::FElt {neg58,1128
+    fn inv(&self, a: Self::FElt) -> Option<Self::FElt> {inv62,1194
+    fn random_element(&self, rng: &mut ThreadRng) -> Self::FElt {random_element70,1399
+impl FiniteField for F2m {F2m75,1511
+    fn characteristic_exponent(&self) -> u32 {characteristic_exponent76,1538
+    fn exp(&self, n: u32) -> Self::FElt {exp80,1607
+    fn log(&self, a: Self::FElt) -> Option<u32> {log84,1685
+impl CharacteristicTwo for F2m {F2m93,1847
+    // fn from(&self, _f2: &F2, elt: <F2 as Field>::FElt) -> Self::FElt {from94,1880
+impl F2FiniteExtension for F2m {F2m99,1981
+    fn elt_to_u32(&self, a: Self::FElt) -> u32 {elt_to_u32100,2014
+    fn u32_to_elt(&self, n: u32) -> Self::FElt {u32_to_elt104,2080
+impl F2m {F2m109,2148
+    pub fn generate(order: u32) -> Self {generate110,2159
+    fn primitive_poly(order: u32) -> u32 {primitive_poly135,2789
+pub fn prime_power(q: u32) -> std::result::Result<(u32, u32), &'static str> {prime_power169,3797
+pub fn trial_division(mut n: u32) -> Vec<u32> {trial_division189,4502
+mod test {test215,5010
+    fn f256_add() {f256_add219,5052
+    fn f256_characteristic() {f256_characteristic233,5476
+    fn f256_sub() {f256_sub243,5711
+    fn f256_mul() {f256_mul253,5963
+    fn f256_neg() {f256_neg271,6600
+    fn f256_inv() {f256_inv284,6958
+
+src/finite_field/f2.rs,1459
+pub struct F2 {}F26,132
+impl Field for F2 {F28,150
+    fn zero(&self) -> Self::FElt {zero11,192
+    fn one(&self) -> Self::FElt {one15,244
+    fn characteristic(&self) -> u32 {characteristic19,295
+    fn add(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt {add33,648
+    fn sub(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt {sub37,733
+    fn mul(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt {mul41,827
+    fn neg(&self, a: Self::FElt) -> Self::FElt {neg45,912
+    fn inv(&self, a: Self::FElt) -> Option<Self::FElt> {inv49,978
+    fn random_element(&self, rng: &mut ThreadRng) -> Self::FElt {random_element57,1126
+impl FiniteField for F2 {F262,1229
+    fn characteristic_exponent(&self) -> u32 {characteristic_exponent63,1255
+    fn exp(&self, _n: u32) -> Self::FElt {exp67,1319
+    fn log(&self, a: Self::FElt) -> Option<u32> {log71,1379
+    fn elt_to_str(&self, a: Self::FElt) -> String {elt_to_str79,1520
+impl CharacteristicTwo for F2 {F284,1603
+    // fn from(&self, _f2: &F2, elt: <F2 as Field>::FElt) -> Self::FElt {from85,1635
+impl F2FiniteExtension for F2 {F290,1736
+    fn elt_to_u32(&self, a: Self::FElt) -> u32 {elt_to_u3291,1768
+    fn u32_to_elt(&self, n: u32) -> Self::FElt {u32_to_elt95,1834
+mod tests {tests101,1915
+    fn f2_add() {f2_add105,1958
+    fn f2_sub() {f2_sub114,2257
+    fn f2_mul() {f2_mul123,2556
+    fn f2_inv() {f2_inv132,2856
+    fn f2_neg() {f2_neg139,3016
+
+src/finite_field/mod.rs,1199
+pub mod f2;f27,79
+pub mod f2m;f2m8,91
+pub mod f7;f79,104
+pub trait Field {Field11,117
+    fn zero(&self) -> Self::FElt;zero14,179
+    fn one(&self) -> Self::FElt;one15,213
+    fn characteristic(&self) -> u32;characteristic16,246
+    fn add(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt;add17,283
+    fn sub(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt;sub18,346
+    fn mul(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt;mul19,409
+    fn neg(&self, a: Self::FElt) -> Self::FElt;neg20,472
+    fn inv(&self, a: Self::FElt) -> Option<Self::FElt>;inv21,520
+    fn random_element(&self, rng: &mut ThreadRng) -> Self::FElt;random_element22,576
+    fn characteristic_exponent(&self) -> u32;characteristic_exponent26,675
+    fn order(&self) -> u32 {order27,721
+    fn exp(&self, n: u32) -> Self::FElt;exp30,822
+    fn log(&self, a: Self::FElt) -> Option<u32>;log31,863
+    fn elt_to_str(&self, a: Self::FElt) -> String {elt_to_str32,912
+    // fn from(&self, f2: &F2, elt: <F2 as Field>::FElt) -> Self::FElt {from47,1350
+    fn elt_to_u32(&self, a: Self::FElt) -> u32;elt_to_u3258,1710
+    fn u32_to_elt(&self, n: u32) -> Self::FElt;u32_to_elt59,1758
+
+src/lib.rs,157
+pub mod crypto;crypto1,0
+pub mod finite_field;finite_field2,16
+pub mod goppa;goppa3,38
+pub mod matrix;matrix4,53
+pub mod polynomial;polynomial5,69
+
+src/matrix/gauss.rs,2271
+impl<'a, F: Eq + Field> Mat<'a, F> {Mat6,98
+    pub fn combine_rows(&mut self, row1: usize, lambda: F::FElt, row2: usize) {combine_rows7,135
+    pub fn mul_row(&mut self, row: usize, lambda: F::FElt) {mul_row14,378
+    pub fn is_invertible(&self) -> bool {is_invertible20,557
+    pub fn inverse(&self) -> Option<Self> {inverse26,775
+    // pub fn invertible_random(rng: &mut ThreadRng, f: &'a F, n: usize) -> Self {invertible_random107,3361
+    pub fn invertible_random(rng: &mut ThreadRng, f: &'a F, n: usize) -> Self {invertible_random126,4009
+    pub fn row_echelon_form(&mut self) -> usize {row_echelon_form167,5528
+    pub fn reduced_row_echelon_form(&mut self) -> usize {reduced_row_echelon_form215,7013
+    pub fn rank(&self) -> usize {rank248,8053
+    pub fn standard_form(&self) -> Option<(Self, Self, Perm)> {standard_form255,8287
+    pub fn is_standard_form(&self) -> bool {is_standard_form326,10779
+    // pub fn col_echelon_form(&mut self) -> usize {col_echelon_form349,11359
+    pub fn max_set_of_independant_rows(&mut self) -> Vec<usize> {max_set_of_independant_rows397,12985
+    fn keep_rows(&mut self, rows: &Vec<usize>) {keep_rows447,14581
+    fn remove_rows(&mut self, rows: &Vec<usize>) {remove_rows459,14928
+    pub fn remove_redundant_rows(&mut self) {remove_redundant_rows466,15134
+impl<'a> Mat<'a, F2> {Mat473,15344
+    pub fn add_rows(&mut self, row1: usize, row2: usize) {add_rows474,15367
+    pub fn inverse_f2(&self) -> Option<Self> {inverse_f2483,15684
+    pub fn invertible_random_f2(rng: &mut ThreadRng, f2: &'a F2, n: usize) -> Self {invertible_random_f2553,17921
+    pub fn row_echelon_form_f2(&mut self) -> usize {row_echelon_form_f2586,19065
+    pub fn reduced_row_echelon_form_f2(&mut self) -> usize {reduced_row_echelon_form_f2624,20156
+    pub fn rank_f2(&self) -> usize {rank_f2654,21102
+    pub fn standard_form_f2(&self) -> Option<(Self, Self, Perm)> {standard_form_f2661,21342
+    pub fn max_set_of_independant_rows_f2(&mut self) -> Vec<usize> {max_set_of_independant_rows_f2722,23409
+    pub fn remove_redundant_rows_f2(&mut self) {remove_redundant_rows_f2762,24611
+    pub fn standard_form_non_full_rank_f2(&self) -> (Self, Perm) {standard_form_non_full_rank_f2768,24825
+
+src/matrix/perm.rs,779
+pub struct Perm(Vec<usize>);Perm5,100
+impl Index<usize> for Perm {Perm7,130
+    fn index(&self, index: usize) -> &Self::Output {index10,185
+impl IndexMut<usize> for Perm {Perm15,270
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {index_mut16,302
+impl Perm {Perm21,403
+    pub fn new(vec: Vec<usize>) -> Result<Self, &'static str> {new22,415
+    pub fn random(rng: &mut ThreadRng, n: usize) -> Self {random38,849
+    pub fn identity(n: usize) -> Self {identity53,1233
+    pub fn len(&self) -> usize {len61,1406
+    pub fn data(&self) -> &Vec<usize> {data65,1467
+    pub fn swap(&mut self, i: usize, j: usize) {swap69,1530
+    pub fn inverse(&self) -> Self {inverse73,1617
+    pub fn is_permutation(&self) -> bool {is_permutation81,1794
+
+src/matrix/rowvec.rs,5331
+type Result<T> = std::result::Result<T, Box<dyn Error>>;Result13,324
+pub struct RowVec<'a, F: Eq + Field>(Mat<'a, F>);RowVec16,407
+impl<'a, F: Eq + Field> Clone for RowVec<'a, F> {RowVec18,458
+    fn clone(&self) -> Self {clone19,508
+impl<'a, F: Eq + Field> Add for RowVec<'a, F> {RowVec24,578
+    fn add(self, other: Self) -> Self::Output {add27,651
+impl<'a, F: Eq + Field> Add<&RowVec<'a, F>> for RowVec<'a, F> {Add32,731
+    fn add(self, other: &Self) -> Self::Output {add35,820
+impl<'a, F: Eq + Field> Add<RowVec<'a, F>> for &RowVec<'a, F> {Add40,900
+    fn add(self, other: RowVec<'a, F>) -> Self::Output {add43,998
+impl<'a, F: Eq + Field> Add for &RowVec<'a, F> {Add48,1086
+    fn add(self, other: Self) -> Self::Output {add51,1169
+impl<'a, F: Eq + Field> AddAssign<RowVec<'a, F>> for RowVec<'a, F> {AddAssign56,1261
+    fn add_assign(&mut self, other: Self) {add_assign57,1330
+impl<'a, F: Eq + Field> AddAssign<&RowVec<'a, F>> for RowVec<'a, F> {AddAssign62,1408
+    fn add_assign(&mut self, other: &Self) {add_assign63,1478
+impl<'a, F: Eq + Field> Sub for RowVec<'a, F> {RowVec68,1560
+    fn sub(self, other: Self) -> Self::Output {sub71,1633
+impl<'a, F: Eq + Field> Sub<&RowVec<'a, F>> for RowVec<'a, F> {Sub76,1713
+    fn sub(self, other: &Self) -> Self::Output {sub79,1802
+impl<'a, F: Eq + Field> Sub<RowVec<'a, F>> for &RowVec<'a, F> {Sub84,1882
+    fn sub(self, other: RowVec<'a, F>) -> Self::Output {sub87,1980
+impl<'a, F: Eq + Field> Sub for &RowVec<'a, F> {Sub92,2068
+    fn sub(self, other: Self) -> Self::Output {sub95,2151
+impl<'a, F: Eq + Field> SubAssign<RowVec<'a, F>> for RowVec<'a, F> {SubAssign100,2243
+    fn sub_assign(&mut self, other: Self) {sub_assign101,2312
+impl<'a, F: Eq + Field> SubAssign<&RowVec<'a, F>> for RowVec<'a, F> {SubAssign106,2390
+    fn sub_assign(&mut self, other: &Self) {sub_assign107,2460
+impl<'a, F: Eq + Field> Mul<Mat<'a, F>> for RowVec<'a, F> {Mul112,2542
+    fn mul(self, other: Mat<'a, F>) -> Self::Output {mul115,2627
+impl<'a, F: Eq + Field> Mul<&Mat<'a, F>> for RowVec<'a, F> {Mul120,2713
+    fn mul(self, other: &Mat<'a, F>) -> Self::Output {mul123,2799
+impl<'a, F: Eq + Field> Mul<Mat<'a, F>> for &RowVec<'a, F> {Mul128,2885
+    fn mul(self, other: Mat<'a, F>) -> Self::Output {mul131,2980
+impl<'a, F: Eq + Field> Mul<&Mat<'a, F>> for &RowVec<'a, F> {Mul136,3065
+    fn mul(self, other: &Mat<'a, F>) -> Self::Output {mul139,3161
+impl<'a, F: Eq + Field> MulAssign<Mat<'a, F>> for RowVec<'a, F> {MulAssign144,3257
+    fn mul_assign(&mut self, other: Mat<'a, F>) {mul_assign145,3323
+impl<'a, F: Eq + Field> MulAssign<&Mat<'a, F>> for RowVec<'a, F> {MulAssign150,3407
+    fn mul_assign(&mut self, other: &Mat<'a, F>) {mul_assign151,3474
+impl<'a, F: Eq + Field> Neg for RowVec<'a, F> {RowVec156,3559
+    fn neg(self) -> Self::Output {neg159,3632
+impl<'a, F: Eq + Field> Neg for &RowVec<'a, F> {Neg164,3691
+    fn neg(self) -> Self::Output {neg167,3774
+impl<'a, F: Eq + Field> Index<usize> for RowVec<'a, F> {RowVec172,3843
+    fn index(&self, index: usize) -> &Self::Output {index175,3928
+impl<'a, F: Eq + Field> IndexMut<usize> for RowVec<'a, F> {RowVec180,4018
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {index_mut181,4078
+impl<'a, F: Eq + F2FiniteExtension> Debug for RowVec<'a, F> {RowVec186,4184
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {fmt187,4246
+impl<'a, F: Eq + FiniteField> Display for RowVec<'a, F> {RowVec192,4347
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {fmt193,4405
+impl<'a, F: Eq + Field> RowVec<'a, F> {RowVec198,4504
+    pub fn new(field: &'a F, data: Vec<F::FElt>) -> Self {new199,4544
+    pub fn zero(field: &'a F, cols: usize) -> Self {zero206,4742
+    pub fn field(&self) -> &'a F {field210,4844
+    pub fn rows(&self) -> usize {rows214,4909
+    pub fn cols(&self) -> usize {cols218,4960
+    pub fn data(&self) -> &Vec<F::FElt> {data222,5023
+    pub fn weight(&self) -> usize {weight226,5094
+    pub fn random(rng: &mut ThreadRng, f: &'a F, n: usize) -> Self {random236,5315
+    pub fn random_with_weight(rng: &mut ThreadRng, f: &'a F, n: usize, w: usize) -> Self {random_with_weight240,5433
+    // pub fn sum(&mut self, vec1: &Self, vec2: &Self) {sum263,6166
+    // pub fn from<'b>(f: &'a F, vec_f2: &RowVec<'b, F2>) -> Selffrom274,6595
+    pub fn transpose(&self) -> Mat<'a, F> {transpose281,6769
+    pub fn is_zero(&self) -> bool {is_zero285,6847
+    pub fn extract_cols(&self, perm: &Vec<usize>) -> Self {extract_cols294,7039
+impl<'a> RowVec<'a, F2> {RowVec299,7150
+    pub fn write(&self, file_name: &str) -> Result<()> {write300,7176
+    pub fn read_vector(file_name: &str, f2: &'a F2) -> Result<RowVec<'a, F2>> {read_vector323,7885
+impl<'a, F: Eq + Field> Mul<Perm> for RowVec<'a, F> {RowVec348,8786
+    fn mul(self, other: Perm) -> Self::Output {mul351,8865
+impl<'a, F: Eq + Field> Mul<&Perm> for RowVec<'a, F> {RowVec356,8945
+    fn mul(self, other: &Perm) -> Self::Output {mul359,9025
+impl<'a, F: Eq + Field> Mul<Perm> for &RowVec<'a, F> {Mul364,9105
+    fn mul(self, other: Perm) -> Self::Output {mul367,9194
+impl<'a, F: Eq + Field> Mul<&Perm> for &RowVec<'a, F> {Mul372,9273
+    fn mul(self, other: &Perm) -> Self::Output {mul375,9363
+
+src/matrix/mod.rs,5660
+type Result<T> = std::result::Result<T, Box<dyn Error>>;Result10,256
+pub struct Mat<'a, F: Eq + Field> {Mat16,384
+impl<'a, F: Eq + Field> Clone for Mat<'a, F> {Mat23,499
+    fn clone(&self) -> Self {clone24,546
+impl<'a, F: Eq + Field> Add for Mat<'a, F> {Mat34,754
+    fn add(self, other: Self) -> Self::Output {add37,824
+impl<'a, F: Eq + Field> Add<&Mat<'a, F>> for Mat<'a, F> {Add42,904
+    fn add(self, other: &Self) -> Self::Output {add45,987
+impl<'a, F: Eq + Field> Add<Mat<'a, F>> for &Mat<'a, F> {Add50,1067
+    fn add(self, other: Mat<'a, F>) -> Self::Output {add53,1156
+impl<'a, F: Eq + Field> Add for &Mat<'a, F> {Add58,1241
+    fn add(self, other: Self) -> Self::Output {add61,1318
+impl<'a, F: Eq + Field> AddAssign<Mat<'a, F>> for Mat<'a, F> {AddAssign77,1831
+    fn add_assign(&mut self, other: Self) {add_assign78,1894
+impl<'a, F: Eq + Field> AddAssign<&Mat<'a, F>> for Mat<'a, F> {AddAssign83,1972
+    fn add_assign(&mut self, other: &Self) {add_assign84,2036
+impl<'a, F: Eq + Field> Sub for Mat<'a, F> {Mat98,2477
+    fn sub(self, other: Self) -> Self::Output {sub101,2547
+impl<'a, F: Eq + Field> Sub<&Mat<'a, F>> for Mat<'a, F> {Sub106,2627
+    fn sub(self, other: &Self) -> Self::Output {sub109,2710
+impl<'a, F: Eq + Field> Sub<Mat<'a, F>> for &Mat<'a, F> {Sub114,2790
+    fn sub(self, other: Mat<'a, F>) -> Self::Output {sub117,2879
+impl<'a, F: Eq + Field> Sub for &Mat<'a, F> {Sub122,2964
+    fn sub(self, other: Self) -> Self::Output {sub125,3041
+impl<'a, F: Eq + Field> SubAssign<Mat<'a, F>> for Mat<'a, F> {SubAssign141,3569
+    fn sub_assign(&mut self, other: Self) {sub_assign142,3632
+impl<'a, F: Eq + Field> SubAssign<&Mat<'a, F>> for Mat<'a, F> {SubAssign147,3710
+    fn sub_assign(&mut self, other: &Self) {sub_assign148,3774
+impl<'a, F: Eq + Field> Mul for Mat<'a, F> {Mat162,4227
+    fn mul(self, other: Self) -> Self::Output {mul165,4297
+impl<'a, F: Eq + Field> Mul<&Mat<'a, F>> for Mat<'a, F> {Mul170,4377
+    fn mul(self, other: &Self) -> Self::Output {mul173,4460
+impl<'a, F: Eq + Field> Mul<Mat<'a, F>> for &Mat<'a, F> {Mul178,4540
+    fn mul(self, other: Mat<'a, F>) -> Self::Output {mul181,4629
+impl<'a, F: Eq + Field> Mul for &Mat<'a, F> {Mul186,4714
+    fn mul(self, other: Self) -> Self::Output {mul189,4791
+impl<'a, F: Eq + Field> MulAssign<Mat<'a, F>> for Mat<'a, F> {MulAssign209,5416
+    fn mul_assign(&mut self, other: Self) {mul_assign210,5479
+impl<'a, F: Eq + Field> MulAssign<&Mat<'a, F>> for Mat<'a, F> {MulAssign215,5557
+    fn mul_assign(&mut self, other: &Self) {mul_assign216,5621
+impl<'a, F: Eq + Field> Neg for Mat<'a, F> {Mat236,6268
+    fn neg(self) -> Self::Output {neg239,6338
+impl<'a, F: Eq + Field> Neg for &Mat<'a, F> {Neg244,6397
+    fn neg(self) -> Self::Output {neg247,6474
+impl<'a, F: Eq + Field> Index<(usize, usize)> for Mat<'a, F> {Mat258,6718
+    fn index(&self, index: (usize, usize)) -> &Self::Output {index261,6809
+impl<'a, F: Eq + Field> IndexMut<(usize, usize)> for Mat<'a, F> {Mat266,6930
+    fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {index_mut267,6996
+impl<'a, F: Eq + F2FiniteExtension> Debug for Mat<'a, F> {Mat272,7133
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {fmt273,7192
+impl<'a, F: Eq + FiniteField> Display for Mat<'a, F> {Mat293,7775
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {fmt294,7830
+impl<'a, F: Eq + Field> Mat<'a, F> {Mat321,8608
+    pub fn new(field: &'a F, rows: usize, cols: usize, data: Vec<F::FElt>) -> Self {new322,8645
+    pub fn zero(field: &'a F, rows: usize, cols: usize) -> Self {zero334,8924
+    pub fn field(&self) -> &'a F {field343,9128
+    pub fn rows(&self) -> usize {rows347,9189
+    pub fn cols(&self) -> usize {cols351,9248
+    pub fn data(&self) -> &Vec<F::FElt> {data355,9307
+    pub fn random(rng: &mut ThreadRng, f: &'a F, n: usize, m: usize) -> Self {random359,9375
+    pub fn is_zero(&self) -> bool {is_zero369,9645
+    pub fn swap_rows(&mut self, row1: usize, row2: usize) {swap_rows380,9900
+    pub fn swap_cols(&mut self, col1: usize, col2: usize) {swap_cols393,10407
+    pub fn extract_cols(&self, cols: &Vec<usize>) -> Self {extract_cols404,10693
+    pub fn identity(f: &'a F, n: usize) -> Self {identity414,10988
+    // pub fn sum(&mut self, mat1: &Self, mat2: &Self) {sum422,11166
+    // pub fn prod(&mut self, mat1: &Self, mat2: &Self) {prod441,11818
+    pub fn transpose(&self) -> Self {transpose460,12547
+// impl<'a, F: CharacteristicTwo + Eq> Mat<'a, F> {Mat471,12798
+//     pub fn from<'b>(f: &'a F, mat_f2: &Mat<'b, F2>) -> Self {from472,12850
+impl<'a, F: Eq + F2FiniteExtension> Mat<'a, F> {Mat483,13211
+    pub fn binary<'b>(&self, f2: &'b F2) -> Mat<'b, F2> {binary484,13260
+impl<'a> Mat<'a, F2> {Mat500,13754
+    pub fn to_hex_string(&self) -> String {to_hex_string501,13777
+    pub fn from_hex_string(s: &str, f2: &'a F2) -> Result<Self> {from_hex_string528,14718
+mod gauss;gauss551,15415
+mod perm;perm552,15426
+mod rowvec;rowvec553,15436
+impl<'a, F: Eq + Field> Mul<Perm> for Mat<'a, F> {Mat555,15449
+    fn mul(self, other: Perm) -> Self::Output {mul558,15525
+impl<'a, F: Eq + Field> Mul<&Perm> for Mat<'a, F> {Mat563,15605
+    fn mul(self, other: &Perm) -> Self::Output {mul566,15682
+impl<'a, F: Eq + Field> Mul<Perm> for &Mat<'a, F> {Mul571,15762
+    fn mul(self, other: Perm) -> Self::Output {mul574,15845
+impl<'a, F: Eq + Field> Mul<&Perm> for &Mat<'a, F> {Mul579,15924
+    fn mul(self, perm: &Perm) -> Self::Output {mul582,16008
+pub fn div_ceil(a: u32, b: u32) -> u32 {div_ceil590,16225
+
+src/crypto.rs,902
+type Result<T> = std::result::Result<T, Box<dyn Error>>;Result13,213
+pub struct PublicKey<'a> {PublicKey16,303
+pub struct SecretKey<'a, 'b> {SecretKey22,508
+pub fn keygen<'a, 'b>(keygen29,771
+impl<'a> PublicKey<'a> {PublicKey65,1899
+    pub fn encrypt(&self, m: &RowVec<'a, F2>) -> RowVec<'a, F2> {encrypt66,1924
+    pub fn write(&self, file_name: &str) -> Result<()> {write75,2285
+    pub fn read_public_key(file_name: &str, f2: &'a F2) -> Result<Self> {read_public_key82,2529
+impl<'a, 'b> SecretKey<'a, 'b> {SecretKey97,3051
+    pub fn decrypt(&self, c: &RowVec<'a, F2>) -> RowVec<'a, F2> {decrypt98,3084
+    pub fn write(&self, file_name: &str) -> Result<()> {write111,3526
+    pub fn read_finite_field(file_name: &str) -> Result<F2m> {read_finite_field129,4238
+    pub fn read_secret_key(file_name: &str, f2: &'a F2, f2m: &'b F2m) -> Result<Self> {read_secret_key140,4643

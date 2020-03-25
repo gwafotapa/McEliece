@@ -20,10 +20,21 @@ mod goppa;
 mod matrix;
 mod polynomial;
 
-const GOPPA_M: u32 = 10; // F2^GOPPA_M is the underlying field of the code
-const GOPPA_N: u32 = 1024; // Code length
-const GOPPA_K: u32 = 524; // Code dimension
-const GOPPA_T: u32 = 50; // Code correction capacity
+// const GOPPA_M: u32 = 10; // F2^GOPPA_M is the underlying field of the code
+// const GOPPA_N: u32 = 1024; // Code length
+// const GOPPA_K: u32 = 524; // Code dimension
+// const GOPPA_T: u32 = 50; // Code correction capacity
+
+const GOPPA_M: u32 = 11; // F2^GOPPA_M is the underlying field of the code
+const GOPPA_N: u32 = 2048; // Code length
+const GOPPA_K: u32 = 1278; // Code dimension
+const GOPPA_T: u32 = 70; // Code correction capacity
+
+// const GOPPA_M: u32 = 12; // F2^GOPPA_M is the underlying field of the code
+// const GOPPA_N: u32 = 4096; // Code length
+// const GOPPA_K: u32 = 2056; // Code dimension
+// const GOPPA_T: u32 = 170; // Code correction capacity
+
 const PLAINTEXT: &str = "plaintext.mce";
 const CIPHERTEXT: &str = "ciphertext.mce";
 const DECRYPTED: &str = "decrypted.mce";

@@ -46,7 +46,7 @@ pub fn keygen<'a, 'b>(
     info!("Generator matrix G:{}", g);
     info!("Information set of generator matrix G:\n{:?}\n", info_set);
     let k = g.rows();
-    let s = Mat::invertible_random_f2(&mut rng, f2, k as usize);
+    let s = Mat::invertible_random(&mut rng, f2, k as usize);
     info!("Singular matrix S:{}", s);
     let p = Perm::random(&mut rng, n as usize);
     info!("Permutation P:\n{:?}\n", p);

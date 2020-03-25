@@ -1,9 +1,32 @@
-use rand::{rngs::ThreadRng, Rng};
+use rand::{Rng, rngs::ThreadRng};
 
-use super::{Mat, Perm};
-use crate::finite_field::{Field, F2};
+use super::{Field, Mat, Perm};
 
 impl<'a, F: Eq + Field> Mat<'a, F> {
+    pub fn swap_rows(&mut self, row1: usize, row2: usize) {
+        if row1 == row2 {
+            return;
+        }
+        let row1_start = row1 * self.cols;
+        let row1_end = row1_start + self.cols;
+        let row2_start = row2 * self.cols;
+        let row2_end = row2_start + self.cols;
+        let mut slice = self.data[row1_start..row1_end].to_vec();
+        slice.swap_with_slice(&mut self.data[row2_start..row2_end]);
+        slice.swap_with_slice(&mut self.data[row1_start..row1_end]);
+    }
+
+    pub fn swap_cols(&mut self, col1: usize, col2: usize) {
+        if col1 == col2 {
+            return;
+        }
+        for i in 0..self.rows {
+            let tmp = self[(i, col1)];
+            self[(i, col1)] = self[(i, col2)];
+            self[(i, col2)] = tmp;
+        }
+    }
+
     pub fn combine_rows(&mut self, row1: usize, lambda: F::FElt, row2: usize) {
         let f = self.field;
         for j in 0..self.cols {
@@ -15,10 +38,6 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         for j in 0..self.cols {
             self[(row, j)] = self.field.mul(lambda, self[(row, j)]);
         }
-    }
-
-    pub fn is_invertible(&self) -> bool {
-        self.rows == self.cols && self.rows == self.rank()
     }
 
     // Inv computation via gaussian elimination
@@ -164,12 +183,13 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         u
     }
 
-    pub fn row_echelon_form(&mut self) -> usize {
+    pub fn row_echelon_form(&mut self) -> Vec<usize> {
         let f = self.field;
         let n = self.rows;
         let m = self.cols;
         let mut row_pivot = 0;
         let mut col_pivot = 0;
+        let mut p = Perm::identity(n);
         let mut rank = 0;
 
         while row_pivot < self.rows && col_pivot < self.cols {
@@ -182,8 +202,9 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
                 col_pivot += 1;
                 continue;
             }
-            rank += 1;
             self.swap_rows(i, row_pivot);
+            p.swap(i, row_pivot);
+            rank += 1;
 
             // Normalize pivot's row
             let pivot_inv = f.inv(self[(row_pivot, col_pivot)]).unwrap();
@@ -209,14 +230,15 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
             row_pivot += 1;
             col_pivot += 1;
         }
-        rank
+        p.data()[0..rank].to_vec()
     }
 
+    // TODO: Return a set of independant rows as row_echelon_form ?
     pub fn reduced_row_echelon_form(&mut self) -> usize {
         let f = self.field;
         let n = self.rows;
         let m = self.cols;
-        let rank = self.row_echelon_form(); // note that all pivots are 1
+        let rank = self.row_echelon_form().len(); // note that all pivots are 1
 
         for row_pivot in (0..n).rev() {
             // Find the pivot on this row if any
@@ -247,7 +269,15 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
 
     pub fn rank(&self) -> usize {
         let mut mat = self.clone();
-        mat.row_echelon_form()
+        mat.row_echelon_form().len()
+    }
+
+    pub fn max_set_of_independant_rows(&mut self) -> Vec<usize> {
+        self.row_echelon_form()
+    }
+
+    pub fn is_invertible(&self) -> bool {
+        self.rows == self.cols && self.rows == self.rank()
     }
 
     // Compute, if possible, (U, S, P) with U invertible, S standard form and P permutation
@@ -323,6 +353,77 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         Some((u, h, p))
     }
 
+    // Takes a parity-check matrix H possibly with redundant rows.
+    // Returns (S, P) with S standard form and P permutation such that
+    // SP^-1 is a (full rank) parity-check matrix of the code (S defines an equivalent code).
+    pub fn standard_parity_check_equivalent(&self) -> (Self, Perm) {
+        let f = self.field;
+        let m = self.rows;
+        let n = self.cols;
+        if m > n {
+            panic!(
+                "Matrix must have at most as many rows as columns for parity-check decomposition"
+            );
+        }
+        let mut h = self.clone();
+        let mut p = Perm::identity(n);
+        let mut col = n; // index of the column to check for a pivot
+
+        // j is the index of the column to "standardize":
+        // The first iteration sets a 1 at the last position (m-1) of column n-1.
+        // The second iteration sets a 1 at position m-2 of column n-2.
+        // ...
+        // The last iteration sets a 1 at position 0 of column n-m.
+        for j in (n - m..n).rev() {
+            // Among the remaining columns, select one with a pivot
+            let mut pivot = false;
+            let mut row_pivot = 0;
+            let mut col_pivot = 0;
+            while !pivot && col != 0 {
+                col -= 1;
+
+                // Check column 'col' for a pivot
+                for row in (0..j + m - n + 1).rev() {
+                    if h[(row, col)] != f.zero() {
+                        pivot = true;
+                        row_pivot = row;
+                        col_pivot = col;
+                        break;
+                    }
+                }
+            }
+
+            if !pivot {
+                h.remove_rows(&(0..j - (n - m) + 1).collect());
+                return (h, p);
+            }
+
+            // Put pivot column in the adequate position and update P
+            h.swap_cols(j, col_pivot);
+            p.swap(j, col_pivot);
+
+            // Put pivot row in the adequate position and update U
+            h.swap_rows(j + m - n, row_pivot);
+
+            // Pivot is now at (j+m-n, j)
+
+            // Multiply pivot row by pivot^-1 and update U
+            let pivot_inv = f.inv(h[(j + m - n, j)]).unwrap();
+            for k in 0..n {
+                h[(j + m - n, k)] = f.mul(pivot_inv, h[(j + m - n, k)]);
+            }
+
+            // Nullify the rest of the column and update matrix U accordingly
+            for i in 0..m {
+                if h[(i, j)] != f.zero() && i != j + m - n {
+                    let lambda = f.neg(h[(i, j)]);
+                    h.combine_rows(i, lambda, j + m - n);
+                }
+            }
+        }
+        (h, p)
+    }
+
     pub fn is_standard_form(&self) -> bool {
         let f = self.field;
         let m = self.rows;
@@ -394,433 +495,9 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
     //     rank
     // }
 
-    pub fn max_set_of_independant_rows(&mut self) -> Vec<usize> {
-        let f = self.field;
-        let n = self.rows;
-        let m = self.cols;
-        let mut row_pivot = 0;
-        let mut col_pivot = 0;
-        let mut p = Perm::identity(n);
-        let mut rank = 0;
-
-        while row_pivot < self.rows && col_pivot < self.cols {
-            // Find pivot
-            let mut i = row_pivot;
-            while i < n && self[(i, col_pivot)] == f.zero() {
-                i += 1;
-            }
-            if i == n {
-                col_pivot += 1;
-                continue;
-            }
-            self.swap_rows(i, row_pivot);
-            p.swap(i, row_pivot);
-            rank += 1;
-
-            // Normalize pivot's row
-            let pivot_inv = f.inv(self[(row_pivot, col_pivot)]).unwrap();
-            for j in col_pivot + 1..m {
-                self[(row_pivot, j)] = f.mul(pivot_inv, self[(row_pivot, j)]);
-            }
-            self[(row_pivot, col_pivot)] = f.one();
-
-            // Adjust all rows below pivot's row
-            for k in row_pivot + 1..n {
-                if self[(k, col_pivot)] == f.zero() {
-                    continue;
-                }
-                for l in col_pivot + 1..m {
-                    self[(k, l)] = f.sub(
-                        self[(k, l)],
-                        f.mul(self[(k, col_pivot)], self[(row_pivot, l)]),
-                    );
-                }
-                self[(k, col_pivot)] = f.zero();
-            }
-
-            row_pivot += 1;
-            col_pivot += 1;
-        }
-        p.data()[0..rank].to_vec()
-    }
-
-    fn keep_rows(&mut self, rows: &Vec<usize>) {
-        let m = self.rows;
-        for i in (0..m).rev() {
-            if rows.contains(&i) {
-                continue;
-            }
-            self.data.drain(i * self.cols..(i + 1) * self.cols);
-            self.rows -= 1;
-        }
-    }
-
-    // row indices must be sorted in increasing order
-    fn remove_rows(&mut self, rows: &Vec<usize>) {
-        for i in (0..rows.len()).rev() {
-            self.data.drain(i * self.cols..(i + 1) * self.cols);
-            self.rows -= 1;
-        }
-    }
-    
     pub fn remove_redundant_rows(&mut self) {
-        let mut tmp = self.clone();
-        let max_set_of_indep_rows = tmp.max_set_of_independant_rows();
-        self.keep_rows(&max_set_of_indep_rows);
-    }
-}
-
-impl<'a> Mat<'a, F2> {
-    pub fn add_rows(&mut self, row1: usize, row2: usize) {
-        let f = self.field;
-        for j in 0..self.cols {
-            self[(row1, j)] = f.add(self[(row1, j)], self[(row2, j)]);
-        }
-    }
-
-    // Inv computation via gaussian elimination
-    // See https://en.wikipedia.org/wiki/Gaussian_elimination
-    pub fn inverse_f2(&self) -> Option<Self> {
-        if self.rows != self.cols {
-            return None;
-        }
-
-        let f = self.field;
-        let n = self.rows;
-        let mut mat = self.clone();
-        let mut inv: Self = Mat::identity(f, n);
-        let mut p = 0; // pivot's row and pivot's column
-
-        while p < n {
-            // Find pivot
-            let mut i = p;
-            while i < n && mat[(i, p)] == f.zero() {
-                i += 1;
-            }
-            if i == n {
-                return None;
-            }
-
-            // Swap rows and mimic operation on matrix 'inv'
-            mat.swap_rows(i, p);
-            inv.swap_rows(i, p);
-
-            // Adjust all rows below pivot's row: L(k) = L(k) - c(k,p) * L(p)
-            // where L(k) is the kth row and c(k,p) is the coefficient [k,p] of our matrix
-            for k in p + 1..n {
-                if mat[(k, p)] == f.zero() {
-                    continue;
-                }
-
-                mat[(k, p)] = f.zero();
-                for l in p + 1..n {
-                    // first p+1 columns are zero
-                    mat[(k, l)] = f.add(mat[(k, l)], mat[(p, l)]);
-                }
-
-                // Mimic operation on matrix 'inv'
-                for l in 0..n {
-                    inv[(k, l)] = f.add(inv[(k, l)], inv[(p, l)]);
-                }
-            }
-
-            p += 1;
-        }
-
-        // Matrix 'mat' is now in triangular form
-
-        for j in (0..n).rev() {
-            for i in (0..j).rev() {
-                // Perform the row operation to set c(i, j) to 0:
-                // L(i) = L(i) - c(i, j) * L(j)
-                // We don't actually need to operate on the original matrix here.
-                // Mimic the row operation on matrix 'inv'.
-                if mat[(i, j)] == f.zero() {
-                    continue;
-                }
-
-                for l in 0..n {
-                    inv[(i, l)] = f.add(inv[(i, l)], inv[(j, l)]);
-                }
-            }
-        }
-        Some(inv)
-    }
-
-    /* Generate a random matrix and put it in standard form with a diagonal of 1.
-     * Keep track of the applied transformations via a matrix u.
-     * Return u is as our random invertible matrix. */
-    pub fn invertible_random_f2(rng: &mut ThreadRng, f2: &'a F2, n: usize) -> Self {
-        let mut mat = Mat::random(rng, f2, n, n);
-        let mut u = Mat::identity(f2, n);
-        // Loop on columns
-        for j in 0..n {
-            // Find a pivot in column j
-            let mut i = j;
-            while i < n && mat[(i, j)] == f2.zero() {
-                i += 1;
-            }
-            // If column j has no pivot, create it
-            if i == n {
-                i = rng.gen_range(j, n);
-                mat[(i, j)] = f2.one();
-            }
-            // Put pivot in position (j, j) and mirror operation on matrix u
-            mat.swap_rows(i, j);
-            u.swap_rows(i, j);
-            // Zero coefficients under the pivot and mirror operation on matrix u
-            for i in j + 1..n {
-                if mat[(i, j)] == f2.zero() {
-                    continue;
-                }
-                mat[(i, j)] = f2.zero();
-                for k in j + 1..n {
-                    mat[(i, k)] = f2.add(mat[(i, k)], mat[(j, k)]);
-                }
-                u.add_rows(i, j);
-            }
-        }
-        u
-    }
-
-    pub fn row_echelon_form_f2(&mut self) -> usize {
-        let f = self.field;
-        let n = self.rows;
-        let m = self.cols;
-        let mut row_pivot = 0;
-        let mut col_pivot = 0;
-        let mut rank = 0;
-
-        while row_pivot < self.rows && col_pivot < self.cols {
-            // Find pivot
-            let mut i = row_pivot;
-            while i < n && self[(i, col_pivot)] == f.zero() {
-                i += 1;
-            }
-            if i == n {
-                col_pivot += 1;
-                continue;
-            }
-            rank += 1;
-            self.swap_rows(i, row_pivot);
-
-            // Adjust all rows below pivot's row
-            for k in row_pivot + 1..n {
-                if self[(k, col_pivot)] == f.zero() {
-                    continue;
-                }
-                for l in col_pivot + 1..m {
-                    self[(k, l)] = f.add(self[(k, l)], self[(row_pivot, l)]);
-                }
-                self[(k, col_pivot)] = f.zero();
-            }
-
-            row_pivot += 1;
-            col_pivot += 1;
-        }
-        rank
-    }
-
-    pub fn reduced_row_echelon_form_f2(&mut self) -> usize {
-        let f = self.field;
-        let n = self.rows;
-        let m = self.cols;
-        let rank = self.row_echelon_form_f2(); // note that all pivots are 1
-
-        for row_pivot in (0..n).rev() {
-            // Find the pivot on this row if any
-            let mut col_pivot = 0;
-            while col_pivot < m && self[(row_pivot, col_pivot)] == f.zero() {
-                col_pivot += 1;
-            }
-            if col_pivot == m {
-                continue;
-            }
-
-            // Eliminate all non zero elements in the pivot's column
-            for i in (0..row_pivot).rev() {
-                if self[(i, col_pivot)] == f.zero() {
-                    continue;
-                }
-
-                for k in col_pivot..m {
-                    self[(i, k)] = f.add(self[(i, k)], self[(row_pivot, col_pivot)]);
-                }
-            }
-        }
-        rank
-    }
-
-    pub fn rank_f2(&self) -> usize {
-        let mut mat = self.clone();
-        mat.row_echelon_form_f2()
-    }
-
-    // Compute, if possible, (U, S, P) with U invertible, S standard form and P permutation
-    // such that S = U * self * P
-    pub fn standard_form_f2(&self) -> Option<(Self, Self, Perm)> {
-        let f = self.field;
-        let m = self.rows;
-        let n = self.cols;
-        if m > n {
-            return None;
-        }
-        let mut u = Mat::identity(f, m);
-        let mut h = self.clone();
-        let mut p = Perm::identity(n);
-        let mut col = n; // index of the column to check for a pivot
-
-        // j is the index of the column to "standardize":
-        // The first iteration sets a 1 at the last position (m-1) of column n-1.
-        // The second iteration sets a 1 at position m-2 of column n-2.
-        // ...
-        // The last iteration sets a 1 at position 0 of column n-m.
-        for j in (n - m..n).rev() {
-            // Among the remaining columns, select one with a pivot
-            let mut pivot = false;
-            let mut row_pivot = 0;
-            let mut col_pivot = 0;
-            while !pivot && col != 0 {
-                col -= 1;
-
-                // Check column 'col' for a pivot
-                for row in (0..j + m - n + 1).rev() {
-                    if h[(row, col)] != f.zero() {
-                        pivot = true;
-                        row_pivot = row;
-                        col_pivot = col;
-                        break;
-                    }
-                }
-            }
-
-            if !pivot {
-                return None;
-            }
-
-            // Put pivot column in the adequate position and update P
-            h.swap_cols(j, col_pivot);
-            p.swap(j, col_pivot);
-
-            // Put pivot row in the adequate position and update U
-            h.swap_rows(j + m - n, row_pivot);
-            u.swap_rows(j + m - n, row_pivot);
-
-            // Pivot is now at (j+m-n, j)
-
-            // Nullify the rest of the column and update matrix U accordingly
-            for i in 0..m {
-                if h[(i, j)] != f.zero() && i != j + m - n {
-                    h.add_rows(i, j + m - n);
-                    u.add_rows(i, j + m - n);
-                }
-            }
-        }
-        Some((u, h, p))
-    }
-
-    pub fn max_set_of_independant_rows_f2(&mut self) -> Vec<usize> {
-        let f = self.field;
-        let n = self.rows;
-        let m = self.cols;
-        let mut row_pivot = 0;
-        let mut col_pivot = 0;
-        let mut p = Perm::identity(n);
-        let mut rank = 0;
-
-        while row_pivot < self.rows && col_pivot < self.cols {
-            // Find pivot
-            let mut i = row_pivot;
-            while i < n && self[(i, col_pivot)] == f.zero() {
-                i += 1;
-            }
-            if i == n {
-                col_pivot += 1;
-                continue;
-            }
-            self.swap_rows(i, row_pivot);
-            p.swap(i, row_pivot);
-            rank += 1;
-
-            // Adjust all rows below pivot's row
-            for k in row_pivot + 1..n {
-                if self[(k, col_pivot)] == f.zero() {
-                    continue;
-                }
-                for l in col_pivot + 1..m {
-                    self[(k, l)] = f.add(self[(k, l)], self[(row_pivot, l)]);
-                }
-                self[(k, col_pivot)] = f.zero();
-            }
-
-            row_pivot += 1;
-            col_pivot += 1;
-        }
-        p.data()[0..rank].to_vec()
-    }
-
-    pub fn remove_redundant_rows_f2(&mut self) {
-        let mut tmp = self.clone();
-        let max_set_of_indep_rows = tmp.max_set_of_independant_rows_f2();
-        self.keep_rows(&max_set_of_indep_rows);
-    }
-
-    pub fn standard_form_non_full_rank_f2(&self) -> (Self, Perm) {
-        let f = self.field;
-        let m = self.rows;
-        let n = self.cols;
-        if m > n {
-            panic!("Matrix must have at most as many rows as columns for standard form");
-        }
-        let mut h = self.clone();
-        let mut p = Perm::identity(n);
-        let mut col = n; // index of the column to check for a pivot
-
-        // j is the index of the column to "standardize":
-        // The first iteration sets a 1 at the last position (m-1) of column n-1.
-        // The second iteration sets a 1 at position m-2 of column n-2.
-        // ...
-        // The last iteration sets a 1 at position 0 of column n-m.
-        for j in (n - m..n).rev() {
-            // Among the remaining columns, select one with a pivot
-            let mut pivot = false;
-            let mut row_pivot = 0;
-            let mut col_pivot = 0;
-            while !pivot && col != 0 {
-                col -= 1;
-
-                // Check column 'col' for a pivot
-                for row in (0..j + m - n + 1).rev() {
-                    if h[(row, col)] != f.zero() {
-                        pivot = true;
-                        row_pivot = row;
-                        col_pivot = col;
-                        break;
-                    }
-                }
-            }
-
-            if !pivot {
-                h.remove_rows(&(0..j - (n - m) + 1).collect());
-                return (h, p);
-            }
-
-            // Put pivot column in the adequate position and update P
-            h.swap_cols(j, col_pivot);
-            p.swap(j, col_pivot);
-
-            // Put pivot row in the adequate position
-            h.swap_rows(j + m - n, row_pivot);
-
-            // Pivot is now at (j+m-n, j)
-
-            // Nullify the rest of the column
-            for i in 0..m {
-                if h[(i, j)] != f.zero() && i != j + m - n {
-                    h.add_rows(i, j + m - n);
-                }
-            }
-        }
-        (h, p)
+        let mut clone = self.clone();
+        let rows = clone.max_set_of_independant_rows();
+        self.keep_rows(&rows);
     }
 }
