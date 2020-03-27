@@ -1,19 +1,15 @@
 use log::warn;
-use rand::Rng;
+// use rand::Rng;
 
 use mceliece::{
     crypto::*,
     finite_field::{F2m, F2},
     // goppa::Goppa,
-    matrix::{self, Mat, RowVec},
+    matrix::{RowVec},
 };
 
-mod common;
+pub mod common;
 
-const GOPPA_N_MIN: u32 = 1;
-const GOPPA_N_MAX: u32 = 128 + 1;
-const GOPPA_N: u32 = 128;
-const GOPPA_T: u32 = 17;
 const REPEAT: u32 = 1;
 
 // fn setup() -> (u32, u32, u32) {
@@ -43,11 +39,11 @@ fn crypto_keygen() {
     let f2 = &F2 {};
     let f2m = &F2m::generate(1 << m);
     let (pk, sk) = keygen(f2, f2m, n, t);
-    let g = sk.goppa.generator_matrix(f2);
-    assert!(sk.s.is_invertible());
+    let g = sk.goppa().generator_matrix(f2);
+    assert!(sk.s().is_invertible());
     assert_eq!(g.rank(), g.rows());
-    assert!(sk.p.is_permutation());
-    assert_eq!(pk.sgp, sk.s * g * sk.p);
+    assert!(sk.p().is_permutation());
+    assert_eq!(*pk.sgp(), sk.s() * g * sk.p());
 }
 
 #[test]
@@ -85,7 +81,7 @@ fn crypto_decrypt_null_ciphertext() {
     let f2 = &F2 {};
     let f2m = &F2m::generate(1 << m);
     let (pk, sk) = keygen(f2, f2m, n, t);
-    let k = pk.sgp.rows();
+    let k = pk.sgp().rows();
     let msg = RowVec::zero(f2, k);
     let cpt = RowVec::zero(f2, n as usize);
     let dmsg = sk.decrypt(&cpt);
@@ -99,10 +95,10 @@ fn crypto_decrypt_codeword_ciphertext() {
     let f2 = &F2 {};
     let f2m = &F2m::generate(1 << m);
     let (pk, sk) = keygen(f2, f2m, n, t);
-    let k = pk.sgp.rows();
+    let k = pk.sgp().rows();
     let mut rng = rand::thread_rng();
     let msg = RowVec::random(&mut rng, f2, k);
-    let cpt = &msg * &pk.sgp;
+    let cpt = &msg * pk.sgp();
     let dmsg = sk.decrypt(&cpt);
     assert_eq!(dmsg, msg);
 }
@@ -114,7 +110,7 @@ fn crypto_encrypt_decrypt_null_message() {
     let f2 = &F2 {};
     let f2m = &F2m::generate(1 << m);
     let (pk, sk) = keygen(f2, f2m, n, t);
-    let k = pk.sgp.rows();
+    let k = pk.sgp().rows();
     let msg = RowVec::zero(f2, k);
     let cpt = pk.encrypt(&msg);
     assert_eq!(cpt.weight() as u32, t);
@@ -129,7 +125,7 @@ fn crypto_encrypt_decrypt_random_message() {
     let f2 = &F2 {};
     let f2m = &F2m::generate(1 << m);
     let (pk, sk) = keygen(f2, f2m, n, t);
-    let k = pk.sgp.rows();
+    let k = pk.sgp().rows();
     let mut rng = rand::thread_rng();
     let msg = RowVec::random(&mut rng, f2, k);
     let cpt = pk.encrypt(&msg);

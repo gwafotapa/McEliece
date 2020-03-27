@@ -1,7 +1,7 @@
-use rand::{rngs::ThreadRng, Rng};
+// use rand::{rngs::ThreadRng, Rng};
 use std::error::Error;
 
-use super::{Field, Mat, Perm, F2};
+use super::{Mat, F2};
 use crate::finite_field::F2FiniteExtension;
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;

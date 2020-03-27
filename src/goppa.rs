@@ -75,9 +75,9 @@ where
     }
 }
 
-impl<'a, F: Eq + Field> Goppa<'a, F>
+impl<'a, F> Goppa<'a, F>
 where
-    F: F2FiniteExtension,
+    F: Eq + Field + F2FiniteExtension,
 {
     pub fn new(poly: Poly<'a, F>, set: Vec<F::FElt>) -> Self {
         if !poly.is_irreducible() {

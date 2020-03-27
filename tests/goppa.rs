@@ -1,12 +1,12 @@
 use log::info;
-use rand::Rng;
+// use rand::Rng;
 
 use mceliece::finite_field::*;
 use mceliece::goppa::*;
-use mceliece::matrix::{self, *};
+use mceliece::matrix::*;
 use mceliece::polynomial::*;
 
-mod common;
+pub mod common;
 
 #[test]
 fn goppa_f8() {

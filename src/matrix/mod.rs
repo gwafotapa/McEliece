@@ -1,13 +1,13 @@
-use rand::{rngs::ThreadRng, Rng};
-use std::{
-    error::Error,
-    fmt::{self, Debug, Display, Formatter},
-    ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign},
-};
+use rand::rngs::ThreadRng;
+// use std::{
+    // error::Error,
+    // fmt::{self, Debug, Display, Formatter},
+    // ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign},
+// };
 
 use crate::finite_field::{Field, FiniteField, F2};
 
-type Result<T> = std::result::Result<T, Box<dyn Error>>;
+// type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 pub use perm::Perm;
 pub use rowvec::RowVec;

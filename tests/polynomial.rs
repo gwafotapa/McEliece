@@ -4,7 +4,7 @@ use rand::Rng;
 use mceliece::finite_field::*;
 use mceliece::polynomial::*;
 
-mod common;
+pub mod common;
 
 #[test]
 fn polynomial_f2_division() {

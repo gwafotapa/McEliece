@@ -4,7 +4,7 @@ use rand::Rng;
 use mceliece::finite_field::*;
 use mceliece::matrix::*;
 
-mod common;
+pub mod common;
 
 #[test]
 fn matrix_f2_new() {

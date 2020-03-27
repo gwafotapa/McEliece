@@ -14,16 +14,16 @@ type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct PublicKey<'a> {
-    pub sgp: Mat<'a, F2>, // disguised generator matrix S * G * P
-    pub t: u32,           // correction capacity and degree of the goppa polynomial
+    sgp: Mat<'a, F2>, // disguised generator matrix S * G * P
+    t: u32,           // correction capacity and degree of the goppa polynomial
 }
 
 #[derive(Eq, PartialEq)]
 pub struct SecretKey<'a, 'b> {
-    pub s: Mat<'a, F2>,        // singular matrix S
-    pub goppa: Goppa<'b, F2m>, // goppa code of generator matrix G
-    pub info_set: Vec<usize>,  // information set of matrix G
-    pub p: Perm,               // permutation P
+    s: Mat<'a, F2>,        // singular matrix S
+    goppa: Goppa<'b, F2m>, // goppa code of generator matrix G
+    info_set: Vec<usize>,  // information set of matrix G
+    p: Perm,               // permutation P
 }
 
 pub fn keygen<'a, 'b>(
@@ -63,6 +63,14 @@ pub fn keygen<'a, 'b>(
 }
 
 impl<'a> PublicKey<'a> {
+    pub fn sgp(&self) -> &Mat<'a, F2> {
+        &self.sgp
+    }
+
+    pub fn t(&self) -> u32 {
+        self.t
+    }
+    
     pub fn encrypt(&self, m: &RowVec<'a, F2>) -> RowVec<'a, F2> {
         let mut rng = rand::thread_rng();
         let c = Goppa::<F2m>::g_encode(&self.sgp, m);
@@ -92,9 +100,35 @@ impl<'a> PublicKey<'a> {
         let t = u32::from_str_radix(&line, 16)?;
         Ok(PublicKey { sgp, t })
     }
+
+    pub fn read_code_dimension(file_name: &str) -> Result<u32> {
+        let f = File::open(file_name)?;
+        let mut f = BufReader::new(f);
+        let mut line = String::new();
+        f.read_line(&mut line)?;
+        let k = u32::from_str_radix(line.split('#').next().ok_or("Cannot read k")?, 16)?;
+        Ok(k)
+    }
+    
 }
 
 impl<'a, 'b> SecretKey<'a, 'b> {
+    pub fn s(&self) -> &Mat<'a, F2> {
+        &self.s
+    }
+
+    pub fn goppa(&self) -> &Goppa<'b, F2m> {
+        &self.goppa
+    }
+
+    pub fn info_set(&self) -> &Vec<usize> {
+        &self.info_set
+    }
+
+    pub fn p(&self) -> &Perm {
+        &self.p
+    }
+
     pub fn decrypt(&self, c: &RowVec<'a, F2>) -> RowVec<'a, F2> {
         let m_s_g_z = c * self.p.inverse();
         let m_s_g = self.goppa.decode(&m_s_g_z);
