@@ -1,11 +1,13 @@
+// Implementation of finite fields of characteristic 2
 use rand::{rngs::ThreadRng, Rng};
 
 use super::{CharacteristicTwo, F2FiniteExtension, Field, FiniteField};
 
+/// Finite field of order 2<sup>m</sup>
 #[derive(Eq)]
 pub struct F2m {
     order: u32,
-    m: u32, // characteristic exponent
+    m: u32,
     exp: Vec<<Self as Field>::FElt>,
     log: Vec<u32>,
 }
@@ -18,15 +20,33 @@ impl PartialEq for F2m {
 
 impl Field for F2m {
     type FElt = u32;
-
+    
+    /// Returns identity element of field addition
+    /// ```
+    /// # use mceliece::finite_field::{Field, F2m};
+    /// let f2m = F2m::generate(4);
+    /// assert_eq!(f2m.zero(), 0);
+    /// ```
     fn zero(&self) -> Self::FElt {
         0
     }
 
+    /// Returns identity element of field multiplication
+    /// ```
+    /// # use mceliece::finite_field::{Field, F2m};
+    /// let f2m = F2m::generate(8);
+    /// assert_eq!(f2m.one(), 1);
+    /// ```
     fn one(&self) -> Self::FElt {
         1
     }
 
+    /// Returns field characteristic
+    /// ```
+    /// # use mceliece::finite_field::{Field, F2m};
+    /// let f2m = F2m::generate(32);
+    /// assert_eq!(f2m.characteristic(), 2);
+    /// ```
     fn characteristic(&self) -> u32 {
         2
     }
@@ -39,6 +59,16 @@ impl Field for F2m {
         self.add(a, b)
     }
 
+    /// Multiplies two field elements
+    /// ```
+    /// # use mceliece::finite_field::{Field, FiniteField, F2m};
+    /// let f64 = F2m::generate(64);
+    /// let a = f64.exp(4);
+    /// let b = f64.exp(11);
+    /// let c = f64.exp(59);
+    /// assert_eq!(f64.mul(a, b), f64.exp(4 + 11));
+    /// assert_eq!(f64.mul(b, c), f64.exp((11 + 59) % 63));
+    /// ```
     fn mul(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt {
         let modulo = |a| {
             if a >= self.order {
@@ -55,6 +85,13 @@ impl Field for F2m {
         }
     }
 
+    /// Returns additive inverse of an element
+    /// ```
+    /// # use mceliece::finite_field::{Field, F2m};
+    /// let f256 = F2m::generate(256);
+    /// let x = f256.random_element(&mut rand::thread_rng());
+    /// assert_eq!(f256.neg(x), x);
+    /// ```
     fn neg(&self, a: Self::FElt) -> Self::FElt {
         a
     }
@@ -73,6 +110,12 @@ impl Field for F2m {
 }
 
 impl FiniteField for F2m {
+    /// Returns m where field order is p<sup>m</sup> with p prime
+    /// ```
+    /// # use mceliece::finite_field::{FiniteField, F2m};
+    /// let f128 = F2m::generate(128);
+    /// assert_eq!(f128.characteristic_exponent(), 7);
+    /// ```
     fn characteristic_exponent(&self) -> u32 {
         self.m
     }
@@ -90,11 +133,7 @@ impl FiniteField for F2m {
     }
 }
 
-impl CharacteristicTwo for F2m {
-    // fn from(&self, _f2: &F2, elt: <F2 as Field>::FElt) -> Self::FElt {
-    //     elt
-    // }
-}
+impl CharacteristicTwo for F2m {}
 
 impl F2FiniteExtension for F2m {
     fn elt_to_u32(&self, a: Self::FElt) -> u32 {
@@ -102,11 +141,29 @@ impl F2FiniteExtension for F2m {
     }
 
     fn u32_to_elt(&self, n: u32) -> Self::FElt {
+        if n >= self.order() {
+            panic!("u32 must be smaller than field order");
+        }
         n
     }
 }
 
 impl F2m {
+    /// Generates finite field of given order which is a power of 2
+    ///
+    /// # Panics
+    ///
+    /// - Panics if order is not a power of 2.
+    /// - Panics if order is 2 (use struct F2 instead).
+    /// - Panics if order is greater than 2<sup>16</sup>.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use mceliece::finite_field::{FiniteField, F2m};
+    /// let f16 = F2m::generate(16);
+    /// assert_eq!(f16.order(), 16);
+    /// ```
     pub fn generate(order: u32) -> Self {
         let (_, m) = match prime_power(order) {
             Ok(r) => r,
@@ -132,6 +189,17 @@ impl F2m {
         f
     }
 
+    /// Returns a primitive polynomial which can be used to generate
+    /// the finite field of the given order
+    ///
+    /// The polynomial is returned as a number such that the its binary representation
+    /// matches the nonzero coefficients of the polynomial.
+    ///
+    /// # Panics
+    ///
+    /// - Panics if order is not a power of 2.
+    /// - Panics if order is 2 (use struct F2 instead).
+    /// - Panics if order is greater than 2<sup>16</sup>.
     fn primitive_poly(order: u32) -> u32 {
         match prime_power(order) {
             Ok((_, m)) => match m {
@@ -150,8 +218,7 @@ impl F2m {
                 14 => 0x4143,
                 15 => 0x8003,
                 16 => 0x110B,
-                17 => 0x2009,
-                _ => panic!("m must be at least 2 and at most 17"),
+                _ => panic!("m must be at least 2 and at most 16"),
             },
             Err(s) => panic!(s),
         }

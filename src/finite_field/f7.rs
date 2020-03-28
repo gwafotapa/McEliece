@@ -1,15 +1,19 @@
+// Implementation of the finite field of order 7
 use rand::{rngs::ThreadRng, Rng};
 
 use super::{Field, FiniteField};
 
-const CARD: u32 = 7;
+/// Field order
+const ORDER: u32 = 7;
 
-const EXP: [F7Elt; CARD as usize] = [1, 3, 2, 6, 4, 5, 1];
+const EXP: [F7Elt; ORDER as usize] = [1, 3, 2, 6, 4, 5, 1];
 
-const LOG: [u32; CARD as usize] = [CARD as u32, 0, 2, 1, 4, 5, 3];
+const LOG: [u32; ORDER as usize] = [ORDER as u32, 0, 2, 1, 4, 5, 3];
 
+/// F7 Element
 type F7Elt = u32;
 
+/// Finite field of order 7
 #[derive(Eq)]
 pub struct F7 {}
 
@@ -22,30 +26,66 @@ impl PartialEq for F7 {
 impl Field for F7 {
     type FElt = F7Elt;
 
+    /// Returns identity element of field addition
+    /// ```
+    /// # use mceliece::finite_field::{Field, F7};
+    /// let f7 = F7 {};
+    /// assert_eq!(f7.zero(), 0);
+    /// ```
     fn zero(&self) -> Self::FElt {
         0
     }
 
+    /// Returns identity element of field multiplication
+    /// ```
+    /// # use mceliece::finite_field::{Field, F7};
+    /// let f7 = F7 {};
+    /// assert_eq!(f7.one(), 1);
+    /// ```
     fn one(&self) -> Self::FElt {
         1
     }
 
+    /// Returns field characteristic
+    /// ```
+    /// # use mceliece::finite_field::{Field, F7};
+    /// let f7 = F7 {};
+    /// assert_eq!(f7.characteristic(), 7);
+    /// ```
     fn characteristic(&self) -> u32 {
-        CARD
+        ORDER
     }
 
+    /// Adds two field elements
+    /// ```
+    /// # use mceliece::finite_field::{Field, F7};
+    /// let f7 = F7 {};
+    /// assert_eq!(f7.add(0, 3), 3);
+    /// assert_eq!(f7.add(5, 1), 6);
+    /// assert_eq!(f7.add(6, 1), 0);
+    /// assert_eq!(f7.add(6, 3), 2);
+    /// ```
     fn add(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt {
-        (a + b) % CARD
+        (a + b) % ORDER
     }
 
+    /// Substracts two field elements
+    /// ```
+    /// # use mceliece::finite_field::{Field, F7};
+    /// let f7 = F7 {};
+    /// assert_eq!(f7.sub(6, 4), 2);
+    /// assert_eq!(f7.sub(5, 0), 5);
+    /// assert_eq!(f7.sub(0, 1), 6);
+    /// assert_eq!(f7.sub(2, 4), 5);
+    /// ```
     fn sub(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt {
-        (CARD + a - b) % CARD
+        (ORDER + a - b) % ORDER
     }
 
     fn mul(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt {
         let modulo = |x| {
-            if x >= CARD {
-                x - (CARD - 1)
+            if x >= ORDER {
+                x - (ORDER - 1)
             } else {
                 x
             }
@@ -58,24 +98,39 @@ impl Field for F7 {
         }
     }
 
+    /// Returns additive inverse of an element
+    /// ```
+    /// # use mceliece::finite_field::{Field, F7};
+    /// let f7 = F7 {};
+    /// assert_eq!(f7.neg(0), 0);
+    /// assert_eq!(f7.neg(1), 6);
+    /// assert_eq!(f7.neg(3), 4);
+    /// assert_eq!(f7.neg(4), 3);
+    /// ```
     fn neg(&self, a: Self::FElt) -> Self::FElt {
-        (CARD - a) % CARD
+        (ORDER - a) % ORDER
     }
 
     fn inv(&self, a: Self::FElt) -> Option<Self::FElt> {
         if a == 0 {
             None
         } else {
-            Some(EXP[(CARD - 1 - LOG[a as usize]) as usize])
+            Some(EXP[(ORDER - 1 - LOG[a as usize]) as usize])
         }
     }
 
     fn random_element(&self, rng: &mut ThreadRng) -> Self::FElt {
-        rng.gen_range(0, CARD)
+        rng.gen_range(0, ORDER)
     }
 }
 
 impl FiniteField for F7 {
+    /// Returns m where field order is p<sup>m</sup> with p prime
+    /// ```
+    /// # use mceliece::finite_field::{FiniteField, F7};
+    /// let f7 = F7 {};
+    /// assert_eq!(f7.characteristic_exponent(), 1);
+    /// ```
     fn characteristic_exponent(&self) -> u32 {
         1
     }

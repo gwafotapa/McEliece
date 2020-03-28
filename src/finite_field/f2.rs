@@ -1,7 +1,9 @@
+// Implementation of the finite field of order 2
 use rand::{rngs::ThreadRng, Rng};
 
 use super::{CharacteristicTwo, F2FiniteExtension, Field, FiniteField};
 
+/// Finite field of order 2
 #[derive(Eq, PartialEq)]
 pub struct F2 {}
 
@@ -87,6 +89,7 @@ impl Field for F2 {
     fn neg(&self, a: Self::FElt) -> Self::FElt {
         a
     }
+    
     /// Returns multiplicative inverse of an element
     /// ```
     /// # use mceliece::finite_field::{Field, F2};
@@ -160,8 +163,14 @@ impl F2FiniteExtension for F2 {
     }
 
     /// Converts an u32 smaller than field order to a field element
-    /// Behaviour is undefined if the u32 is greater than or equal to field order.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the u32 is greater than or equal to field order.
     fn u32_to_elt(&self, n: u32) -> Self::FElt {
+        if n >= self.order() {
+            panic!("u32 must be smaller than field order");
+        }        
         n
     }
 }
