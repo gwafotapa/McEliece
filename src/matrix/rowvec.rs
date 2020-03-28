@@ -259,25 +259,6 @@ impl<'a, F: Eq + Field> RowVec<'a, F> {
         vec
     }
 
-    // TODO: Remove this function
-    // pub fn sum(&mut self, vec1: &Self, vec2: &Self) {
-    //     let f = self.field();
-    //     if f != vec1.field() || f != vec2.field() {
-    //         panic!("Cannot add vectors: fields don't match");
-    //     }
-    //     if self.rows() != vec1.rows() || self.rows() != vec2.rows() {
-    //         panic!("Cannot add vectors: dimensions don't match");
-    //     }
-    //     self.0.sum(&vec1.0, &vec2.0);
-    // }
-
-    // pub fn from<'b>(f: &'a F, vec_f2: &RowVec<'b, F2>) -> Self
-    // where
-    //     F: CharacteristicTwo,
-    // {
-    //     RowVec(Mat::from(f, &vec_f2.0))
-    // }
-
     pub fn transpose(&self) -> Mat<'a, F> {
         self.0.transpose()
     }

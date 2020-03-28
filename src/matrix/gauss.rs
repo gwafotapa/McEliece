@@ -27,6 +27,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         }
     }
 
+    /// Modifies row1 such that row1 = row1 + lambda * row2
     pub fn combine_rows(&mut self, row1: usize, lambda: F::FElt, row2: usize) {
         let f = self.field;
         for j in 0..self.cols {
@@ -40,8 +41,9 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         }
     }
 
-    // Inv computation via gaussian elimination
-    // See https://en.wikipedia.org/wiki/Gaussian_elimination
+    /// Inverse computation via gaussian elimination
+    ///
+    /// See <https://en.wikipedia.org/wiki/Gaussian_elimination>.
     pub fn inverse(&self) -> Option<Self> {
         if self.rows != self.cols {
             return None;
@@ -123,28 +125,15 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         Some(inv)
     }
 
-    // pub fn invertible_random(rng: &mut ThreadRng, f: &'a F, n: usize) -> Self {
-    //     let mut mat = Mat::zero(f, n, n);
-    //     let mut i = 0;
-    //     while i < n {
-    //         // Fill line i at random
-    //         for j in 0..n {
-    //             mat[(i, j)] = f.random_element(rng);
-    //         }
-
-    //         if mat.rank() == i + 1 {
-    //             i += 1;
-    //         }
-    //     }
-    //     mat
-    // }
-
-    /* Generate a random matrix and put it in standard form with a diagonal of 1.
-     * Keep track of the applied transformations via a matrix u.
-     * Return u is as our random invertible matrix. */
+    /// Generates a random invertible matrix
+    ///
+    /// First generates a random matrix then applies to it the standard form algorithm.
+    /// Keeps track of the applied transformations via an invertible matrix u.
+    /// Returns u as our random invertible matrix.
     pub fn invertible_random(rng: &mut ThreadRng, f: &'a F, n: usize) -> Self {
         let mut mat = Mat::random(rng, f, n, n);
         let mut u = Mat::identity(f, n);
+        
         // Loop on columns
         for j in 0..n {
             // Find a pivot in column j
@@ -152,6 +141,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
             while i < n && mat[(i, j)] == f.zero() {
                 i += 1;
             }
+            
             // If column j has no pivot, create it
             if i == n {
                 i = rng.gen_range(j, n);
@@ -159,14 +149,17 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
                     mat[(i, j)] = f.random_element(rng);
                 }
             }
+            
             // Put pivot in position (j, j) and mirror operation on matrix u
             mat.swap_rows(i, j);
             u.swap_rows(i, j);
+            
             // Normalize pivot's row and mirror operation on matrix u
             let pivot = mat[(j, j)];
             let inv_pivot = f.inv(pivot).unwrap();
             mat.mul_row(j, inv_pivot);
             u.mul_row(j, inv_pivot);
+            
             // Zero coefficients under the pivot and mirror operation on matrix u
             for i in j + 1..n {
                 if mat[(i, j)] == f.zero() {
@@ -233,12 +226,11 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         p.data()[0..rank].to_vec()
     }
 
-    // TODO: Return a set of independant rows as row_echelon_form ?
-    pub fn reduced_row_echelon_form(&mut self) -> usize {
+    pub fn reduced_row_echelon_form(&mut self) -> Vec<usize> {
         let f = self.field;
         let n = self.rows;
         let m = self.cols;
-        let rank = self.row_echelon_form().len(); // note that all pivots are 1
+        let max_set_of_independant_rows = self.row_echelon_form(); // note that all pivots are 1
 
         for row_pivot in (0..n).rev() {
             // Find the pivot on this row if any
@@ -264,7 +256,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
                 }
             }
         }
-        rank
+        max_set_of_independant_rows
     }
 
     pub fn rank(&self) -> usize {
@@ -280,8 +272,8 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         self.rows == self.cols && self.rows == self.rank()
     }
 
-    // Compute, if possible, (U, S, P) with U invertible, S standard form and P permutation
-    // such that S = U * self * P
+    /// Compute, if possible, (U, S, P) with U invertible, S standard form and P permutation
+    /// such that S = U * self * P
     pub fn standard_form(&self) -> Option<(Self, Self, Perm)> {
         let f = self.field;
         let m = self.rows;
@@ -353,9 +345,10 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         Some((u, h, p))
     }
 
-    // Takes a parity-check matrix H possibly with redundant rows.
-    // Returns (S, P) with S standard form and P permutation such that
-    // SP^-1 is a (full rank) parity-check matrix of the code (S defines an equivalent code).
+    /// Takes a parity-check matrix H possibly with redundant rows.  
+    /// Returns (S, P) with S standard form and P permutation such that
+    /// SP<sup>-1</sup> is a (full rank) parity-check matrix of the code  
+    /// (S defines an equivalent code).
     pub fn standard_parity_check_equivalent(&self) -> (Self, Perm) {
         let f = self.field;
         let m = self.rows;
@@ -446,54 +439,6 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         }
         true
     }
-
-    // pub fn col_echelon_form(&mut self) -> usize {
-    //     let f = self.field;
-    //     let n = self.rows;
-    //     let m = self.cols;
-    //     let mut row_pivot = 0;
-    //     let mut col_pivot = 0;
-    //     let mut rank = 0;
-
-    //     while row_pivot < self.rows && col_pivot < self.cols {
-    //         // Find pivot
-    //         let mut j = col_pivot;
-    //         while j < m && self[(row_pivot, j)] == f.zero() {
-    //             j += 1;
-    //         }
-    //         if j == m {
-    //             row_pivot += 1;
-    //             continue;
-    //         }
-    //         rank += 1;
-    //         self.swap_cols(j, col_pivot);
-
-    //         // Normalize pivot's column
-    //         let pivot_inv = f.inv(self[(row_pivot, col_pivot)]).unwrap();
-    //         for i in row_pivot + 1..n {
-    //             self[(i, col_pivot)] = f.mul(pivot_inv, self[(i, col_pivot)]);
-    //         }
-    //         self[(row_pivot, col_pivot)] = f.one();
-
-    //         // Adjust all columns right of pivot's column
-    //         for l in col_pivot + 1..m {
-    //             if self[(row_pivot, l)] == f.zero() {
-    //                 continue;
-    //             }
-    //             for k in row_pivot + 1..n {
-    //                 self[(k, l)] = f.sub(
-    //                     self[(k, l)],
-    //                     f.mul(self[(k, col_pivot)], self[(row_pivot, l)]),
-    //                 );
-    //             }
-    //             self[(row_pivot, l)] = f.zero();
-    //         }
-
-    //         row_pivot += 1;
-    //         col_pivot += 1;
-    //     }
-    //     rank
-    // }
 
     pub fn remove_redundant_rows(&mut self) {
         let mut clone = self.clone();

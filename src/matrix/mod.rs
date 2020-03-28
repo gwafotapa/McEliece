@@ -1,13 +1,7 @@
+// Implementation of matrices on field
 use rand::rngs::ThreadRng;
-// use std::{
-    // error::Error,
-    // fmt::{self, Debug, Display, Formatter},
-    // ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign},
-// };
 
 use crate::finite_field::{Field, FiniteField, F2};
-
-// type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 pub use perm::Perm;
 pub use rowvec::RowVec;
@@ -16,6 +10,7 @@ pub fn div_ceil(a: u32, b: u32) -> u32 {
     a / b + if a % b == 0 { 0 } else { 1 }
 }
 
+/// Matrix with coefficients in a field F
 #[derive(Eq, PartialEq)]
 pub struct Mat<'a, F: Eq + Field> {
     field: &'a F,
@@ -25,9 +20,18 @@ pub struct Mat<'a, F: Eq + Field> {
 }
 
 impl<'a, F: Eq + Field> Mat<'a, F> {
+    /// Creates a new matrix
+    ///
+    /// The vector data holds the matrix coefficients, row by row.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the matrix is empty or if there are not exactly rows * cols coefficients.
     pub fn new(field: &'a F, rows: usize, cols: usize, data: Vec<F::FElt>) -> Self {
-        if data.len() != rows * cols {
-            panic!("Wrong dimensions");
+        if rows == 0 || cols == 0 || data.is_empty() {
+            panic!("Empty matrix");
+        } else if data.len() != rows * cols {
+            panic!("Dimensions do not match the number of coefficients");
         }
         Self {
             field,
@@ -37,7 +41,15 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         }
     }
 
+    /// Creates a new matrix whose coefficients are all zero
+    ///
+    /// # Panics
+    ///
+    /// Panics if the number of either rows or columns is zero.
     pub fn zero(field: &'a F, rows: usize, cols: usize) -> Self {
+        if rows == 0 || cols == 0 {
+            panic!("Empty matrix");
+        }
         Self {
             field,
             rows,
@@ -83,6 +95,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         true
     }
 
+    /// Creates a new matrix by taking the chosen columns in the given order
     pub fn extract_cols(&self, cols: &Vec<usize>) -> Self {
         let mut res = Mat::zero(self.field(), self.rows(), cols.len());
         for j in 0..cols.len() {
@@ -101,44 +114,6 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         id
     }
 
-    // pub fn sum(&mut self, mat1: &Self, mat2: &Self) {
-    //     let f = self.field;
-    //     if f != mat1.field || f != mat2.field {
-    //         panic!("Cannot add matrices: fields don't match");
-    //     } else if self.rows != mat1.rows
-    //         || self.rows != mat2.rows
-    //         || self.cols != mat1.cols
-    //         || self.cols != mat2.cols
-    //     {
-    //         panic!("Cannot add matrices: dimensions don't match");
-    //     }
-
-    //     for i in 0..self.rows {
-    //         for j in 0..self.cols {
-    //             self[(i, j)] = f.add(mat1[(i, j)], mat2[(i, j)]);
-    //         }
-    //     }
-    // }
-
-    // pub fn prod(&mut self, mat1: &Self, mat2: &Self) {
-    //     let f = self.field;
-    //     if f != mat1.field || f != mat2.field {
-    //         panic!("Cannot add matrices: fields don't match");
-    //     } else if self.rows != mat1.rows || self.cols != mat2.cols || mat1.cols != mat2.rows {
-    //         panic!("Cannot multiply matrices: dimensions don't match");
-    //     }
-
-    //     for i in 0..self.rows {
-    //         for j in 0..self.cols {
-    //             let mut sum = f.zero();
-    //             for k in 0..mat1.cols {
-    //                 sum = f.add(sum, f.mul(mat1[(i, k)], mat2[(k, j)]));
-    //             }
-    //             self[(i, j)] = sum;
-    //         }
-    //     }
-    // }
-
     pub fn transpose(&self) -> Self {
         let mut t = Self::zero(self.field, self.cols, self.rows);
         for i in 0..t.rows {
@@ -149,43 +124,45 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         t
     }
 
-
-    // TODO: Can I write it better ?
+    /// Keep only given rows
+    ///
+    /// # Panics
+    ///
+    /// Panics if the vector contains an index that does not match any row of the matrix
     fn keep_rows(&mut self, rows: &Vec<usize>) {
-        let m = self.rows;
-        for i in (0..m).rev() {
-            if rows.contains(&i) {
+        let mut rrows = rows.clone();
+        rrows.sort_by(|a, b| a.cmp(b).reverse());
+        if *rrows.first().unwrap() >= self.rows {
+            panic!("invalid row index");
+        }
+        let mut iter = rrows.into_iter();
+        let mut row = iter.next().unwrap_or(self.rows);
+        for i in (0..self.rows).rev() {
+            if i == row {
+                row = iter.next().unwrap_or(self.rows);
                 continue;
             }
             self.data.drain(i * self.cols..(i + 1) * self.cols);
             self.rows -= 1;
         }
-        // let mut rows_in_descending_order = rows.clone();
-        // rows_in_descending_order.sort_by(|a, b| a.cmp(b).reverse());
-        // let row_to_keep_iter = rows_in_descending_order.iter();
-        // let row_to_keep = row_to_keep_iter.next();
-        // for i in (0..self.rows).rev() {
-        //     if row_to_keep_iter.next()
-        //     self.data.drain(i * self.cols..(i + 1) * self.cols);
-        //     self.rows -= 1;
-        // }
     }
 
-    // TODO: Can I write it better ?
+    /// Remove the given rows from the matrix
+    ///
+    /// # Panics
+    ///
+    /// Panics if the vector contains an index that does not match any row of the matrix
     fn remove_rows(&mut self, rows: &Vec<usize>) {
-        // for i in (0..rows.len()).rev() {
-        //     self.data.drain(i * self.cols..(i + 1) * self.cols);
-        //     self.rows -= 1;
-        // }
-        let mut rows_in_descending_order = rows.clone();
-        rows_in_descending_order.sort_by(|a, b| a.cmp(b).reverse());
-        for i in rows_in_descending_order.iter() {
+        let mut rrows = rows.clone();
+        rrows.sort_by(|a, b| a.cmp(b).reverse());
+        if *rrows.first().unwrap() >= self.rows {
+            panic!("invalid row index");
+        }
+        for i in rrows.iter() {
             self.data.drain(i * self.cols..(i + 1) * self.cols);
             self.rows -= 1;
         }
     }
-
-
 }
 
 mod f2;

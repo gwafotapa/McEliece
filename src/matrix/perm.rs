@@ -19,20 +19,30 @@ impl IndexMut<usize> for Perm {
 }
 
 impl Perm {
-    pub fn new(vec: Vec<usize>) -> Result<Self, &'static str> {
+    /// Creates a new permutation
+    ///
+    /// vec is the vector of images (of the indices)
+    /// e.g. the permutation (0 1 2) on the set [0, 1, 2]
+    /// is obtained by Perm::new([1, 2, 0]).
+    ///
+    /// # Panics
+    ///
+    /// Panics if vec contains an out of range image
+    /// or the same image twice.
+    pub fn new(vec: Vec<usize>) -> Self {
         let n = vec.len();
-        let mut list = vec![0; n];
+        let mut list = vec![false; n];
         for i in 0..n {
             if vec[i] >= n {
-                return Err("Not a permutation");
+                panic!("Invalid image");
             }
-            if list[vec[i]] == 0 {
-                list[vec[i]] = 1;
+            if list[vec[i]] == false {
+                list[vec[i]] = true;
             } else {
-                return Err("Not a permutation");
+                panic!("Image has already been assigned");
             }
         }
-        Ok(Perm(vec))
+        Perm(vec)
     }
 
     pub fn random(rng: &mut ThreadRng, n: usize) -> Self {

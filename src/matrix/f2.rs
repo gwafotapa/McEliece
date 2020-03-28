@@ -6,6 +6,7 @@ use crate::finite_field::F2FiniteExtension;
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
+// TODO: clean file from commentaries
 impl<'a> Mat<'a, F2> {
     // pub fn add_rows(&mut self, row1: usize, row2: usize) {
     //     let f = self.field;
@@ -425,6 +426,9 @@ impl<'a> Mat<'a, F2> {
 // }
 
 impl<'a, F: Eq + F2FiniteExtension> Mat<'a, F> {
+    /// Takes a t * n matrix on F<sub>2<sup>m</sup></sub>
+    /// and outputs a mt * n matrix on F<sub>2</sub>
+    /// by decomposing each coefficient on the canonical basis
     pub fn binary<'b>(&self, f2: &'b F2) -> Mat<'b, F2> {
         let f = self.field();
         let m = f.characteristic_exponent() as usize;

@@ -202,7 +202,7 @@ impl<'a, 'b> SecretKey<'a, 'b> {
         for i in 0..v.len() {
             p.push(usize::from_str_radix(v[i], 16)?);
         }
-        let p = Perm::new(p)?;
+        let p = Perm::new(p);
 
         Ok(SecretKey {
             s,

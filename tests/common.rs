@@ -2,7 +2,7 @@ use rand::Rng;
 use std::sync::Once;
 
 static INIT: Once = Once::new();
-const GOPPA_N_MIN: u32 = 2;
+const GOPPA_N_MIN: u32 = 5; // TODO: check value 3 and 4 and also modify main.rs
 const GOPPA_N_MAX: u32 = 256 + 1;
 
 const GOPPA_N: u32 = 0;
