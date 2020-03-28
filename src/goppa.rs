@@ -281,37 +281,59 @@ where
         let f2 = rcv.field();
         let syndrome = Self::syndrome_from_xyz(xyz, rcv);
         info!("syndrome:{}", syndrome);
-        let mut deg_s_x = syndrome.rows() - 1;
-        for i in 0..syndrome.rows() - 1 {
-            if syndrome[(i, 0)] != f.zero() {
-                break;
-            }
-            deg_s_x -= 1;
-        }
-        // If syndrome is zero, we're done.
-        if deg_s_x == 0 && syndrome[(syndrome.rows() - 1, 0)] == f.zero() {
-            return rcv.clone();
-        }
+        
+        // let mut deg_s_x = syndrome.rows() - 1;
+        // for i in 0..syndrome.rows() - 1 {
+        //     if syndrome[(i, 0)] != f.zero() {
+        //         break;
+        //     }
+        //     deg_s_x -= 1;
+        // }
+        // // If syndrome is zero, we're done.
+        // if deg_s_x == 0 && syndrome[(syndrome.rows() - 1, 0)] == f.zero() {
+        //     return rcv.clone();
+        // }
+        // let mut s_x = Poly::zero(f, deg_s_x + 1);
+        // for i in 0..deg_s_x + 1 {
+        //     s_x[i] = syndrome[(syndrome.rows() - 1 - i, 0)];
+        // }
+        // info!("S(x) = {}", s_x);
 
-        let mut s_x = Poly::zero(f, deg_s_x + 1);
-        for i in 0..deg_s_x + 1 {
-            s_x[i] = syndrome[(syndrome.rows() - 1 - i, 0)];
-        }
+        // let mut s_x = Poly::zero(f, syndrome.rows());
+        // for i in 0..syndrome.rows() {
+        //     s_x[i] = syndrome[(syndrome.rows() - 1 - i, 0)];
+        // }
+        // s_x.update_len();
+        // info!("S(x) = {}", s_x);
+        // if s_x.is_zero() {
+        //     return rcv.clone();
+        // }
+
+        let s_x = Poly::new(f, syndrome.data().iter().rev().cloned().collect());
         info!("S(x) = {}", s_x);
 
+        if s_x.is_zero() {
+            return rcv.clone();
+        }
+        
+        // TODO: Which inverse_modulo do I have to use ?
         // s_x.inverse_modulo_by_fast_exponentiation(&self.poly);
         let mut s_x = s_x.inverse_modulo(&self.poly);
         info!("T(x) = s(x)^-1 = {}", s_x);
+        
         s_x += Poly::x_n(f, 1);
         s_x.square_root_modulo(&self.poly);
         info!("(T(x) + x)^(1/2) = {}", s_x);
+        
         let (mut a, mut b) = Poly::goppa_extended_gcd(&self.poly, &s_x);
         info!("a(x) = {}", a);
         info!("b(x) = {}", b);
+        
         a.square();
         b.square();
         info!("a(x)^2 = {}", a);
         info!("b(x)^2 = {}", b);
+        
         b *= Poly::x_n(f, 1);
         let sigma = &a + &b;
         info!("sigma(x) = {}", sigma);
@@ -330,6 +352,7 @@ where
                 .collect(),
         );
         info!("Error vector:{}", err);
+        
         let cdw = rcv + err;
         cdw
     }

@@ -32,26 +32,26 @@ pub fn keygen<'a, 'b>(
     n: u32,
     t: u32,
 ) -> (PublicKey<'a>, SecretKey<'a, 'b>) {
-    // info!("keygen(F{}, n={}, t={})\n", f2m.order(), n, t);
     let mut rng = rand::thread_rng();
     let goppa = Goppa::random(&mut rng, f2m, n as usize, t as usize);
     info!("{}", goppa);
     
     let xyz = goppa.parity_check_xyz();
     let (g, info_set) = Goppa::generator_from_xyz(&xyz, f2);
-    // let h = goppa.parity_check_matrix(f2);
-    // info!("Parity check matrix:{}", h);
-    // let (g, info_set) = Goppa::<F2m>::generator_from_parity_check(&h);
-
     info!("Generator matrix G:{}", g);
     info!("Information set of generator matrix G:\n{:?}\n", info_set);
+    
     let k = g.rows();
     let s = Mat::invertible_random(&mut rng, f2, k as usize);
+    info!("Code dimension k = {}", k);
     info!("Singular matrix S:{}", s);
+    
     let p = Perm::random(&mut rng, n as usize);
     info!("Permutation P:\n{:?}\n", p);
+    
     let sgp = &s * &g * &p;
     info!("Perturbed generator matrix ~G:{}", sgp);
+    
     let pk = PublicKey { sgp, t };
     let sk = SecretKey {
         s,
@@ -75,8 +75,10 @@ impl<'a> PublicKey<'a> {
         let mut rng = rand::thread_rng();
         let c = Goppa::<F2m>::g_encode(&self.sgp, m);
         info!("Encoded plaintext:{}", c);
+        
         let z = RowVec::random_with_weight(&mut rng, m.field(), self.sgp.cols(), self.t as usize);
         info!("Error vector:{}", z);
+        
         c + z
     }
 
@@ -133,11 +135,13 @@ impl<'a, 'b> SecretKey<'a, 'b> {
         let m_s_g_z = c * self.p.inverse();
         let m_s_g = self.goppa.decode(&m_s_g_z);
         info!("Decoded codeword mSG:{}", m_s_g);
+        
         let m_s = m_s_g.extract_cols(&self.info_set);
         info!(
             "Use information set {:?} to extract mS:{}",
             self.info_set, m_s
         );
+        
         let m = m_s * self.s.inverse().unwrap();
         m
     }

@@ -303,13 +303,17 @@ impl<'a, F: Eq + FiniteField> Display for Poly<'a, F> {
 }
 
 impl<'a, F: Eq + Field> Poly<'a, F> {
-    pub fn zero(field: &'a F, capacity: usize) -> Self {
-        if capacity == 0 {
-            panic!("Vector capacity cannot be zero");
+    pub fn new(field: &'a F, data: Vec<F::FElt>) -> Self {
+        Poly { field, data }
+    }
+    
+    pub fn zero(field: &'a F, len: usize) -> Self {
+        if len == 0 {
+            panic!("Polynomial must have at least one coefficient");
         }
         Self {
             field,
-            data: vec![field.zero(); capacity],
+            data: vec![field.zero(); len],
         }
     }
 
