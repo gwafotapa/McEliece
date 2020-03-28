@@ -1,4 +1,5 @@
-// Implementation of the finite field of order 7
+//! The finite field of order 7
+
 use rand::{rngs::ThreadRng, Rng};
 
 use super::{Field, FiniteField};

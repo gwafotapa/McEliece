@@ -1,4 +1,5 @@
-// Implementation of finite fields of characteristic 2
+//! Finite fields of characteristic 2
+
 use rand::{rngs::ThreadRng, Rng};
 
 use super::{CharacteristicTwo, F2FiniteExtension, Field, FiniteField};
@@ -225,7 +226,7 @@ impl F2m {
     }
 }
 
-/// Determines if number is a prime power.
+/// Determines if a number is a prime power.
 /// ```
 /// # use mceliece::finite_field::f2m::prime_power;
 /// assert!(prime_power(2*3).is_err());
@@ -244,8 +245,8 @@ pub fn prime_power(q: u32) -> std::result::Result<(u32, u32), &'static str> {
     Ok((p, m))
 }
 
-/// Computes the prime factors of a nonzero integer by trial division.  
-/// https://en.wikipedia.org/wiki/Trial_division
+/// Computes the prime factors of a nonzero integer by trial division  
+/// <https://en.wikipedia.org/wiki/Trial_division>
 /// ```
 /// # use mceliece::finite_field::f2m::trial_division;
 /// assert_eq!(trial_division(1), vec![]);

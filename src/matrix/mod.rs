@@ -1,4 +1,5 @@
-// Implementation of matrices on field
+//! Matrices on a field
+
 use rand::rngs::ThreadRng;
 
 use crate::finite_field::{Field, FiniteField, F2};

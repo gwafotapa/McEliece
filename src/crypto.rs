@@ -1,3 +1,5 @@
+//! The McEliece cryptosystem
+
 use log::info;
 
 use std::{
@@ -12,18 +14,38 @@ use crate::matrix::{Mat, Perm, RowVec};
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
+/// Public key of the McEliece cryptosystem
+///
+/// A public key is a couple (SGP, t) where:
+/// - SGP is the product of three matrices S, G and P
+///   (see struct [SecretKey](struct.SecretKey.html) for more)
+/// - t is the correction capacity of the Goppa code (and also the degree of the Goppa polynomial)
 #[derive(Debug, Eq, PartialEq)]
 pub struct PublicKey<'a> {
-    sgp: Mat<'a, F2>, // disguised generator matrix S * G * P
-    t: u32,           // correction capacity and degree of the goppa polynomial
+    sgp: Mat<'a, F2>,
+    t: u32,
 }
 
+/// Secret key of the McEliece cryptosystem
+///
+/// A secret key has three components:
+/// - a random invertible matrix S
+/// - a random binary irreducible Goppa code of generator matrix G
+/// - a random permutation matrix P
+///
+/// Instead of storing P, we save the corresponding element of the symmetric group.  
+/// info_set is the information set of G.  
+/// See <https://en.wikipedia.org/wiki/McEliece_cryptosystem>
+/// for a brief description of the McEliece cryptosystem.  
+/// For more details, see Engelbert, D., Overbeck, R., & Schmidt, A. (2007),
+/// A summary of McEliece-type cryptosystems and their security.
+/// Journal of Mathematical Cryptology JMC, 1(2), 151-199.
 #[derive(Eq, PartialEq)]
 pub struct SecretKey<'a, 'b> {
-    s: Mat<'a, F2>,        // singular matrix S
-    goppa: Goppa<'b, F2m>, // goppa code of generator matrix G
-    info_set: Vec<usize>,  // information set of matrix G
-    p: Perm,               // permutation P
+    s: Mat<'a, F2>,
+    goppa: Goppa<'b, F2m>,
+    info_set: Vec<usize>,
+    p: Perm,
 }
 
 pub fn keygen<'a, 'b>(

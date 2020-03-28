@@ -1,4 +1,5 @@
-// Implementation of the finite field of order 2
+//! The finite field of order 2
+
 use rand::{rngs::ThreadRng, Rng};
 
 use super::{CharacteristicTwo, F2FiniteExtension, Field, FiniteField};

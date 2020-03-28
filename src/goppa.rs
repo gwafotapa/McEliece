@@ -1,3 +1,5 @@
+//! Binary irreducible Goppa codes
+
 use log::info;
 
 use rand::{rngs::ThreadRng, Rng};
@@ -15,6 +17,7 @@ use crate::{
 
 type Result<T> = result::Result<T, Box<dyn Error>>;
 
+/// Binary irreducible Goppa code
 #[derive(Eq, PartialEq)]
 pub struct Goppa<'a, F: Eq + Field> {
     poly: Poly<'a, F>,
@@ -79,6 +82,20 @@ impl<'a, F> Goppa<'a, F>
 where
     F: Eq + Field + F2FiniteExtension,
 {
+    /// Creates a binary irreducible Goppa code
+    ///
+    /// poly must be an irreducible polynomial on F
+    /// and set a subset of F which does not contain any root of the polynomial.  
+    /// Set elements must be ordered according to their u32 representation
+    /// (given by function `elt_to_u32()`).
+    ///
+    /// # Panics
+    ///
+    /// Panics if:
+    /// - poly is not irreducible
+    /// - set contains twice the same element
+    /// - set contains a root of the polynomial
+    /// - set elements are not ordered according to their u32 representation
     pub fn new(poly: Poly<'a, F>, set: Vec<F::FElt>) -> Self {
         if !poly.is_irreducible() {
             panic!("Goppa polynomial is not irreducible");
@@ -98,13 +115,22 @@ where
         Self { poly, set }
     }
 
+    /// Generates from field F a random binary irreducible Goppa code
+    /// of length n and of correction capacity t
+    ///
+    /// # Panics
+    ///
+    /// Panics if:
+    /// - n is greater than the order of F
+    /// - n &le; t * log<sub>2</sub>|F| (Goppa code dimension would be 0)
+    /// - n = log<sub>2</sub>|F| and t = 1 (a Goppa code set cannot contain one of its roots)
     pub fn random(rng: &mut ThreadRng, f: &'a F, n: usize, t: usize) -> Self {
         let q = f.order() as usize;
         if n > q {
             panic!("n must be at most q");
         }
         let m = f.characteristic_exponent() as usize;
-        if n < m * t {
+        if n <= m * t {
             panic!("m * t must be at most n");
         }
         let poly = Poly::random_monic_irreducible(rng, f, t);
@@ -281,33 +307,6 @@ where
         let f2 = rcv.field();
         let syndrome = Self::syndrome_from_xyz(xyz, rcv);
         info!("syndrome:{}", syndrome);
-        
-        // let mut deg_s_x = syndrome.rows() - 1;
-        // for i in 0..syndrome.rows() - 1 {
-        //     if syndrome[(i, 0)] != f.zero() {
-        //         break;
-        //     }
-        //     deg_s_x -= 1;
-        // }
-        // // If syndrome is zero, we're done.
-        // if deg_s_x == 0 && syndrome[(syndrome.rows() - 1, 0)] == f.zero() {
-        //     return rcv.clone();
-        // }
-        // let mut s_x = Poly::zero(f, deg_s_x + 1);
-        // for i in 0..deg_s_x + 1 {
-        //     s_x[i] = syndrome[(syndrome.rows() - 1 - i, 0)];
-        // }
-        // info!("S(x) = {}", s_x);
-
-        // let mut s_x = Poly::zero(f, syndrome.rows());
-        // for i in 0..syndrome.rows() {
-        //     s_x[i] = syndrome[(syndrome.rows() - 1 - i, 0)];
-        // }
-        // s_x.update_len();
-        // info!("S(x) = {}", s_x);
-        // if s_x.is_zero() {
-        //     return rcv.clone();
-        // }
 
         let s_x = Poly::new(f, syndrome.data().iter().rev().cloned().collect());
         info!("S(x) = {}", s_x);

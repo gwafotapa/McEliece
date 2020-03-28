@@ -1,4 +1,5 @@
-// Implementation of traits regarding finite fields
+//! Finite fields of characteristic 2
+
 use rand::rngs::ThreadRng;
 
 pub use f2::F2;

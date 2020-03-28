@@ -1,5 +1,3 @@
-// use log::info;
-
 use rand::rngs::ThreadRng;
 use std::error::Error;
 
@@ -53,6 +51,7 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
         }
     }
 
+    // TODO: is this inverse_modulo more efficient ?
     pub fn inverse_modulo_by_fast_exponentiation(&mut self, modulus: &Self)
     where
         F: FiniteField,
@@ -69,17 +68,13 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
         let mut tmp = self.clone();
         for _i in 0..m as usize * modulus.degree() - 2 {
             tmp.square();
-            // println!("tmp.square() = {:?}\n", tmp);
             tmp.modulo(&modulus);
-            // println!("tmp.modulo() = {:?}\n", tmp);
             *self *= &tmp;
-            // println!("self.mul(&tmp) = {:?}\n", self);
             self.modulo(&modulus);
-            // println!("self.modulo(&modulus) = {:?}\n", self);
         }
     }
 
-    // Computes p^n mod (modulus)
+    /// Computes p<sup>n</sup> mod (modulus)
     pub fn pow_modulo(&mut self, mut n: u32, modulus: &Self) {
         if self.field != modulus.field {
             panic!("Cannot compute power modulo: fields don't match");
@@ -116,13 +111,7 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
         let q = f.order();
         let mut n_prime_factors = trial_division(n);
         n_prime_factors.dedup();
-        // info!("decomposition of n in prime factors: {:?}", n_prime_factors);
-
         let n_div_primes: Vec<u32> = n_prime_factors.iter().map(|x| n / x).collect();
-        // info!(
-        //     "list of n/p where p is a prime factor of n: {:?}",
-        //     n_div_primes
-        // );
 
         for i in 0..n_prime_factors.len() {
             let mut h = Self::x_n(f, 1);
@@ -132,22 +121,15 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
             h -= &Self::x_n(f, 1);
             let g = Self::gcd(self, &h);
             if g.degree() != 0 {
-                // info!("{:?}", g);
                 return false;
             }
         }
         let mut g = Self::x_n(f, 1);
-        // info!("{:?}", g);
         for _i in 0..n {
             g.pow_modulo(q, self);
-            // info!("{:?}", g);
         }
         g -= &Self::x_n(f, 1);
-        // info!("{:?}", g);
         g.modulo(self);
-        // info!("{:?}", g);
-        // info!("{}", g.degree());
-        // info!("{:?}", g[0]);
         g.is_zero()
     }
 
@@ -247,14 +229,11 @@ pub fn trial_division(mut n: u32) -> Vec<u32> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     use crate::finite_field::{F2m, F2};
-    // use crate::finite_field::{FiniteFieldElement, F1024, F2};
 
     #[test]
     fn is_irreducible() {
         env_logger::init();
-
         let f2 = &F2 {};
         let f1024 = &F2m::generate(1024);
 
