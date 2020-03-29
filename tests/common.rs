@@ -5,7 +5,7 @@ static INIT: Once = Once::new();
 const GOPPA_N_MIN: u32 = 3;
 const GOPPA_N_MAX: u32 = 256 + 1;
 
-const GOPPA_N: u32 = 5;
+const GOPPA_N: u32 = 8;
 const GOPPA_T: u32 = 0;
 
 // TODO: remove commented code

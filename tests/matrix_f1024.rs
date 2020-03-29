@@ -177,8 +177,8 @@ fn matrix_f1024_transpose() {
     common::log_setup();
     let f1024 = &F2m::generate(1024);
     let mut rng = rand::thread_rng();
-    let rows = rng.gen_range(0, 100);
-    let cols = rng.gen_range(0, 100);
+    let rows = rng.gen_range(1, 100);
+    let cols = rng.gen_range(1, 100);
     let mat = Mat::random(&mut rng, f1024, rows, cols);
     let tmat = mat.transpose();
     for i in 0..rows {
