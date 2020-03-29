@@ -1,8 +1,7 @@
 use log::info;
 use rand::Rng;
 
-use mceliece::finite_field::*;
-use mceliece::matrix::*;
+use mceliece::{finite_field::*, matrix::*};
 
 pub mod common;
 
@@ -19,7 +18,7 @@ fn matrix_f1024_is_invertible() {
     common::log_setup();
     let f1024 = &F2m::generate(1024);
     let id = Mat::identity(f1024, 11);
-    info!("{:?}", id);
+    info!("Matrix identity:{:?}", id);
     assert!(id.is_invertible());
 }
 
@@ -57,23 +56,22 @@ fn matrix_f1024_add() {
     common::log_setup();
     let f1024 = &F2m::generate(1024);
     let mut rng = rand::thread_rng();
-    let a = Mat::random(&mut rng, f1024, 11, 11);
-    let b = Mat::random(&mut rng, f1024, 11, 11);
-    let c = Mat::random(&mut rng, f1024, 11, 11);
-    let z = Mat::zero(f1024, 11, 11);
-    info!("{:?}", a);
+    let a = &Mat::random(&mut rng, f1024, 11, 11);
+    let b = &Mat::random(&mut rng, f1024, 11, 11);
+    let c = &Mat::random(&mut rng, f1024, 11, 11);
+    let z = &Mat::zero(f1024, 11, 11);
 
     // Associativity
-    assert_eq!((&a + &b) + &c, &a + (&b + &c));
+    assert_eq!((a + b) + c, a + (b + c));
 
     // Commutativity
-    assert_eq!(&a + &b, &b + &a);
+    assert_eq!(a + b, b + a);
 
     // Neutral element
-    assert_eq!(&a + &z, a);
+    assert_eq!(a + z, *a);
 
     // Characteristic
-    assert_eq!(&a + &a, z);
+    assert_eq!(a + a, *z);
 }
 
 #[test]
@@ -92,37 +90,37 @@ fn matrix_f1024_mul() {
     common::log_setup();
     let f1024 = &F2m::generate(1024);
     let mut rng = rand::thread_rng();
-    let a = Mat::random(&mut rng, f1024, 10, 8);
-    let b = Mat::random(&mut rng, f1024, 8, 13);
-    let c = Mat::random(&mut rng, f1024, 13, 4);
+    let a = &Mat::random(&mut rng, f1024, 10, 8);
+    let b = &Mat::random(&mut rng, f1024, 8, 13);
+    let c = &Mat::random(&mut rng, f1024, 13, 4);
 
     // Associativity
-    assert_eq!((&a * &b) * &c, &a * (&b * &c));
+    assert_eq!((a * b) * c, a * (b * c));
 
     // Neutral element
-    let i8 = Mat::identity(f1024, 8);
-    let i10 = Mat::identity(f1024, 10);
-    assert_eq!(&a * &i8, a);
-    assert_eq!(&i10 * &a, a);
+    let i8 = &Mat::identity(f1024, 8);
+    let i10 = &Mat::identity(f1024, 10);
+    assert_eq!(a * i8, *a);
+    assert_eq!(i10 * a, *a);
 
     // Zero case
-    let z8 = Mat::zero(f1024, 8, 8);
-    let z10 = Mat::zero(f1024, 10, 10);
-    let z10_8 = Mat::zero(f1024, 10, 8);
-    assert_eq!(&a * &z8, z10_8);
-    assert_eq!(&z10 * &a, z10_8);
+    let z8 = &Mat::zero(f1024, 8, 8);
+    let z10 = &Mat::zero(f1024, 10, 10);
+    let z10_8 = &Mat::zero(f1024, 10, 8);
+    assert_eq!(a * z8, *z10_8);
+    assert_eq!(z10 * a, *z10_8);
 
     // Distributivity
-    let a = Mat::random(&mut rng, f1024, 10, 12);
-    let b = Mat::random(&mut rng, f1024, 10, 12);
-    let c = Mat::random(&mut rng, f1024, 12, 9);
-    let d = Mat::random(&mut rng, f1024, 12, 9);
+    let a = &Mat::random(&mut rng, f1024, 10, 12);
+    let b = &Mat::random(&mut rng, f1024, 10, 12);
+    let c = &Mat::random(&mut rng, f1024, 12, 9);
+    let d = &Mat::random(&mut rng, f1024, 12, 9);
 
     // Left: (a + b)c = ac + bc
-    assert_eq!((&a + &b) * &c, &a * &c + &b * &c);
+    assert_eq!((a + b) * c, a * c + b * c);
 
     // Right: a(b + c) = ab + ac
-    assert_eq!(&a * (&c + &d), &a * &c + &a * &d);
+    assert_eq!(a * (c + d), a * c + a * d);
 }
 
 #[test]
@@ -161,11 +159,9 @@ fn matrix_f1024_standard_form() {
     let (u, s, p) = h
         .standard_form()
         .expect("Failed to put a full rank matrix in standard form");
-
-    info!("{:?}", u);
-    info!("{:?}", s);
-    info!("{:?}", p);
-
+    info!("Invertible matrix U:{:?}", u);
+    info!("Standard form matrix S:{:?}", s);
+    info!("Permutation P:{:?}", p);
     assert!(u.is_invertible());
     assert!(s.is_standard_form());
     assert!(p.is_permutation());

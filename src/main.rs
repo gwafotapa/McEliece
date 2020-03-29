@@ -37,26 +37,6 @@ const DECRYPTED: &str = "decrypted.mce";
 const PUBLIC_KEY: &str = "public_key.mce";
 const SECRET_KEY: &str = "secret_key.mce";
 
-fn get_program(path: &str) -> &str {
-    let i = match path.rfind('/') {
-        None => 0,
-        Some(index) => index + 1,
-    };
-    &path[i..]
-}
-
-fn print_help(program: &str, opts: Options) {
-    let brief = format!(
-        "Usage: {0} keygen [PK] [SK]\n\
-         {0} encrypt [PK] [PLAINTEXT] [CIPHERTEXT]\n\
-         {0} decrypt [SK] [CIPHERTEXT] [DECRYPTED]\n\
-         {0} plaintext [PK] [PLAINTEXT]\n\
-         Encrypts information using the McEliece cryptosystem.",
-        program
-    );
-    print!("{}", opts.usage(&brief));
-}
-
 fn keygen(
     pk_file: &str,
     sk_file: &str,
@@ -202,6 +182,14 @@ fn plaintext(pk_file: &str, ptxt_file: &str, verbose: bool) -> Result<(), MainEr
     Ok(())
 }
 
+fn get_program(path: &str) -> &str {
+    let i = match path.rfind('/') {
+        None => 0,
+        Some(index) => index + 1,
+    };
+    &path[i..]
+}
+
 fn get_code_params(matches: &Matches) -> Result<(u32, u32, u32), MainError> {
     let n = match matches.opt_str("n") {
         None => GOPPA_N,
@@ -228,6 +216,18 @@ fn get_code_params(matches: &Matches) -> Result<(u32, u32, u32), MainError> {
         return Err("Code length n must be greater than m * t".into());
     }
     Ok((m, n, t))
+}
+
+fn print_help(program: &str, opts: Options) {
+    let brief = format!(
+        "Usage: {0} keygen [PK] [SK]\n\
+         {0} encrypt [PK] [PLAINTEXT] [CIPHERTEXT]\n\
+         {0} decrypt [SK] [CIPHERTEXT] [DECRYPTED]\n\
+         {0} plaintext [PK] [PLAINTEXT]\n\
+         Encrypts information using the McEliece cryptosystem.",
+        program
+    );
+    print!("{}", opts.usage(&brief));
 }
 
 fn main() -> Result<(), MainError> {

@@ -1,8 +1,7 @@
 use log::info;
 use rand::Rng;
 
-use mceliece::finite_field::*;
-use mceliece::matrix::*;
+use mceliece::{finite_field::*, matrix::*};
 
 pub mod common;
 
@@ -26,7 +25,7 @@ fn matrix_f2_permutation_random() {
     common::log_setup();
     let mut rng = rand::thread_rng();
     let p = Perm::random(&mut rng, 10);
-    info!("{:?}", p);
+    info!("Permutation matrix:{:?}", p);
     assert!(p.is_permutation());
 }
 
@@ -35,7 +34,7 @@ fn matrix_f2_is_invertible() {
     common::log_setup();
     let f2 = &F2 {};
     let id = Mat::identity(f2, 11);
-    info!("{:?}", id);
+    info!("Matrix identity:{:?}", id);
     assert!(id.is_invertible());
 }
 
@@ -44,7 +43,7 @@ fn matrix_f2_inverse() {
     common::log_setup();
     let f2 = &F2 {};
     let id = Mat::identity(f2, 11);
-    assert_eq!(id.inverse().as_ref(), Some(&id));
+    assert_eq!(id.inverse(), Some(id));
 
     let mut rng = rand::thread_rng();
     let p = Perm::random(&mut rng, 11);
@@ -76,23 +75,22 @@ fn matrix_f2_add() {
     common::log_setup();
     let f2 = &F2 {};
     let mut rng = rand::thread_rng();
-    let a = Mat::random(&mut rng, f2, 11, 11);
-    let b = Mat::random(&mut rng, f2, 11, 11);
-    let c = Mat::random(&mut rng, f2, 11, 11);
-    let z = Mat::zero(f2, 11, 11);
-    info!("{:?}", a);
+    let a = &Mat::random(&mut rng, f2, 11, 11);
+    let b = &Mat::random(&mut rng, f2, 11, 11);
+    let c = &Mat::random(&mut rng, f2, 11, 11);
+    let z = &Mat::zero(f2, 11, 11);
 
     // Associativity
-    assert_eq!((&a + &b) + &c, &a + (&b + &c));
+    assert_eq!((a + b) + c, a + (b + c));
 
     // Commutativity
-    assert_eq!(&a + &b, &b + &a);
+    assert_eq!(a + b, b + a);
 
     // Neutral element
-    assert_eq!(&a + &z, a);
+    assert_eq!(a + z, *a);
 
     // Characteristic
-    assert_eq!(&a + &a, z);
+    assert_eq!(a + a, *z);
 }
 
 #[test]
@@ -111,47 +109,43 @@ fn matrix_f2_mul() {
     common::log_setup();
     let f2 = &F2 {};
     let mut rng = rand::thread_rng();
-    let a: Mat<F2> = Mat::random(&mut rng, f2, 10, 8);
-    let b: Mat<F2> = Mat::random(&mut rng, f2, 8, 13);
-    let c: Mat<F2> = Mat::random(&mut rng, f2, 13, 4);
+    let a = &Mat::random(&mut rng, f2, 10, 8);
+    let b = &Mat::random(&mut rng, f2, 8, 13);
+    let c = &Mat::random(&mut rng, f2, 13, 4);
 
     // Associativity
-    assert_eq!((&a * &b) * &c, &a * (&b * &c));
+    assert_eq!((a * b) * c, a * (b * c));
 
     // Neutral element
-    let i8 = Mat::identity(f2, 8);
-    let i10 = Mat::identity(f2, 10);
-    assert_eq!(&a * &i8, a);
-    assert_eq!(&i10 * &a, a);
+    let i8 = &Mat::identity(f2, 8);
+    let i10 = &Mat::identity(f2, 10);
+    assert_eq!(a * i8, *a);
+    assert_eq!(i10 * a, *a);
 
     // Zero case
-    let z8 = Mat::zero(f2, 8, 8);
-    let z10 = Mat::zero(f2, 10, 10);
-    let z10_8 = Mat::zero(f2, 10, 8);
-    assert_eq!(&a * &z8, z10_8);
-    assert_eq!(&z10 * &a, z10_8);
+    let z8 = &Mat::zero(f2, 8, 8);
+    let z10 = &Mat::zero(f2, 10, 10);
+    let z10_8 = &Mat::zero(f2, 10, 8);
+    assert_eq!(a * z8, *z10_8);
+    assert_eq!(z10 * a, *z10_8);
 
     // Distributivity
-    let a: Mat<F2> = Mat::random(&mut rng, f2, 10, 12);
-    let b: Mat<F2> = Mat::random(&mut rng, f2, 10, 12);
-    let c: Mat<F2> = Mat::random(&mut rng, f2, 12, 9);
-    let d: Mat<F2> = Mat::random(&mut rng, f2, 12, 9);
-
-    // Left: (a + b)c = ac + bc
-    assert_eq!((&a + &b) * &c, &a * &c + &b * &c);
-
-    // Right: a(b + c) = ab + ac
-    assert_eq!(&a * (&c + &d), &a * &c + &a * &d);
+    let a = &Mat::random(&mut rng, f2, 10, 12);
+    let b = &Mat::random(&mut rng, f2, 10, 12);
+    let c = &Mat::random(&mut rng, f2, 12, 9);
+    let d = &Mat::random(&mut rng, f2, 12, 9);
+    assert_eq!((a + b) * c, a * c + b * c);
+    assert_eq!(a * (c + d), a * c + a * d);
 }
 
 #[test]
 fn matrix_f2_rank() {
     common::log_setup();
     let f2 = &F2 {};
-    let mat: Mat<F2> = Mat::zero(f2, 23, 4);
+    let mat = Mat::zero(f2, 23, 4);
     assert_eq!(mat.rank(), 0);
 
-    let mat: Mat<F2> = Mat::identity(f2, 19);
+    let mat = Mat::identity(f2, 19);
     assert_eq!(mat.rank(), 19);
 }
 
@@ -180,11 +174,9 @@ fn matrix_f2_standard_form() {
     let (u, s, p) = h
         .standard_form()
         .expect("Failed to put a full rank matrix in standard form");
-
-    info!("{:?}", u);
-    info!("{:?}", s);
-    info!("{:?}", p);
-
+    info!("Invertible matrix U:{:?}", u);
+    info!("Standard form matrix S:{:?}", s);
+    info!("Permutation P:{:?}", p);
     assert!(u.is_invertible());
     assert!(s.is_standard_form());
     assert!(p.is_permutation());
@@ -196,8 +188,8 @@ fn matrix_f2_transpose() {
     common::log_setup();
     let f2 = &F2 {};
     let mut rng = rand::thread_rng();
-    let rows = rng.gen_range(0, 100);
-    let cols = rng.gen_range(0, 100);
+    let rows = rng.gen_range(1, 100);
+    let cols = rng.gen_range(1, 100);
     let mat = Mat::random(&mut rng, f2, rows, cols);
     let tmat = mat.transpose();
     for i in 0..rows {
@@ -241,9 +233,11 @@ fn matrix_f2_remove_redundant_rows() {
     ];
     let mut a = Mat::new(f2, 5, 5, v);
     let b = Mat::new(f2, 2, 5, vec![1, 0, 1, 0, 0, 1, 1, 1, 0, 0]);
-    info!("{}", a);
+    info!("Matrix A:{}", a);
+
     a.remove_redundant_rows();
-    info!("{}", a);
+    info!("Matrix A without redundant rows:{}", a);
+
     assert_eq!(a, b);
 
     let v = vec![
@@ -253,9 +247,11 @@ fn matrix_f2_remove_redundant_rows() {
     ];
     let mut a = Mat::new(f2, 13, 5, v);
     let b = Mat::new(f2, 3, 5, vec![0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0]);
-    info!("{}", a);
+    info!("Matrix A:{}", a);
+
     a.remove_redundant_rows();
-    info!("{}", a);
+    info!("Matrix A without redundant rows:{}", a);
+
     assert_eq!(a, b);
 
     let v = vec![
@@ -263,8 +259,10 @@ fn matrix_f2_remove_redundant_rows() {
     ];
     let mut a = Mat::new(f2, 3, 7, v);
     let b = a.clone();
-    info!("{}", a);
+    info!("Matrix A:{}", a);
+
     a.remove_redundant_rows();
-    info!("{}", a);
+    info!("Matrix A without redundant rows:{}", a);
+
     assert_eq!(a, b);
 }

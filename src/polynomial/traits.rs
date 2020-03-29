@@ -4,8 +4,8 @@ use std::{
     ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign},
 };
 
-use crate::finite_field::{F2FiniteExtension, Field, FiniteField};
 use super::Poly;
+use crate::finite_field::{F2FiniteExtension, Field, FiniteField};
 
 impl<'a, F: Eq + Field> PartialEq for Poly<'a, F> {
     fn eq(&self, other: &Self) -> bool {

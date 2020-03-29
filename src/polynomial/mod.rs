@@ -246,5 +246,5 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
     }
 }
 
-pub mod traits;
 pub mod characteristic_two;
+pub mod traits;

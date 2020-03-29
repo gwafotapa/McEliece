@@ -1,41 +1,16 @@
-use log::warn;
-// use rand::Rng;
+use log::{info, warn};
 
-use mceliece::{
-    crypto::*,
-    finite_field::{F2m, F2},
-    // goppa::Goppa,
-    matrix::{RowVec},
-};
+use mceliece::{crypto::*, finite_field::*, matrix::*};
 
 pub mod common;
 
 const REPEAT: u32 = 10;
 
-// fn setup() -> (u32, u32, u32) {
-//     common::log_setup();
-//     let mut rng = rand::thread_rng();
-//     let n = match GOPPA_N {
-//         0 => rng.gen_range(GOPPA_N_MIN, GOPPA_N_MAX),
-//         value => value,
-//     };
-//     let q = n.next_power_of_two();
-//     let m = q.trailing_zeros();
-//     let t = match GOPPA_T {
-//         0 => {
-//             let t_min = if n == q { 2 } else { 1 };
-//             let t_max = matrix::div_ceil(n, m) + if n.is_power_of_two() { 1 } else { 0 };
-//             rng.gen_range(t_min, t_max)
-//         }
-//         value => value,
-//     };
-//     (m, n, t)
-// }
-
 #[test]
 fn crypto_keygen() {
     let (m, n, t) = common::goppa_setup();
-    warn!("m={}, n={}, t={}", m, n, t);
+    info!("F2m=F{}, n={}, t={}", 1 << m, n, t);
+
     let f2 = &F2 {};
     let f2m = &F2m::generate(1 << m);
     let (pk, sk) = keygen(f2, f2m, n, t);
@@ -49,7 +24,8 @@ fn crypto_keygen() {
 #[test]
 fn crypto_pk_write_read() {
     let (m, n, t) = common::goppa_setup();
-    warn!("m={}, n={}, t={}", m, n, t);
+    info!("F2m=F{}, n={}, t={}", 1 << m, n, t);
+
     let f2 = &F2 {};
     let f2m = &F2m::generate(1 << m);
     let (pk, _) = keygen(f2, f2m, n, t);
@@ -62,7 +38,8 @@ fn crypto_pk_write_read() {
 #[test]
 fn crypto_sk_write_read() {
     let (m, n, t) = common::goppa_setup();
-    warn!("m={}, n={}, t={}", m, n, t);
+    info!("F2m=F{}, n={}, t={}", 1 << m, n, t);
+
     let f2 = &F2 {};
     let f2m = &F2m::generate(1 << m);
     let (_, sk) = keygen(f2, f2m, n, t);
@@ -77,7 +54,8 @@ fn crypto_sk_write_read() {
 #[test]
 fn crypto_decrypt_null_ciphertext() {
     let (m, n, t) = common::goppa_setup();
-    warn!("m={}, n={}, t={}", m, n, t);
+    info!("F2m=F{}, n={}, t={}", 1 << m, n, t);
+
     let f2 = &F2 {};
     let f2m = &F2m::generate(1 << m);
     let (pk, sk) = keygen(f2, f2m, n, t);
@@ -89,9 +67,10 @@ fn crypto_decrypt_null_ciphertext() {
 }
 
 #[test]
-fn crypto_decrypt_codeword_ciphertext() {
+fn crypto_decrypt_codeword() {
     let (m, n, t) = common::goppa_setup();
-    warn!("m={}, n={}, t={}", m, n, t);
+    info!("F2m=F{}, n={}, t={}", 1 << m, n, t);
+
     let f2 = &F2 {};
     let f2m = &F2m::generate(1 << m);
     let (pk, sk) = keygen(f2, f2m, n, t);
@@ -106,7 +85,8 @@ fn crypto_decrypt_codeword_ciphertext() {
 #[test]
 fn crypto_encrypt_decrypt_null_message() {
     let (m, n, t) = common::goppa_setup();
-    warn!("m={}, n={}, t={}", m, n, t);
+    info!("F2m=F{}, n={}, t={}", 1 << m, n, t);
+
     let f2 = &F2 {};
     let f2m = &F2m::generate(1 << m);
     let (pk, sk) = keygen(f2, f2m, n, t);
@@ -114,6 +94,7 @@ fn crypto_encrypt_decrypt_null_message() {
     let msg = RowVec::zero(f2, k);
     let cpt = pk.encrypt(&msg);
     assert_eq!(cpt.weight() as u32, t);
+
     let dmsg = sk.decrypt(&cpt);
     assert_eq!(dmsg, msg);
 }
@@ -121,7 +102,8 @@ fn crypto_encrypt_decrypt_null_message() {
 #[test]
 fn crypto_encrypt_decrypt_random_message() {
     let (m, n, t) = common::goppa_setup();
-    warn!("m={}, n={}, t={}", m, n, t);
+    info!("F2m=F{}, n={}, t={}", 1 << m, n, t);
+
     let f2 = &F2 {};
     let f2m = &F2m::generate(1 << m);
     let (pk, sk) = keygen(f2, f2m, n, t);
@@ -134,10 +116,31 @@ fn crypto_encrypt_decrypt_random_message() {
 }
 
 #[test]
-fn crypto_repeat_encrypt_decrypt() {
-    let mut r = 0;
-    while r < REPEAT {
-        crypto_encrypt_decrypt_random_message();
-        r += 1;
+fn crypto_repeat() {
+    common::log_setup();
+    warn!("Series of {} random encryption - decryption", REPEAT);
+
+    for _r in 0..REPEAT {
+        let (m, n, t) = common::goppa_setup();
+        warn!(
+            "Encrypt - Decrypt #{:02}: F2m=F{:<4}, n={:<4}, t={:<4}",
+            _r,
+            1 << m,
+            n,
+            t
+        );
+        crypto_repeated(m, n, t);
     }
+}
+
+fn crypto_repeated(m: u32, n: u32, t: u32) {
+    let f2 = &F2 {};
+    let f2m = &F2m::generate(1 << m);
+    let (pk, sk) = keygen(f2, f2m, n, t);
+    let k = pk.sgp().rows();
+    let mut rng = rand::thread_rng();
+    let msg = RowVec::random(&mut rng, f2, k);
+    let cpt = pk.encrypt(&msg);
+    let dmsg = sk.decrypt(&cpt);
+    assert_eq!(dmsg, msg);
 }

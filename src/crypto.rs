@@ -1,6 +1,6 @@
 //! The McEliece cryptosystem
 
-use log::info;
+use log::debug;
 
 use std::{
     error::Error,
@@ -56,23 +56,23 @@ pub fn keygen<'a, 'b>(
 ) -> (PublicKey<'a>, SecretKey<'a, 'b>) {
     let mut rng = rand::thread_rng();
     let goppa = Goppa::random(&mut rng, f2m, n as usize, t as usize);
-    info!("{}", goppa);
+    debug!("{}", goppa);
     
     let xyz = goppa.parity_check_xyz();
     let (g, info_set) = Goppa::generator_from_xyz(&xyz, f2);
-    info!("Generator matrix G:{}", g);
-    info!("Information set of generator matrix G:\n{:?}\n", info_set);
+    debug!("Generator matrix G:{}", g);
+    debug!("Information set of generator matrix G:\n{:?}\n", info_set);
     
     let k = g.rows();
     let s = Mat::invertible_random(&mut rng, f2, k as usize);
-    info!("Code dimension k = {}", k);
-    info!("Singular matrix S:{}", s);
+    debug!("Code dimension k = {}", k);
+    debug!("Singular matrix S:{}", s);
     
     let p = Perm::random(&mut rng, n as usize);
-    info!("Permutation P:\n{:?}\n", p);
+    debug!("Permutation P:\n{:?}\n", p);
     
     let sgp = &s * &g * &p;
-    info!("Perturbed generator matrix ~G:{}", sgp);
+    debug!("Perturbed generator matrix ~G:{}", sgp);
     
     let pk = PublicKey { sgp, t };
     let sk = SecretKey {
@@ -96,10 +96,10 @@ impl<'a> PublicKey<'a> {
     pub fn encrypt(&self, m: &RowVec<'a, F2>) -> RowVec<'a, F2> {
         let mut rng = rand::thread_rng();
         let c = Goppa::<F2m>::g_encode(&self.sgp, m);
-        info!("Encoded plaintext:{}", c);
+        debug!("Encoded plaintext:{}", c);
         
         let z = RowVec::random_with_weight(&mut rng, m.field(), self.sgp.cols(), self.t as usize);
-        info!("Error vector:{}", z);
+        debug!("Error vector:{}", z);
         
         c + z
     }
@@ -156,10 +156,10 @@ impl<'a, 'b> SecretKey<'a, 'b> {
     pub fn decrypt(&self, c: &RowVec<'a, F2>) -> RowVec<'a, F2> {
         let m_s_g_z = c * self.p.inverse();
         let m_s_g = self.goppa.decode(&m_s_g_z);
-        info!("Decoded codeword mSG:{}", m_s_g);
+        debug!("Decoded codeword mSG:{}", m_s_g);
         
         let m_s = m_s_g.extract_cols(&self.info_set);
-        info!(
+        debug!(
             "Use information set {:?} to extract mS:{}",
             self.info_set, m_s
         );
@@ -204,11 +204,11 @@ impl<'a, 'b> SecretKey<'a, 'b> {
 
         let line = lines_iter.next().ok_or("Cannot read line 1")?;
         let s = Mat::from_hex_string(&line, f2)?;
-        info!("Read matrix s:{}", s);
+        debug!("Read matrix s:{}", s);
 
         let line = lines_iter.next().ok_or("Cannot read line 2")?;
         let goppa = Goppa::from_hex_string(&line, f2m)?;
-        info!("Read goppa code:{}", goppa);
+        debug!("Read goppa code:{}", goppa);
 
         let line = lines_iter.next().ok_or("Cannot read line 3")?;
         let v: Vec<&str> = line.split(' ').collect();
@@ -216,7 +216,7 @@ impl<'a, 'b> SecretKey<'a, 'b> {
         for i in 0..v.len() {
             info_set.push(usize::from_str_radix(v[i], 16)?);
         }
-        info!("Read information set:{:?}", info_set);
+        debug!("Read information set:{:?}", info_set);
 
         let line = lines_iter.next().ok_or("Cannot read line 4")?;
         let v: Vec<&str> = line.split(' ').collect();

@@ -5,7 +5,7 @@ static INIT: Once = Once::new();
 const GOPPA_N_MIN: u32 = 3;
 const GOPPA_N_MAX: u32 = 256 + 1;
 
-const GOPPA_N: u32 = 8;
+const GOPPA_N: u32 = 0;
 const GOPPA_T: u32 = 0;
 
 // TODO: remove commented code
@@ -20,7 +20,6 @@ pub fn div_ceil(n: u32, d: u32) -> u32 {
     n / d + if n % d == 0 { 0 } else { 1 }
 }
 
-/// Setup function that is only run once, even if called multiple times.
 pub fn log_setup() {
     INIT.call_once(|| {
         env_logger::init();

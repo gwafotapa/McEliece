@@ -1,8 +1,7 @@
 use log::info;
 use rand::Rng;
 
-use mceliece::finite_field::*;
-use mceliece::matrix::*;
+use mceliece::{finite_field::*, matrix::*};
 
 pub mod common;
 
@@ -19,7 +18,7 @@ fn matrix_f7_is_invertible() {
     common::log_setup();
     let f7 = &F7 {};
     let id = Mat::identity(f7, 11);
-    info!("{}", id);
+    info!("Identity matrix:{}", id);
     assert!(id.is_invertible());
 }
 
@@ -60,27 +59,26 @@ fn matrix_f7_add() {
     common::log_setup();
     let f7 = &F7 {};
     let mut rng = rand::thread_rng();
-    let a = Mat::random(&mut rng, f7, 11, 11);
-    let b = Mat::random(&mut rng, f7, 11, 11);
-    let c = Mat::random(&mut rng, f7, 11, 11);
-    let z = Mat::zero(f7, 11, 11);
-    info!("{}", a);
+    let a = &Mat::random(&mut rng, f7, 11, 11);
+    let b = &Mat::random(&mut rng, f7, 11, 11);
+    let c = &Mat::random(&mut rng, f7, 11, 11);
+    let z = &Mat::zero(f7, 11, 11);
 
     // Associativity
-    assert!((&a + &b) + &c == &a + (&b + &c));
+    assert!((a + b) + c == a + (b + c));
 
     // Commutativity
-    assert!(&a + &b == &b + &a);
+    assert!(a + b == b + a);
 
     // Neutral element
-    assert!(&a + &z == a);
+    assert!(a + z == *a);
 
     // Characteristic
     let mut s = Mat::zero(f7, 11, 11);
     for _i in 0..7 {
-        s += &a;
+        s += a;
     }
-    assert!(s == z);
+    assert!(s == *z);
 }
 
 #[test]
@@ -99,37 +97,37 @@ fn matrix_f7_mul() {
     common::log_setup();
     let f7 = &F7 {};
     let mut rng = rand::thread_rng();
-    let a = Mat::random(&mut rng, f7, 10, 8);
-    let b = Mat::random(&mut rng, f7, 8, 13);
-    let c = Mat::random(&mut rng, f7, 13, 4);
+    let a = &Mat::random(&mut rng, f7, 10, 8);
+    let b = &Mat::random(&mut rng, f7, 8, 13);
+    let c = &Mat::random(&mut rng, f7, 13, 4);
 
     // Associativity
-    assert!((&a * &b) * &c == &a * (&b * &c));
+    assert!((a * b) * c == a * (b * c));
 
     // Neutral element
-    let i8 = Mat::identity(f7, 8);
-    let i10 = Mat::identity(f7, 10);
-    assert!(&a * &i8 == a);
-    assert!(&i10 * &a == a);
+    let i8 = &Mat::identity(f7, 8);
+    let i10 = &Mat::identity(f7, 10);
+    assert!(a * i8 == *a);
+    assert!(i10 * a == *a);
 
     // Zero case
-    let z8 = Mat::zero(f7, 8, 8);
-    let z10 = Mat::zero(f7, 10, 10);
-    let z10_8 = Mat::zero(f7, 10, 8);
-    assert!(&a * &z8 == z10_8);
-    assert!(&z10 * &a == z10_8);
+    let z8 = &Mat::zero(f7, 8, 8);
+    let z10 = &Mat::zero(f7, 10, 10);
+    let z10_8 = &Mat::zero(f7, 10, 8);
+    assert!(a * z8 == *z10_8);
+    assert!(z10 * a == *z10_8);
 
     // Distributivity
-    let a = Mat::random(&mut rng, f7, 10, 12);
-    let b = Mat::random(&mut rng, f7, 10, 12);
-    let c = Mat::random(&mut rng, f7, 12, 9);
-    let d = Mat::random(&mut rng, f7, 12, 9);
+    let a = &Mat::random(&mut rng, f7, 10, 12);
+    let b = &Mat::random(&mut rng, f7, 10, 12);
+    let c = &Mat::random(&mut rng, f7, 12, 9);
+    let d = &Mat::random(&mut rng, f7, 12, 9);
 
     // Left: (a + b)c = ac + bc
-    assert!((&a + &b) * &c == &a * &c + &b * &c);
+    assert!((a + b) * c == a * c + b * c);
 
     // Right: a(b + c) = ab + ac
-    assert!(&a * (&c + &d) == &a * &c + &a * &d);
+    assert!(a * (c + d) == a * c + a * d);
 }
 
 #[test]
@@ -168,11 +166,9 @@ fn matrix_f7_standard_form() {
     let (u, s, p) = h
         .standard_form()
         .expect("Failed to put a full rank matrix in standard form");
-
-    info!("{}", u);
-    info!("{}", s);
-    info!("{:?}", p);
-
+    info!("Invertible matrix U:{}", u);
+    info!("Standard form matrix S:{}", s);
+    info!("Permutation P:{:?}", p);
     assert!(u.is_invertible());
     assert!(s.is_standard_form());
     assert!(p.is_permutation());
@@ -184,8 +180,8 @@ fn matrix_f7_transpose() {
     common::log_setup();
     let f7 = &F7 {};
     let mut rng = rand::thread_rng();
-    let rows = rng.gen_range(0, 100);
-    let cols = rng.gen_range(0, 100);
+    let rows = rng.gen_range(1, 100);
+    let cols = rng.gen_range(1, 100);
     let mat = Mat::random(&mut rng, f7, rows, cols);
     let tmat = mat.transpose();
     for i in 0..rows {

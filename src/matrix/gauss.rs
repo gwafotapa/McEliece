@@ -1,4 +1,4 @@
-use rand::{Rng, rngs::ThreadRng};
+use rand::{rngs::ThreadRng, Rng};
 
 use super::{Field, Mat, Perm};
 
@@ -133,7 +133,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
     pub fn invertible_random(rng: &mut ThreadRng, f: &'a F, n: usize) -> Self {
         let mut mat = Mat::random(rng, f, n, n);
         let mut u = Mat::identity(f, n);
-        
+
         // Loop on columns
         for j in 0..n {
             // Find a pivot in column j
@@ -141,7 +141,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
             while i < n && mat[(i, j)] == f.zero() {
                 i += 1;
             }
-            
+
             // If column j has no pivot, create it
             if i == n {
                 i = rng.gen_range(j, n);
@@ -149,17 +149,17 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
                     mat[(i, j)] = f.random_element(rng);
                 }
             }
-            
+
             // Put pivot in position (j, j) and mirror operation on matrix u
             mat.swap_rows(i, j);
             u.swap_rows(i, j);
-            
+
             // Normalize pivot's row and mirror operation on matrix u
             let pivot = mat[(j, j)];
             let inv_pivot = f.inv(pivot).unwrap();
             mat.mul_row(j, inv_pivot);
             u.mul_row(j, inv_pivot);
-            
+
             // Zero coefficients under the pivot and mirror operation on matrix u
             for i in j + 1..n {
                 if mat[(i, j)] == f.zero() {

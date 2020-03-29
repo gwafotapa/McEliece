@@ -1,6 +1,6 @@
 //! Binary irreducible Goppa codes
 
-use log::info;
+use log::debug;
 
 use rand::{rngs::ThreadRng, Rng};
 use std::{
@@ -306,34 +306,34 @@ where
         let f = self.field();
         let f2 = rcv.field();
         let syndrome = Self::syndrome_from_xyz(xyz, rcv);
-        info!("syndrome:{}", syndrome);
+        debug!("syndrome:{}", syndrome);
 
         let s_x = Poly::new(f, syndrome.data().iter().rev().cloned().collect());
-        info!("S(x) = {}", s_x);
+        debug!("S(x) = {}", s_x);
 
         if s_x.is_zero() {
             return rcv.clone();
         }
-        
+
         let mut t_x = s_x.inverse_modulo(&self.poly);
-        info!("T(x) = s(x)^-1 = {}", s_x);
-        
+        debug!("T(x) = s(x)^-1 = {}", s_x);
+
         t_x += Poly::x_n(f, 1);
         t_x.square_root_modulo(&self.poly);
-        info!("(T(x) + x)^(1/2) = {}", t_x);
-        
+        debug!("(T(x) + x)^(1/2) = {}", t_x);
+
         let (mut a, mut b) = Poly::goppa_extended_gcd(&self.poly, &t_x);
-        info!("a(x) = {}", a);
-        info!("b(x) = {}", b);
-        
+        debug!("a(x) = {}", a);
+        debug!("b(x) = {}", b);
+
         a.square();
         b.square();
-        info!("a(x)^2 = {}", a);
-        info!("b(x)^2 = {}", b);
-        
+        debug!("a(x)^2 = {}", a);
+        debug!("b(x)^2 = {}", b);
+
         b *= Poly::x_n(f, 1);
         let sigma = &a + &b;
-        info!("sigma(x) = {}", sigma);
+        debug!("sigma(x) = {}", sigma);
 
         let err = RowVec::new(
             f2,
@@ -348,8 +348,8 @@ where
                 })
                 .collect(),
         );
-        info!("Error vector:{}", err);
-        
+        debug!("Error vector:{}", err);
+
         let cdw = rcv + err;
         cdw
     }
@@ -386,7 +386,7 @@ impl<'a, F: Eq + F2FiniteExtension> Goppa<'a, F> {
     pub fn from_hex_string(s: &str, f: &'a F) -> Result<Self> {
         let v: Vec<&str> = s.split("##").collect();
         let poly = Poly::from_hex_string(v[0], f)?;
-        info!("Read polynomial:{}", s);
+        debug!("Read polynomial:{}", s);
 
         let set_data = hex::decode(v[1])?;
         let mut set = Vec::new();
