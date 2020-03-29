@@ -7,10 +7,6 @@ use crate::finite_field::{Field, FiniteField, F2};
 pub use perm::Perm;
 pub use rowvec::RowVec;
 
-pub fn div_ceil(a: u32, b: u32) -> u32 {
-    a / b + if a % b == 0 { 0 } else { 1 }
-}
-
 /// Matrix with coefficients in a field F
 #[derive(Eq, PartialEq)]
 pub struct Mat<'a, F: Eq + Field> {
@@ -130,7 +126,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
     /// # Panics
     ///
     /// Panics if the vector contains an index that does not match any row of the matrix
-    fn keep_rows(&mut self, rows: &Vec<usize>) {
+    pub fn keep_rows(&mut self, rows: &Vec<usize>) {
         let mut rrows = rows.clone();
         rrows.sort_by(|a, b| a.cmp(b).reverse());
         if *rrows.first().unwrap() >= self.rows {
@@ -153,7 +149,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
     /// # Panics
     ///
     /// Panics if the vector contains an index that does not match any row of the matrix
-    fn remove_rows(&mut self, rows: &Vec<usize>) {
+    pub fn remove_rows(&mut self, rows: &Vec<usize>) {
         let mut rrows = rows.clone();
         rrows.sort_by(|a, b| a.cmp(b).reverse());
         if *rrows.first().unwrap() >= self.rows {
@@ -166,8 +162,8 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
     }
 }
 
-mod f2;
-mod gauss;
-mod perm;
-mod rowvec;
-mod traits;
+pub mod f2;
+pub mod gauss;
+pub mod perm;
+pub mod rowvec;
+pub mod traits;

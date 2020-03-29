@@ -364,9 +364,6 @@ impl<'a> Mat<'a, F2> {
     // }
 
     pub fn to_hex_string(&self) -> String {
-        if self.rows > 4095 || self.cols > 4095 {
-            panic!("Cannot convert matrix to hex string: dimensions not supported");
-        }
         let len = 2 * (4 + 1) + 2 * (self.rows * self.cols / 8 + 1) + 1;
         let mut s = String::with_capacity(len);
         s.push_str(format!("{:x}#{:x}#", self.rows, self.cols).as_str());

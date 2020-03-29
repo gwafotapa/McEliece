@@ -315,16 +315,14 @@ where
             return rcv.clone();
         }
         
-        // TODO: Which inverse_modulo do I have to use ?
-        // s_x.inverse_modulo_by_fast_exponentiation(&self.poly);
-        let mut s_x = s_x.inverse_modulo(&self.poly);
+        let mut t_x = s_x.inverse_modulo(&self.poly);
         info!("T(x) = s(x)^-1 = {}", s_x);
         
-        s_x += Poly::x_n(f, 1);
-        s_x.square_root_modulo(&self.poly);
-        info!("(T(x) + x)^(1/2) = {}", s_x);
+        t_x += Poly::x_n(f, 1);
+        t_x.square_root_modulo(&self.poly);
+        info!("(T(x) + x)^(1/2) = {}", t_x);
         
-        let (mut a, mut b) = Poly::goppa_extended_gcd(&self.poly, &s_x);
+        let (mut a, mut b) = Poly::goppa_extended_gcd(&self.poly, &t_x);
         info!("a(x) = {}", a);
         info!("b(x) = {}", b);
         
@@ -406,6 +404,6 @@ impl<'a, F: Eq + F2FiniteExtension> Goppa<'a, F> {
                 cnt_mod_8 -= 1
             }
         }
-        Ok(Goppa { poly, set })
+        Ok(Goppa::new(poly, set))
     }
 }

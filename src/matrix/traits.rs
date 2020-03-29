@@ -6,6 +6,10 @@ use std::{
 use super::{Field, FiniteField, Mat, Perm};
 use crate::finite_field::F2FiniteExtension;
 
+fn div_ceil(a: u32, b: u32) -> u32 {
+    a / b + if a % b == 0 { 0 } else { 1 }
+}
+
 impl<'a, F: Eq + Field> Clone for Mat<'a, F> {
     fn clone(&self) -> Self {
         Mat {
@@ -294,7 +298,7 @@ impl<'a, F: Eq + F2FiniteExtension> Debug for Mat<'a, F> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let k = self.field;
         let m = k.characteristic_exponent() as usize;
-        let width = super::div_ceil(m as u32, 4) as usize;
+        let width = div_ceil(m as u32, 4) as usize;
         write!(f, "\n")?;
         for i in 0..self.rows {
             for j in 0..self.cols - 1 {

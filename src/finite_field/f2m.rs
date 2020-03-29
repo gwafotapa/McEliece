@@ -201,7 +201,7 @@ impl F2m {
     /// - Panics if order is not a power of 2.
     /// - Panics if order is 2 (use struct F2 instead).
     /// - Panics if order is greater than 2<sup>16</sup>.
-    fn primitive_poly(order: u32) -> u32 {
+    pub fn primitive_poly(order: u32) -> u32 {
         match prime_power(order) {
             Ok((_, m)) => match m {
                 2 => 0x7,

@@ -6,10 +6,6 @@ pub use f2::F2;
 pub use f2m::F2m;
 pub use f7::F7;
 
-pub mod f2;
-pub mod f2m;
-pub mod f7;
-
 pub trait Field {
     /// Field Element
     type FElt: Copy + Eq;
@@ -91,3 +87,7 @@ pub trait F2FiniteExtension: CharacteristicTwo + FiniteField {
     /// Panics if the u32 is greater than or equal to field order.
     fn u32_to_elt(&self, n: u32) -> Self::FElt;
 }
+
+pub mod f2;
+pub mod f2m;
+pub mod f7;

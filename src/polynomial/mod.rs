@@ -89,7 +89,7 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
     }
 
     /// Sets length of vector data as one plus the degree of the polynomial
-    pub fn update_len(&mut self) {
+    fn update_len(&mut self) {
         self.data.truncate(self.degree() + 1);
     }
 
@@ -246,5 +246,5 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
     }
 }
 
-mod traits;
+pub mod traits;
 pub mod characteristic_two;

@@ -2,7 +2,7 @@ use rand::rngs::ThreadRng;
 use std::error::Error;
 
 use super::{Field, Poly};
-use crate::finite_field::{CharacteristicTwo, F2FiniteExtension, FiniteField};
+use crate::finite_field::{f2m, CharacteristicTwo, F2FiniteExtension, FiniteField};
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
@@ -51,7 +51,6 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
         }
     }
 
-    // TODO: is this inverse_modulo more efficient ?
     pub fn inverse_modulo_by_fast_exponentiation(&mut self, modulus: &Self)
     where
         F: FiniteField,
@@ -109,7 +108,7 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
 
         let f = self.field;
         let q = f.order();
-        let mut n_prime_factors = trial_division(n);
+        let mut n_prime_factors = f2m::trial_division(n);
         n_prime_factors.dedup();
         let n_div_primes: Vec<u32> = n_prime_factors.iter().map(|x| n / x).collect();
 
@@ -133,7 +132,7 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
         g.is_zero()
     }
 
-    pub fn goppa_extended_gcd(g: &Self, t: &Self) -> (Self, Self) {
+    pub(crate) fn goppa_extended_gcd(g: &Self, t: &Self) -> (Self, Self) {
         if g.field != t.field {
             panic!("Cannot compute euclidean division: fields differ")
         }
@@ -190,40 +189,6 @@ impl<'a, F: Eq + F2FiniteExtension> Poly<'a, F> {
         }
         Ok(poly)
     }
-}
-
-/// Computes the prime factors of (non zero) integer n by trial division
-/// https://en.wikipedia.org/wiki/Trial_division
-/// ```
-/// # use mceliece::polynomial::characteristic_two::trial_division;
-/// assert_eq!(trial_division(1), vec![]);
-/// assert_eq!(trial_division(19), vec![19]);
-/// assert_eq!(trial_division(77), vec![7, 11]);
-/// assert_eq!(trial_division(12), vec![2, 2, 3]);
-/// ```
-pub fn trial_division(mut n: u32) -> Vec<u32> {
-    if n == 0 {
-        panic!("0 is an invalid input for trial division");
-    }
-
-    let mut prime_factors = Vec::new();
-    while n % 2 == 0 {
-        prime_factors.push(2);
-        n /= 2;
-    }
-    let mut f = 3;
-    while f * f <= n {
-        if n % f == 0 {
-            prime_factors.push(f);
-            n /= f;
-        } else {
-            f += 2;
-        }
-    }
-    if n != 1 {
-        prime_factors.push(n);
-    }
-    prime_factors
 }
 
 #[cfg(test)]

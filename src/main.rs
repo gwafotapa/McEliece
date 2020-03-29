@@ -5,15 +5,13 @@ use std::{
     io::{self, Write},
 };
 
-use crypto::{PublicKey, SecretKey};
-use finite_field::{F2m, F2};
-use matrix::RowVec;
+use mceliece::{
+    crypto::{self, PublicKey, SecretKey},
+    finite_field::{F2m, F2},
+    matrix::RowVec,
+};
 
-pub mod crypto;
-mod finite_field;
-pub mod goppa; // TODO: Warnings about dead code without the pub. Why ?
-mod matrix;
-mod polynomial;
+// TODO: remove commented code
 
 // const GOPPA_N_MIN: u32 = 4;
 // const GOPPA_N_MAX: u32 = 1024;
@@ -21,17 +19,17 @@ mod polynomial;
 // const GOPPA_T: u32 = 50; // Code correction capacity
 // const GOPPA_K: u32 = 524; // Code dimension
 
-const GOPPA_N_MIN: u32 = 4;
-const GOPPA_N_MAX: u32 = 2048;
-const GOPPA_N: u32 = 2048; // Code length
-const GOPPA_T: u32 = 70; // Code correction capacity
-// const GOPPA_K: u32 = 1278; // Code dimension
-
 // const GOPPA_N_MIN: u32 = 4;
-// const GOPPA_N_MAX: u32 = 4096;
-// const GOPPA_N: u32 = 4096; // Code length
-// const GOPPA_T: u32 = 170; // Code correction capacity
-// const GOPPA_K: u32 = 2056; // Code dimension
+// const GOPPA_N_MAX: u32 = 2048;
+// const GOPPA_N: u32 = 2048; // Code length
+// const GOPPA_T: u32 = 70; // Code correction capacity
+// // const GOPPA_K: u32 = 1278; // Code dimension
+
+const GOPPA_N_MIN: u32 = 4; // TODO: 4 or 5 ?
+const GOPPA_N_MAX: u32 = 4096;
+const GOPPA_N: u32 = 4096; // Code length
+const GOPPA_T: u32 = 170; // Code correction capacity
+                          // const GOPPA_K: u32 = 2056; // Code dimension
 
 const PLAINTEXT: &str = "plaintext.mce";
 const CIPHERTEXT: &str = "ciphertext.mce";

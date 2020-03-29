@@ -153,6 +153,38 @@ impl<'a, F: Eq + Field> MulAssign<&Mat<'a, F>> for RowVec<'a, F> {
     }
 }
 
+impl<'a, F: Eq + Field> Mul<Perm> for RowVec<'a, F> {
+    type Output = Self;
+
+    fn mul(self, other: Perm) -> Self::Output {
+        &self * &other
+    }
+}
+
+impl<'a, F: Eq + Field> Mul<&Perm> for RowVec<'a, F> {
+    type Output = Self;
+
+    fn mul(self, other: &Perm) -> Self::Output {
+        &self * other
+    }
+}
+
+impl<'a, F: Eq + Field> Mul<Perm> for &RowVec<'a, F> {
+    type Output = RowVec<'a, F>;
+
+    fn mul(self, other: Perm) -> Self::Output {
+        self * &other
+    }
+}
+
+impl<'a, F: Eq + Field> Mul<&Perm> for &RowVec<'a, F> {
+    type Output = RowVec<'a, F>;
+
+    fn mul(self, other: &Perm) -> Self::Output {
+        self.extract_cols(other.data())
+    }
+}
+
 impl<'a, F: Eq + Field> Neg for RowVec<'a, F> {
     type Output = Self;
 
@@ -239,22 +271,19 @@ impl<'a, F: Eq + Field> RowVec<'a, F> {
 
     pub fn random_with_weight(rng: &mut ThreadRng, f: &'a F, n: usize, w: usize) -> Self {
         let mut vec = RowVec::zero(f, n);
-        let mut cols = Vec::with_capacity(n); // remaining column indices
+        let mut cols = Vec::with_capacity(n);
         for i in 0..n {
             cols.push(i);
         }
 
-        for i in 0..w {
-            // Draw a random column index
-            let nbr = rng.gen_range(0, n - i);
+        for _i in 0..w {
             let mut elt = f.random_element(rng);
             while elt == f.zero() {
                 elt = f.random_element(rng);
             }
-            vec[cols[nbr]] = elt;
-
-            // Remove the index from the list by putting it at the end
-            cols.swap(nbr, n - 1 - i);
+            let index = rng.gen_range(0, cols.len());
+            vec[cols[index]] = elt;
+            cols.swap_remove(index);
         }
         vec
     }
@@ -323,37 +352,5 @@ impl<'a> RowVec<'a, F2> {
             }
         }
         Ok(vec)
-    }
-}
-
-impl<'a, F: Eq + Field> Mul<Perm> for RowVec<'a, F> {
-    type Output = Self;
-
-    fn mul(self, other: Perm) -> Self::Output {
-        &self * &other
-    }
-}
-
-impl<'a, F: Eq + Field> Mul<&Perm> for RowVec<'a, F> {
-    type Output = Self;
-
-    fn mul(self, other: &Perm) -> Self::Output {
-        &self * other
-    }
-}
-
-impl<'a, F: Eq + Field> Mul<Perm> for &RowVec<'a, F> {
-    type Output = RowVec<'a, F>;
-
-    fn mul(self, other: Perm) -> Self::Output {
-        self * &other
-    }
-}
-
-impl<'a, F: Eq + Field> Mul<&Perm> for &RowVec<'a, F> {
-    type Output = RowVec<'a, F>;
-
-    fn mul(self, other: &Perm) -> Self::Output {
-        self.extract_cols(other.data())
     }
 }

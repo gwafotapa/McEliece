@@ -8,6 +8,8 @@ const GOPPA_N_MAX: u32 = 256 + 1;
 const GOPPA_N: u32 = 0;
 const GOPPA_T: u32 = 0;
 
+// TODO: remove commented code
+
 // const GOPPA_N: u32 = 1024;
 // const GOPPA_T: u32 = 50;
 
@@ -25,7 +27,7 @@ pub fn goppa_setup() -> (u32, u32, u32) {
     log_setup();
     let mut rng = rand::thread_rng();
     let (mut m, mut n, mut t) = (1, 0, 1);
-    while m * t > n {
+    while m * t >= n {
         n = match GOPPA_N {
             0 => rng.gen_range(GOPPA_N_MIN, GOPPA_N_MAX),
             value => value,
