@@ -2,10 +2,10 @@ use rand::Rng;
 use std::sync::Once;
 
 static INIT: Once = Once::new();
-const GOPPA_N_MIN: u32 = 5; // TODO: check value 3 and 4 and also modify main.rs
+const GOPPA_N_MIN: u32 = 3;
 const GOPPA_N_MAX: u32 = 256 + 1;
 
-const GOPPA_N: u32 = 0;
+const GOPPA_N: u32 = 5;
 const GOPPA_T: u32 = 0;
 
 // TODO: remove commented code
@@ -15,6 +15,10 @@ const GOPPA_T: u32 = 0;
 
 // const GOPPA_N: u32 = 97;
 // const GOPPA_T: u32 = 11;
+
+pub fn div_ceil(n: u32, d: u32) -> u32 {
+    n / d + if n % d == 0 { 0 } else { 1 }
+}
 
 /// Setup function that is only run once, even if called multiple times.
 pub fn log_setup() {
@@ -36,14 +40,15 @@ pub fn goppa_setup() -> (u32, u32, u32) {
         m = q.trailing_zeros();
         t = match GOPPA_T {
             0 => {
-                // if n == q, the degree t of the goppa polynomial must be greater than 1.
-                // Otherwise, the set L contains the polynomial root.
-                let t_min = if n == q { 2 } else { 1 };
-                let t_max = t_min + n / m;
+                let t_min = 1;
+                let t_max = div_ceil(n, m);
                 rng.gen_range(t_min, t_max)
             }
             value => value,
         };
+        if n == q && t == 1 {
+            m += 1;
+        }
     }
     (m, n, t)
 }

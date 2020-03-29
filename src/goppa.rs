@@ -134,8 +134,8 @@ where
             panic!("m * t must be at most n");
         }
         let poly = Poly::random_monic_irreducible(rng, f, t);
-        if poly.degree() == 1 && n > q - 1 {
-            panic!("n must be (strictly) less than q when goppa polynomial is of degree 1");
+        if poly.degree() == 1 && n == q {
+            panic!("n must be strictly less than q when Goppa polynomial is of degree 1");
         }
         let mut pool = Vec::<u32>::with_capacity(q);
         for i in 0..q {

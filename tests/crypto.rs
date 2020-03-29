@@ -10,7 +10,7 @@ use mceliece::{
 
 pub mod common;
 
-const REPEAT: u32 = 1;
+const REPEAT: u32 = 10;
 
 // fn setup() -> (u32, u32, u32) {
 //     common::log_setup();

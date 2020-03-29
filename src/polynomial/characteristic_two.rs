@@ -105,6 +105,9 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
         if n == 0 {
             return false;
         }
+        if n == 1 {
+            return true;
+        }
 
         let f = self.field;
         let q = f.order();

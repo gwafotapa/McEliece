@@ -62,12 +62,12 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {Poly9,219
     pub fn inverse_modulo_by_fast_exponentiation(&mut self, modulus: &Self)inverse_modulo_by_fast_exponentiation54,1460
     pub fn pow_modulo(&mut self, mut n: u32, modulus: &Self) {pow_modulo77,2148
     pub fn is_irreducible(&self) -> boolis_irreducible100,2775
-    pub(crate) fn goppa_extended_gcd(g: &Self, t: &Self) -> (Self, Self) {goppa_extended_gcd135,3717
-impl<'a, F: Eq + F2FiniteExtension> Poly<'a, F> {Poly163,4459
-    pub fn to_hex_string(&self) -> String {to_hex_string164,4509
-    pub fn from_hex_string(s: &str, f: &'a F) -> Result<Self> {from_hex_string182,5260
-mod tests {tests195,5670
-    fn is_irreducible() {is_irreducible200,5753
+    pub(crate) fn goppa_extended_gcd(g: &Self, t: &Self) -> (Self, Self) {goppa_extended_gcd138,3772
+impl<'a, F: Eq + F2FiniteExtension> Poly<'a, F> {Poly166,4514
+    pub fn to_hex_string(&self) -> String {to_hex_string167,4564
+    pub fn from_hex_string(s: &str, f: &'a F) -> Result<Self> {from_hex_string185,5315
+mod tests {tests198,5725
+    fn is_irreducible() {is_irreducible203,5808
 
 polynomial/mod.rs,1263
 pub struct Poly<'a, F: Eq + Field> {Poly9,149
@@ -101,59 +101,59 @@ impl<'a, F> Display for Goppa<'a, F>Goppa54,1244
 impl<'a, F> Goppa<'a, F>Goppa81,1994
     pub fn new(poly: Poly<'a, F>, set: Vec<F::FElt>) -> Self {new99,2633
     pub fn random(rng: &mut ThreadRng, f: &'a F, n: usize, t: usize) -> Self {random127,3771
-    pub fn len(&self) -> usize {len159,4914
-    pub fn poly(&self) -> &Poly<'a, F> {poly163,4977
-    pub fn set(&self) -> &Vec<F::FElt> {set167,5044
-    pub fn field(&self) -> &'a F {field171,5110
-    pub fn parity_check_x(&self) -> Mat<'a, F> {parity_check_x175,5178
-    pub fn parity_check_y(&self) -> Mat<'a, F> {parity_check_y187,5480
-    pub fn parity_check_z(&self) -> Mat<'a, F> {parity_check_z205,5918
-    pub fn parity_check_xyz(&self) -> Mat<'a, F> {parity_check_xyz216,6186
-    pub fn parity_check_from_xyz<'b>(xyz: &Mat<'a, F>, f2: &'b F2) -> Mat<'b, F2> {parity_check_from_xyz223,6379
-    pub fn parity_check_matrix<'b>(&self, f2: &'b F2) -> Mat<'b, F2> {parity_check_matrix229,6551
-    pub fn generator_from_xyz<'b>(xyz: &Mat<'a, F>, f2: &'b F2) -> (Mat<'b, F2>, Vec<usize>) {generator_from_xyz234,6718
-    pub fn generator_from_parity_check_standard<'b>(h: &Mat<'b, F2>) -> Mat<'b, F2> {generator_from_parity_check_standard243,7122
-    pub fn generator_from_parity_check<'b>(h: &Mat<'b, F2>) -> (Mat<'b, F2>, Vec<usize>) {generator_from_parity_check257,7511
-    pub fn generator_matrix<'b>(&self, f2: &'b F2) -> Mat<'b, F2> {generator_matrix266,7896
-    pub fn syndrome<'b>(&self, r: &RowVec<'b, F2>) -> Mat<'a, F> {syndrome271,8059
-    pub fn syndrome_from_xyz<'b>(xyz: &Mat<'a, F>, r: &RowVec<'b, F2>) -> Mat<'a, F> {syndrome_from_xyz276,8217
-    pub fn encode<'b>(&self, msg: &RowVec<'b, F2>) -> RowVec<'b, F2> {encode290,8638
-    pub fn g_encode<'b>(g: &Mat<'b, F2>, msg: &RowVec<'b, F2>) -> RowVec<'b, F2> {g_encode296,8821
-    pub fn decode<'b>(&self, rcv: &RowVec<'b, F2>) -> RowVec<'b, F2> {decode300,8927
-    pub fn xyz_decode<'b>(&self, xyz: &Mat<'a, F>, rcv: &RowVec<'b, F2>) -> RowVec<'b, F2> {xyz_decode305,9083
-impl<'a, F: Eq + F2FiniteExtension> Goppa<'a, F> {Goppa358,10567
-    pub fn to_hex_string(&self) -> String {to_hex_string359,10618
-    pub fn from_hex_string(s: &str, f: &'a F) -> Result<Self> {from_hex_string386,11430
+    pub fn len(&self) -> usize {len159,4909
+    pub fn poly(&self) -> &Poly<'a, F> {poly163,4972
+    pub fn set(&self) -> &Vec<F::FElt> {set167,5039
+    pub fn field(&self) -> &'a F {field171,5105
+    pub fn parity_check_x(&self) -> Mat<'a, F> {parity_check_x175,5173
+    pub fn parity_check_y(&self) -> Mat<'a, F> {parity_check_y187,5475
+    pub fn parity_check_z(&self) -> Mat<'a, F> {parity_check_z205,5913
+    pub fn parity_check_xyz(&self) -> Mat<'a, F> {parity_check_xyz216,6181
+    pub fn parity_check_from_xyz<'b>(xyz: &Mat<'a, F>, f2: &'b F2) -> Mat<'b, F2> {parity_check_from_xyz223,6374
+    pub fn parity_check_matrix<'b>(&self, f2: &'b F2) -> Mat<'b, F2> {parity_check_matrix229,6546
+    pub fn generator_from_xyz<'b>(xyz: &Mat<'a, F>, f2: &'b F2) -> (Mat<'b, F2>, Vec<usize>) {generator_from_xyz234,6713
+    pub fn generator_from_parity_check_standard<'b>(h: &Mat<'b, F2>) -> Mat<'b, F2> {generator_from_parity_check_standard243,7117
+    pub fn generator_from_parity_check<'b>(h: &Mat<'b, F2>) -> (Mat<'b, F2>, Vec<usize>) {generator_from_parity_check257,7506
+    pub fn generator_matrix<'b>(&self, f2: &'b F2) -> Mat<'b, F2> {generator_matrix266,7891
+    pub fn syndrome<'b>(&self, r: &RowVec<'b, F2>) -> Mat<'a, F> {syndrome271,8054
+    pub fn syndrome_from_xyz<'b>(xyz: &Mat<'a, F>, r: &RowVec<'b, F2>) -> Mat<'a, F> {syndrome_from_xyz276,8212
+    pub fn encode<'b>(&self, msg: &RowVec<'b, F2>) -> RowVec<'b, F2> {encode290,8633
+    pub fn g_encode<'b>(g: &Mat<'b, F2>, msg: &RowVec<'b, F2>) -> RowVec<'b, F2> {g_encode296,8816
+    pub fn decode<'b>(&self, rcv: &RowVec<'b, F2>) -> RowVec<'b, F2> {decode300,8922
+    pub fn xyz_decode<'b>(&self, xyz: &Mat<'a, F>, rcv: &RowVec<'b, F2>) -> RowVec<'b, F2> {xyz_decode305,9078
+impl<'a, F: Eq + F2FiniteExtension> Goppa<'a, F> {Goppa358,10562
+    pub fn to_hex_string(&self) -> String {to_hex_string359,10613
+    pub fn from_hex_string(s: &str, f: &'a F) -> Result<Self> {from_hex_string386,11425
 
-main.rs,1864
-// const GOPPA_N_MIN: u32 = 4;GOPPA_N_MIN16,250
+main.rs,1763
+// const GOPPA_N_MIN: u32 = 3;GOPPA_N_MIN16,250
 // const GOPPA_N_MAX: u32 = 1024;GOPPA_N_MAX17,281
 // const GOPPA_N: u32 = 1024; // Code lengthGOPPA_N18,315
 // const GOPPA_T: u32 = 50; // Code correction capacityGOPPA_T19,360
 // const GOPPA_K: u32 = 524; // Code dimensionGOPPA_K20,416
-// const GOPPA_N_MIN: u32 = 4;GOPPA_N_MIN22,464
+// const GOPPA_N_MIN: u32 = 3;GOPPA_N_MIN22,464
 // const GOPPA_N_MAX: u32 = 2048;GOPPA_N_MAX23,495
 // const GOPPA_N: u32 = 2048; // Code lengthGOPPA_N24,529
 // const GOPPA_T: u32 = 70; // Code correction capacityGOPPA_T25,574
 // // const GOPPA_K: u32 = 1278; // Code dimensionGOPPA_K26,630
-const GOPPA_N_MIN: u32 = 4; // TODO: 4 or 5 ?GOPPA_N_MIN28,682
-const GOPPA_N_MAX: u32 = 4096;GOPPA_N_MAX29,728
-const GOPPA_N: u32 = 4096; // Code lengthGOPPA_N30,759
-const GOPPA_T: u32 = 170; // Code correction capacityGOPPA_T31,801
-                          // const GOPPA_K: u32 = 2056; // Code dimensionGOPPA_K32,855
-const PLAINTEXT: &str = "plaintext.mce";PLAINTEXT34,930
-const CIPHERTEXT: &str = "ciphertext.mce";CIPHERTEXT35,971
-const DECRYPTED: &str = "decrypted.mce";DECRYPTED36,1014
-const PUBLIC_KEY: &str = "public_key.mce";PUBLIC_KEY37,1055
-const SECRET_KEY: &str = "secret_key.mce";SECRET_KEY38,1098
-fn get_program(path: &str) -> &str {get_program40,1142
-fn print_help(program: &str, opts: Options) {print_help48,1293
-fn keygen(pk_file: &str, sk_file: &str, n: u32, t: u32, verbose: bool) -> Result<(), MainError> {keygen60,1684
-fn encrypt(encrypt90,2414
-fn decrypt(sk_file: &str, ctxt_file: &str, dec_file: &str, verbose: bool) -> Result<(), MainError> {decrypt131,3396
-fn plaintext(pk_file: &str, ptxt_file: &str, verbose: bool) -> Result<(), MainError> {plaintext173,4551
-fn get_code_params(matches: &Matches) -> Result<(u32, u32), MainError> {get_code_params200,5258
-fn main() -> Result<(), MainError> {main228,6188
+const GOPPA_N_MIN: u32 = 3;GOPPA_N_MIN28,682
+const GOPPA_N_MAX: u32 = 4096;GOPPA_N_MAX29,710
+const GOPPA_N: u32 = 4096; // Code lengthGOPPA_N30,741
+const GOPPA_T: u32 = 170; // Code correction capacityGOPPA_T31,783
+                          // const GOPPA_K: u32 = 2056; // Code dimensionGOPPA_K32,837
+const PLAINTEXT: &str = "plaintext.mce";PLAINTEXT34,912
+const CIPHERTEXT: &str = "ciphertext.mce";CIPHERTEXT35,953
+const DECRYPTED: &str = "decrypted.mce";DECRYPTED36,996
+const PUBLIC_KEY: &str = "public_key.mce";PUBLIC_KEY37,1037
+const SECRET_KEY: &str = "secret_key.mce";SECRET_KEY38,1080
+fn get_program(path: &str) -> &str {get_program40,1124
+fn print_help(program: &str, opts: Options) {print_help48,1275
+fn keygen(keygen60,1666
+fn encrypt(encrypt95,2364
+fn decrypt(sk_file: &str, ctxt_file: &str, dec_file: &str, verbose: bool) -> Result<(), MainError> {decrypt136,3346
+fn plaintext(pk_file: &str, ptxt_file: &str, verbose: bool) -> Result<(), MainError> {plaintext178,4501
+fn get_code_params(matches: &Matches) -> Result<(u32, u32, u32), MainError> {get_code_params205,5208
+fn main() -> Result<(), MainError> {main233,6033
 
 finite_field/f7.rs,1418
 const ORDER: u32 = 7;ORDER8,118

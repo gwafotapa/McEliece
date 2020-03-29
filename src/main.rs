@@ -13,19 +13,19 @@ use mceliece::{
 
 // TODO: remove commented code
 
-// const GOPPA_N_MIN: u32 = 4;
+// const GOPPA_N_MIN: u32 = 3;
 // const GOPPA_N_MAX: u32 = 1024;
 // const GOPPA_N: u32 = 1024; // Code length
 // const GOPPA_T: u32 = 50; // Code correction capacity
 // const GOPPA_K: u32 = 524; // Code dimension
 
-// const GOPPA_N_MIN: u32 = 4;
+// const GOPPA_N_MIN: u32 = 3;
 // const GOPPA_N_MAX: u32 = 2048;
 // const GOPPA_N: u32 = 2048; // Code length
 // const GOPPA_T: u32 = 70; // Code correction capacity
 // // const GOPPA_K: u32 = 1278; // Code dimension
 
-const GOPPA_N_MIN: u32 = 4; // TODO: 4 or 5 ?
+const GOPPA_N_MIN: u32 = 3;
 const GOPPA_N_MAX: u32 = 4096;
 const GOPPA_N: u32 = 4096; // Code length
 const GOPPA_T: u32 = 170; // Code correction capacity
@@ -57,10 +57,15 @@ fn print_help(program: &str, opts: Options) {
     print!("{}", opts.usage(&brief));
 }
 
-fn keygen(pk_file: &str, sk_file: &str, n: u32, t: u32, verbose: bool) -> Result<(), MainError> {
+fn keygen(
+    pk_file: &str,
+    sk_file: &str,
+    m: u32,
+    n: u32,
+    t: u32,
+    verbose: bool,
+) -> Result<(), MainError> {
     let f2 = &F2 {};
-    let q = n.next_power_of_two();
-    let m = q.trailing_zeros();
     let f2m = &F2m::generate(1 << m);
 
     if verbose {
@@ -197,7 +202,7 @@ fn plaintext(pk_file: &str, ptxt_file: &str, verbose: bool) -> Result<(), MainEr
     Ok(())
 }
 
-fn get_code_params(matches: &Matches) -> Result<(u32, u32), MainError> {
+fn get_code_params(matches: &Matches) -> Result<(u32, u32, u32), MainError> {
     let n = match matches.opt_str("n") {
         None => GOPPA_N,
         Some(length) => u32::from_str_radix(&length, 10)?,
@@ -209,20 +214,20 @@ fn get_code_params(matches: &Matches) -> Result<(u32, u32), MainError> {
         )
         .into());
     }
-    let q = n.next_power_of_two();
-    let m = q.trailing_zeros();
     let t = match matches.opt_str("t") {
         None => GOPPA_T,
         Some(correction) => u32::from_str_radix(&correction, 10)?,
     };
-    if t == 1 && n == q {
-        return Err("t cannot be 1 if n is a power of 2 \
-                    because L cannot contain a root of the goppa polynomial"
-            .into());
-    } else if n <= m * t {
+    let q = if t == 1 && n.is_power_of_two() {
+        2 * n
+    } else {
+        n.next_power_of_two()
+    };
+    let m = q.trailing_zeros();
+    if n <= m * t {
         return Err("Code length n must be greater than m * t".into());
     }
-    Ok((n, t))
+    Ok((m, n, t))
 }
 
 fn main() -> Result<(), MainError> {
@@ -240,7 +245,7 @@ fn main() -> Result<(), MainError> {
         return Ok(());
     }
     let verbose = matches.opt_present("v");
-    let (n, t) = get_code_params(&matches)?;
+    let (m, n, t) = get_code_params(&matches)?;
     if verbose {
         print!("Code length n: {}\nCode correction capacity t: {}\n", n, t);
     }
@@ -249,7 +254,7 @@ fn main() -> Result<(), MainError> {
         None => {
             return Err(format!(
                 "Command expected\n\
-             Try '{} --help' for more information.",
+                 Try '{} --help' for more information.",
                 program
             )
             .into())
@@ -260,7 +265,7 @@ fn main() -> Result<(), MainError> {
         "keygen" => {
             let pk_file = files.get(0).unwrap_or(&PUBLIC_KEY);
             let sk_file = files.get(1).unwrap_or(&SECRET_KEY);
-            keygen(pk_file, sk_file, n, t, verbose)
+            keygen(pk_file, sk_file, m, n, t, verbose)
         }
         "encrypt" => {
             let pk_file = files.get(0).unwrap_or(&PUBLIC_KEY);
