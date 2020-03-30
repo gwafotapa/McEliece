@@ -6,10 +6,6 @@ use std::{
 use super::{Field, FiniteField, Mat, Perm};
 use crate::finite_field::F2FiniteExtension;
 
-fn div_ceil(a: u32, b: u32) -> u32 {
-    a / b + if a % b == 0 { 0 } else { 1 }
-}
-
 impl<'a, F: Eq + Field> Clone for Mat<'a, F> {
     fn clone(&self) -> Self {
         Mat {
@@ -341,4 +337,8 @@ impl<'a, F: Eq + FiniteField> Display for Mat<'a, F> {
         }
         Ok(())
     }
+}
+
+fn div_ceil(a: u32, b: u32) -> u32 {
+    a / b + if a % b == 0 { 0 } else { 1 }
 }

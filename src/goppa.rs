@@ -356,54 +356,55 @@ where
 }
 
 impl<'a, F: Eq + F2FiniteExtension> Goppa<'a, F> {
-    pub fn to_hex_string(&self) -> String {
+    pub fn to_bytes(&self) -> Vec<u8> {
         let f = self.field();
-        let mut s = self.poly.to_hex_string();
-        s.reserve(s.len() + 2 + 2 * (f.order() as usize / 8 + 1) + 1);
-        s.push_str("##");
+        let mut vec = self.poly.to_bytes();
+        vec.reserve_exact(vec.len() + div_ceil(f.order() as usize, 8));
         let mut byte = 0;
-        let mut cnt_mod_8 = 7;
+        let mut shift = 7;
         let mut j = 0;
         for i in 0..f.order() {
             if Some(&f.u32_to_elt(i)) == self.set.get(j) {
-                byte |= 1 << cnt_mod_8;
+                byte |= 1 << shift;
                 j += 1;
             }
-            if cnt_mod_8 == 0 {
-                s.push_str(format!("{:02x}", byte).as_str());
+            if shift == 0 {
+                vec.push(byte);
                 byte = 0;
-                cnt_mod_8 = 7;
+                shift = 7;
             } else {
-                cnt_mod_8 -= 1;
+                shift -= 1;
             }
         }
         if f.order() % 8 != 0 {
-            s.push_str(format!("{:02x}", byte).as_str());
+            vec.push(byte);
         }
-        s
+        vec
     }
 
-    pub fn from_hex_string(s: &str, f: &'a F) -> Result<Self> {
-        let v: Vec<&str> = s.split("##").collect();
-        let poly = Poly::from_hex_string(v[0], f)?;
-        debug!("Read polynomial:{}", s);
+    // pub fn from_bytes(vec: &Vec<u8>, f: &'a F) -> Result<Self> {
+    pub fn from_bytes(vec: &[u8], f: &'a F) -> Result<Self> {
+        let poly = Poly::from_bytes(vec, f)?;
+        debug!("Read polynomial:\n{}", poly);
 
-        let set_data = hex::decode(v[1])?;
+        let mut i = 4 + 4 + 4 * (poly.degree() + 1);
         let mut set = Vec::new();
-        let mut iter = set_data.iter();
-        let mut byte = iter.next().ok_or("Missing byte")?;
-        let mut cnt_mod_8 = 7;
-        for i in 0..f.order() {
-            if (*byte >> cnt_mod_8) & 1 == 1 {
-                set.push(f.u32_to_elt(i));
+        let mut shift = 7;
+        for j in 0..f.order() {
+            if (vec[i] >> shift) & 1 == 1 {
+                set.push(f.u32_to_elt(j));
             }
-            if cnt_mod_8 == 0 && i != f.order() - 1 {
-                cnt_mod_8 = 7;
-                byte = iter.next().ok_or("Missing byte")?;
+            if shift == 0 {
+                shift = 7;
+                i += 1;
             } else {
-                cnt_mod_8 -= 1
+                shift -= 1
             }
         }
         Ok(Goppa::new(poly, set))
     }
+}
+
+fn div_ceil(a: usize, b: usize) -> usize {
+    a / b + if a % b == 0 { 0 } else { 1 }
 }

@@ -1,5 +1,6 @@
 use rand::{rngs::ThreadRng, Rng};
 use std::{
+    convert::TryInto,
     error::Error,
     fmt::{self, Debug, Display, Formatter},
     fs::File,
@@ -309,48 +310,49 @@ impl<'a, F: Eq + Field> RowVec<'a, F> {
 impl<'a> RowVec<'a, F2> {
     pub fn write(&self, file_name: &str) -> Result<()> {
         let mut f = File::create(file_name)?;
-        let mut s = format!("{:x}#", self.cols());
-        let mut byte: u8 = 0;
-        let mut cnt_mod_8 = 7;
+        let len = 4 + div_ceil(self.cols(), 8);
+        let mut vec = Vec::with_capacity(len);
+        vec.extend_from_slice(&(self.cols() as u32).to_be_bytes());
+        let mut byte = 0;
+        let mut shift = 7;
         for i in 0..self.cols() {
-            byte |= (self[i] << cnt_mod_8) as u8;
-            if cnt_mod_8 == 0 {
-                s.push_str(format!("{:02x}", byte).as_str());
-                cnt_mod_8 = 7;
+            byte |= (self[i] as u8) << shift;
+            if shift == 0 {
+                vec.push(byte);
                 byte = 0;
+                shift = 7;
             } else {
-                cnt_mod_8 -= 1;
+                shift -= 1;
             }
         }
         if self.cols() % 8 != 0 {
-            s.push_str(format!("{:02x}", byte).as_str());
+            vec.push(byte);
         }
-        s.push('\n');
-        f.write_all(s.as_bytes())?;
+        f.write_all(&vec)?;
         Ok(())
     }
 
     pub fn read_vector(file_name: &str, f2: &'a F2) -> Result<RowVec<'a, F2>> {
         let mut f = File::open(file_name)?;
-        let mut buf = String::new();
-        f.read_to_string(&mut buf)?;
-        buf.pop(); // Remove terminating newline character
-        let v: Vec<&str> = buf.split('#').collect();
-        let cols = u32::from_str_radix(v[0], 16)? as usize;
-        let mut vec = RowVec::zero(f2, cols);
-        let mut cnt_mod_8 = 7;
-        let s = hex::decode(v[1])?;
-        let mut iter = s.iter();
-        let mut byte = iter.next().ok_or("Missing byte")?;
+        let mut vec = Vec::new();
+        f.read_to_end(&mut vec)?;
+        let cols = u32::from_be_bytes(vec[0..4].try_into()?) as usize;
+        let mut rowvec = RowVec::zero(f2, cols);
+        let mut k = 4;
+        let mut shift = 7;
         for i in 0..cols {
-            vec[i] = (*byte as u32 >> cnt_mod_8) & 1_u32;
-            if cnt_mod_8 == 0 && i != cols - 1 {
-                byte = iter.next().ok_or("Missing byte")?;
-                cnt_mod_8 = 7;
+            rowvec[i] = ((vec[k] >> shift) & 1).into();
+            if shift == 0 {
+                k += 1;
+                shift = 7;
             } else {
-                cnt_mod_8 -= 1;
+                shift -= 1;
             }
         }
-        Ok(vec)
+        Ok(rowvec)
     }
+}
+
+fn div_ceil(a: usize, b: usize) -> usize {
+    a / b + if a % b == 0 { 0 } else { 1 }
 }

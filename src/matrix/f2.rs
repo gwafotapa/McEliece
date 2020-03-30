@@ -1,5 +1,5 @@
 // use rand::{rngs::ThreadRng, Rng};
-use std::error::Error;
+use std::{convert::TryInto, error::Error};
 
 use super::{Mat, F2};
 use crate::finite_field::F2FiniteExtension;
@@ -363,17 +363,22 @@ impl<'a> Mat<'a, F2> {
     //     self.keep_rows(&max_set_of_indep_rows);
     // }
 
-    pub fn to_hex_string(&self) -> String {
-        let len = 2 * (4 + 1) + 2 * (self.rows * self.cols / 8 + 1) + 1;
-        let mut s = String::with_capacity(len);
-        s.push_str(format!("{:x}#{:x}#", self.rows, self.cols).as_str());
+    /// Encodes the matrix in bytes
+    ///
+    /// We start by encoding numbers of rows and columns on four bytes each.
+    /// The matrix data follows.
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let len = 4 + 4 + div_ceil(self.rows * self.cols, 8);
+        let mut vec = Vec::with_capacity(len);
+        vec.extend_from_slice(&(self.rows as u32).to_be_bytes());
+        vec.extend_from_slice(&(self.cols as u32).to_be_bytes());
         let mut byte = 0;
         let mut shift = 7;
         for i in 0..self.rows {
             for j in 0..self.cols {
-                byte |= self[(i, j)] << shift;
+                byte |= (self[(i, j)] as u8) << shift;
                 if shift == 0 {
-                    s.push_str(format!("{:02x}", byte).as_str());
+                    vec.push(byte);
                     byte = 0;
                     shift = 7;
                 } else {
@@ -382,24 +387,24 @@ impl<'a> Mat<'a, F2> {
             }
         }
         if (self.rows * self.cols) % 8 != 0 {
-            s.push_str(format!("{:02x}", byte).as_str());
+            vec.push(byte);
         }
-        s
+        vec
     }
 
-    pub fn from_hex_string(s: &str, f2: &'a F2) -> Result<Self> {
-        let v: Vec<&str> = s.split('#').collect();
-        let rows = usize::from_str_radix(v[0], 16)?;
-        let cols = usize::from_str_radix(v[1], 16)?;
-        let data = hex::decode(v[2])?;
+    // TODO: reference method with markdown
+    /// Decodes bytes encoded with to_bytes() to a matrix
+    pub fn from_bytes(vec: &Vec<u8>, f2: &'a F2) -> Result<Self> {
+        let rows = u32::from_be_bytes(vec[0..4].try_into()?) as usize;
+        let cols = u32::from_be_bytes(vec[4..8].try_into()?) as usize;
         let mut mat = Mat::zero(f2, rows, cols);
-        let mut d = 0;
+        let mut k = 8;
         let mut shift = 7;
         for i in 0..rows {
             for j in 0..cols {
-                mat[(i, j)] = ((data[d] >> shift) & 1).into();
+                mat[(i, j)] = ((vec[k] >> shift) & 1).into();
                 if shift == 0 {
-                    d += 1;
+                    k += 1;
                     shift = 7;
                 } else {
                     shift -= 1;
@@ -440,4 +445,9 @@ impl<'a, F: Eq + F2FiniteExtension> Mat<'a, F> {
         }
         bin
     }
+}
+
+// TODO: Should I rewrite this in each module ?
+fn div_ceil(a: usize, b: usize) -> usize {
+    a / b + if a % b == 0 { 0 } else { 1 }
 }

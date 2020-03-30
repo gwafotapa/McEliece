@@ -3,12 +3,13 @@
 use log::debug;
 
 use std::{
+    convert::TryInto,
     error::Error,
     fs::File,
-    io::{BufRead, BufReader, BufWriter, Write},
+    io::{BufRead, BufReader, BufWriter, Read, Write},
 };
 
-use crate::finite_field::{F2m, F2};
+use crate::finite_field::{F2m, FiniteField, F2};
 use crate::goppa::Goppa;
 use crate::matrix::{Mat, Perm, RowVec};
 
@@ -57,23 +58,23 @@ pub fn keygen<'a, 'b>(
     let mut rng = rand::thread_rng();
     let goppa = Goppa::random(&mut rng, f2m, n as usize, t as usize);
     debug!("{}", goppa);
-    
+
     let xyz = goppa.parity_check_xyz();
     let (g, info_set) = Goppa::generator_from_xyz(&xyz, f2);
     debug!("Generator matrix G:{}", g);
     debug!("Information set of generator matrix G:\n{:?}\n", info_set);
-    
+
     let k = g.rows();
     let s = Mat::invertible_random(&mut rng, f2, k as usize);
     debug!("Code dimension k = {}", k);
     debug!("Singular matrix S:{}", s);
-    
+
     let p = Perm::random(&mut rng, n as usize);
     debug!("Permutation P:\n{:?}\n", p);
-    
+
     let sgp = &s * &g * &p;
     debug!("Perturbed generator matrix ~G:{}", sgp);
-    
+
     let pk = PublicKey { sgp, t };
     let sk = SecretKey {
         s,
@@ -92,48 +93,42 @@ impl<'a> PublicKey<'a> {
     pub fn t(&self) -> u32 {
         self.t
     }
-    
+
     pub fn encrypt(&self, m: &RowVec<'a, F2>) -> RowVec<'a, F2> {
         let mut rng = rand::thread_rng();
         let c = Goppa::<F2m>::g_encode(&self.sgp, m);
         debug!("Encoded plaintext:{}", c);
-        
+
         let z = RowVec::random_with_weight(&mut rng, m.field(), self.sgp.cols(), self.t as usize);
         debug!("Error vector:{}", z);
-        
+
         c + z
     }
 
     pub fn write(&self, file_name: &str) -> Result<()> {
         let mut f = File::create(file_name)?;
-        let s = self.sgp.to_hex_string() + format!("\n{:02x}\n", self.t).as_str();
-        f.write_all(s.as_bytes())?;
+        f.write_all(&self.sgp.to_bytes());
+        f.write_all(&self.t.to_be_bytes());
         Ok(())
     }
 
     pub fn read_public_key(file_name: &str, f2: &'a F2) -> Result<Self> {
-        let f = File::open(file_name)?;
-        let mut f = BufReader::new(f);
-        let mut line = String::new();
-        f.read_line(&mut line)?;
-        line.pop(); // Remove terminating newline
-        let sgp = Mat::from_hex_string(&line, f2)?;
-        line.clear();
-        f.read_line(&mut line)?;
-        line.pop(); // Remove terminating newline
-        let t = u32::from_str_radix(&line, 16)?;
+        let mut f = File::open(file_name)?;
+        let mut vec = Vec::new();
+        f.read_to_end(&mut vec)?;
+        let sgp = Mat::from_bytes(&vec, f2)?;
+        let i = 4 + 4 + div_ceil(sgp.rows() * sgp.cols(), 8);
+        let t = u32::from_be_bytes(vec[i..i + 4].try_into()?);
         Ok(PublicKey { sgp, t })
     }
 
     pub fn read_code_dimension(file_name: &str) -> Result<u32> {
-        let f = File::open(file_name)?;
-        let mut f = BufReader::new(f);
-        let mut line = String::new();
-        f.read_line(&mut line)?;
-        let k = u32::from_str_radix(line.split('#').next().ok_or("Cannot read k")?, 16)?;
+        let mut f = File::open(file_name)?;
+        let mut buf = [0; 4];
+        f.read_exact(&mut buf)?;
+        let k = u32::from_be_bytes(buf);
         Ok(k)
     }
-    
 }
 
 impl<'a, 'b> SecretKey<'a, 'b> {
@@ -157,13 +152,13 @@ impl<'a, 'b> SecretKey<'a, 'b> {
         let m_s_g_z = c * self.p.inverse();
         let m_s_g = self.goppa.decode(&m_s_g_z);
         debug!("Decoded codeword mSG:{}", m_s_g);
-        
+
         let m_s = m_s_g.extract_cols(&self.info_set);
         debug!(
             "Use information set {:?} to extract mS:{}",
             self.info_set, m_s
         );
-        
+
         let m = m_s * self.s.inverse().unwrap();
         m
     }
@@ -171,58 +166,71 @@ impl<'a, 'b> SecretKey<'a, 'b> {
     pub fn write(&self, file_name: &str) -> Result<()> {
         let f = File::create(file_name)?;
         let mut f = BufWriter::new(f);
-        f.write_all((self.s.to_hex_string() + "\n").as_bytes())?;
-        f.write_all((self.goppa.to_hex_string() + "\n").as_bytes())?;
+        f.write_all(&self.s.to_bytes())?;
+        f.write_all(&self.goppa.to_bytes())?;
 
-        for i in 0..self.info_set.len() - 1 {
-            f.write_all(format!("{:x} ", self.info_set[i]).as_bytes())?;
+        // f.write_all(self.info_set.len().to_be_bytes());
+        for i in 0..self.info_set.len() {
+            f.write_all(&(self.info_set[i] as u32).to_be_bytes())?; // TODO: u32 or usize ???
         }
-        f.write_all(format!("{:x}\n", self.info_set[self.info_set.len() - 1]).as_bytes())?;
 
-        for i in 0..self.p.len() - 1 {
-            f.write_all(format!("{:x} ", self.p[i]).as_bytes())?;
+        f.write_all(&(self.p.len() as u32).to_be_bytes());
+        for i in 0..self.p.len() {
+            f.write_all(&(self.p[i] as u32).to_be_bytes())?;
         }
-        f.write_all(format!("{:x}\n", self.p[self.p.len() - 1]).as_bytes())?;
         Ok(())
     }
 
+    // TODO: Is it possible to eliminate this function ?
     pub fn read_finite_field(file_name: &str) -> Result<F2m> {
-        let f = File::open(file_name)?;
-        let mut f = BufReader::new(f);
-        let mut line = String::new();
-        f.read_line(&mut line)?;
-        line.clear();
-        f.read_line(&mut line)?;
-        let order = u32::from_str_radix(&line[..line.find('#').ok_or("Missing hashtag")?], 16)?;
+        let mut f = File::open(file_name)?;
+        // let mut f = BufReader::new(f);
+        let mut vec = Vec::new();
+        f.read_to_end(&mut vec)?;
+
+        // let mut buf = [0; 4];
+        // f.read_exact(&mut buf)?;
+        // let k = u32::from_be_bytes(buf);
+        let k = u32::from_be_bytes(vec[0..4].try_into()?) as usize;
+        let i = 4 + 4 + div_ceil(k * k, 8);
+        let order = u32::from_be_bytes(vec[i..i + 4].try_into()?);
+
+        // let mut line = String::new();
+        // f.read_line(&mut line)?;
+        // line.clear();
+        // f.read_line(&mut line)?;
+        // let order = u32::from_str_radix(&line[..line.find('#').ok_or("Missing hashtag")?], 16)?;
         Ok(F2m::generate(order))
     }
 
+    // TODO: rewrite the use of index i for all read/write functions
     pub fn read_secret_key(file_name: &str, f2: &'a F2, f2m: &'b F2m) -> Result<Self> {
-        let f = File::open(file_name)?;
-        let f = BufReader::new(f);
-        let mut lines_iter = f.lines().map(|l| l.unwrap());
+        let mut f = File::open(file_name)?;
+        // let f = BufReader::new(f);
+        let mut vec = Vec::new();
+        f.read_to_end(&mut vec)?;
 
-        let line = lines_iter.next().ok_or("Cannot read line 1")?;
-        let s = Mat::from_hex_string(&line, f2)?;
+        let s = Mat::from_bytes(&vec, f2)?;
         debug!("Read matrix s:{}", s);
 
-        let line = lines_iter.next().ok_or("Cannot read line 2")?;
-        let goppa = Goppa::from_hex_string(&line, f2m)?;
-        debug!("Read goppa code:{}", goppa);
+        let k = s.rows();
+        let mut i = 4 + 4 + div_ceil(k * k, 8);
+        let goppa = Goppa::from_bytes(&vec[i..], f2m)?;
+        debug!("Read Goppa code:\n{}", goppa);
 
-        let line = lines_iter.next().ok_or("Cannot read line 3")?;
-        let v: Vec<&str> = line.split(' ').collect();
+        i += 4 + 4 + 4 * (goppa.poly().degree() + 1) + div_ceil(goppa.field().order() as usize, 8); // TODO: Can I not use order() ???
         let mut info_set = Vec::new();
-        for i in 0..v.len() {
-            info_set.push(usize::from_str_radix(v[i], 16)?);
+        for j in 0..k {
+            info_set.push(u32::from_be_bytes(vec[i + 4 * j..i + 4 * j + 4].try_into()?) as usize);
         }
-        debug!("Read information set:{:?}", info_set);
+        debug!("Read information set:\n{:?}", info_set);
 
-        let line = lines_iter.next().ok_or("Cannot read line 4")?;
-        let v: Vec<&str> = line.split(' ').collect();
-        let mut p = Vec::new();
-        for i in 0..v.len() {
-            p.push(usize::from_str_radix(v[i], 16)?);
+        i += 4 * k;
+        let p_len = u32::from_be_bytes(vec[i..i + 4].try_into()?) as usize;
+        i += 4;
+        let mut p = Vec::with_capacity(p_len);
+        for j in 0..p_len {
+            p.push(u32::from_be_bytes(vec[i + 4 * j..i + 4 * j + 4].try_into()?) as usize);
         }
         let p = Perm::new(p);
 
@@ -233,4 +241,8 @@ impl<'a, 'b> SecretKey<'a, 'b> {
             p,
         })
     }
+}
+
+fn div_ceil(a: usize, b: usize) -> usize {
+    a / b + if a % b == 0 { 0 } else { 1 }
 }

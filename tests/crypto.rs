@@ -46,8 +46,9 @@ fn crypto_sk_write_read() {
     let file_name = "sk_write_read_test.mce";
     sk.write(file_name).unwrap();
     let f2m_read = &SecretKey::read_finite_field(file_name).unwrap();
-    let sk_read = SecretKey::read_secret_key(file_name, f2, f2m_read).unwrap();
     assert!(f2m == f2m_read);
+
+    let sk_read = SecretKey::read_secret_key(file_name, f2, f2m_read).unwrap();
     assert!(sk == sk_read);
 }
 

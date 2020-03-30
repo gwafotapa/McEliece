@@ -1,5 +1,5 @@
 use rand::rngs::ThreadRng;
-use std::error::Error;
+use std::{convert::TryInto, error::Error};
 
 use super::{Field, Poly};
 use crate::finite_field::{f2m, CharacteristicTwo, F2FiniteExtension, FiniteField};
@@ -164,31 +164,28 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
 }
 
 impl<'a, F: Eq + F2FiniteExtension> Poly<'a, F> {
-    pub fn to_hex_string(&self) -> String {
+    /// Encodes the polynomial in bytes
+    ///
+    /// We start by encoding field order and degree of the polynomial followed by coefficients.
+    /// Each number is encoded on four bytes.
+    pub fn to_bytes(&self) -> Vec<u8> {
         let f = self.field();
-        if f.order() > 1 << 16 {
-            panic!("Cannot convert polynomial to hex string: field order must be at most 2^16");
+        let len = 4 + 4 + 4 * (self.degree() + 1);
+        let mut vec = Vec::with_capacity(len);
+        vec.extend_from_slice(&(f.order()).to_be_bytes());
+        vec.extend_from_slice(&(self.degree() as u32).to_be_bytes());
+        for i in 0..self.degree() + 1 {
+            vec.extend_from_slice(&(f.elt_to_u32(self[i])).to_be_bytes());
         }
-        if self.degree() > 255 {
-            panic!("Cannot convert polynomial to hex string: degree must be less than 256");
-        }
-        let len = 2 * (4 + 1) + 4 * (self.degree() + 1);
-        let mut s = String::with_capacity(len);
-        s.push_str(format!("{:x}#{:x}#", f.order(), self.degree()).as_str());
-        for i in 0..self.degree() {
-            s.push_str(format!("{:x} ", f.elt_to_u32(self[i])).as_str());
-        }
-        s.push_str(format!("{:x}", f.elt_to_u32(self[self.degree()])).as_str());
-        s
+        vec
     }
 
-    pub fn from_hex_string(s: &str, f: &'a F) -> Result<Self> {
-        let v: Vec<&str> = s.split('#').collect();
-        let t = usize::from_str_radix(v[1], 16)?;
-        let v: Vec<&str> = v[2].split(' ').collect();
-        let mut poly = Self::zero(&f, t + 1);
+    pub fn from_bytes(vec: &[u8], f: &'a F) -> Result<Self> {
+        let t = u32::from_be_bytes(vec[4..8].try_into()?) as usize;
+        let mut poly = Self::zero(f, t + 1);
         for i in 0..t + 1 {
-            poly[i] = f.u32_to_elt(u32::from_str_radix(v[i], 16)?);
+            let j = 8 + 4 * i;
+            poly[i] = f.u32_to_elt(u32::from_be_bytes(vec[j..j + 4].try_into()?));
         }
         Ok(poly)
     }
