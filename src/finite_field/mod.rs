@@ -17,7 +17,7 @@ pub trait Field {
     fn one(&self) -> Self::FElt;
 
     /// Returns field characteristic
-    fn characteristic(&self) -> u32;
+    fn characteristic(&self) -> usize;
 
     /// Adds two field elements
     fn add(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt;
@@ -39,12 +39,11 @@ pub trait Field {
 }
 
 pub trait FiniteField: Field {
-
     /// Returns m where field order is p<sup>m</sup> with p prime
     fn characteristic_exponent(&self) -> u32;
 
     /// Returns field order
-    fn order(&self) -> u32 {
+    fn order(&self) -> usize {
         self.characteristic().pow(self.characteristic_exponent())
     }
 

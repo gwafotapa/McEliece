@@ -43,9 +43,9 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
         if self.field != modulus.field {
             panic!("Cannot compute square root modulo: fields don't match");
         }
-        let m = self.field.characteristic_exponent();
+        let m = self.field.characteristic_exponent() as usize;
 
-        for _i in 0..m as usize * modulus.degree() - 1 {
+        for _i in 0..m * modulus.degree() - 1 {
             self.square();
             self.modulo(modulus);
         }
@@ -61,11 +61,11 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
         if self.is_zero() {
             panic!("The null polynom has no inverse");
         }
-        let m = self.field.characteristic_exponent();
+        let m = self.field.characteristic_exponent() as usize;
 
         self.square();
         let mut tmp = self.clone();
-        for _i in 0..m as usize * modulus.degree() - 2 {
+        for _i in 0..m * modulus.degree() - 2 {
             tmp.square();
             tmp.modulo(&modulus);
             *self *= &tmp;
@@ -110,7 +110,7 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
         }
 
         let f = self.field;
-        let q = f.order();
+        let q = f.order() as u32;
         let mut n_prime_factors = f2m::trial_division(n);
         n_prime_factors.dedup();
         let n_div_primes: Vec<u32> = n_prime_factors.iter().map(|x| n / x).collect();

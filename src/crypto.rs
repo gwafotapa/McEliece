@@ -24,7 +24,7 @@ type Result<T> = std::result::Result<T, Box<dyn Error>>;
 #[derive(Debug, Eq, PartialEq)]
 pub struct PublicKey<'a> {
     sgp: Mat<'a, F2>,
-    t: u32,
+    t: usize,
 }
 
 /// Secret key of the McEliece cryptosystem
@@ -52,11 +52,11 @@ pub struct SecretKey<'a, 'b> {
 pub fn keygen<'a, 'b>(
     f2: &'a F2,
     f2m: &'b F2m,
-    n: u32,
-    t: u32,
+    n: usize,
+    t: usize,
 ) -> (PublicKey<'a>, SecretKey<'a, 'b>) {
     let mut rng = rand::thread_rng();
-    let goppa = Goppa::random(&mut rng, f2m, n as usize, t as usize);
+    let goppa = Goppa::random(&mut rng, f2m, n, t);
     debug!("{}", goppa);
 
     let xyz = goppa.parity_check_xyz();
@@ -65,11 +65,11 @@ pub fn keygen<'a, 'b>(
     debug!("Information set of generator matrix G:\n{:?}\n", info_set);
 
     let k = g.rows();
-    let s = Mat::invertible_random(&mut rng, f2, k as usize);
+    let s = Mat::invertible_random(&mut rng, f2, k);
     debug!("Code dimension k = {}", k);
     debug!("Singular matrix S:{}", s);
 
-    let p = Perm::random(&mut rng, n as usize);
+    let p = Perm::random(&mut rng, n);
     debug!("Permutation P:\n{:?}\n", p);
 
     let sgp = &s * &g * &p;
@@ -90,7 +90,7 @@ impl<'a> PublicKey<'a> {
         &self.sgp
     }
 
-    pub fn t(&self) -> u32 {
+    pub fn t(&self) -> usize {
         self.t
     }
 
@@ -99,7 +99,7 @@ impl<'a> PublicKey<'a> {
         let c = Goppa::<F2m>::g_encode(&self.sgp, m);
         debug!("Encoded plaintext:{}", c);
 
-        let z = RowVec::random_with_weight(&mut rng, m.field(), self.sgp.cols(), self.t as usize);
+        let z = RowVec::random_with_weight(&mut rng, m.field(), self.sgp.cols(), self.t);
         debug!("Error vector:{}", z);
 
         c + z
@@ -118,15 +118,15 @@ impl<'a> PublicKey<'a> {
         f.read_to_end(&mut vec)?;
         let sgp = Mat::from_bytes(&vec, f2)?;
         let i = 4 + 4 + div_ceil(sgp.rows() * sgp.cols(), 8);
-        let t = u32::from_be_bytes(vec[i..i + 4].try_into()?);
+        let t = u32::from_be_bytes(vec[i..i + 4].try_into()?) as usize;
         Ok(PublicKey { sgp, t })
     }
 
-    pub fn read_code_dimension(file_name: &str) -> Result<u32> {
+    pub fn read_code_dimension(file_name: &str) -> Result<usize> {
         let mut f = File::open(file_name)?;
         let mut buf = [0; 4];
         f.read_exact(&mut buf)?;
-        let k = u32::from_be_bytes(buf);
+        let k = u32::from_be_bytes(buf) as usize;
         Ok(k)
     }
 }
@@ -171,7 +171,7 @@ impl<'a, 'b> SecretKey<'a, 'b> {
 
         // f.write_all(self.info_set.len().to_be_bytes());
         for i in 0..self.info_set.len() {
-            f.write_all(&(self.info_set[i] as u32).to_be_bytes())?; // TODO: u32 or usize ???
+            f.write_all(&(self.info_set[i] as u32).to_be_bytes())?;
         }
 
         f.write_all(&(self.p.len() as u32).to_be_bytes());
@@ -193,7 +193,7 @@ impl<'a, 'b> SecretKey<'a, 'b> {
         // let k = u32::from_be_bytes(buf);
         let k = u32::from_be_bytes(vec[0..4].try_into()?) as usize;
         let i = 4 + 4 + div_ceil(k * k, 8);
-        let order = u32::from_be_bytes(vec[i..i + 4].try_into()?);
+        let order = u32::from_be_bytes(vec[i..i + 4].try_into()?) as usize;
 
         // let mut line = String::new();
         // f.read_line(&mut line)?;
@@ -218,7 +218,7 @@ impl<'a, 'b> SecretKey<'a, 'b> {
         let goppa = Goppa::from_bytes(&vec[i..], f2m)?;
         debug!("Read Goppa code:\n{}", goppa);
 
-        i += 4 + 4 + 4 * (goppa.poly().degree() + 1) + div_ceil(goppa.field().order() as usize, 8); // TODO: Can I not use order() ???
+        i += 4 + 4 + 4 * (goppa.poly().degree() + 1) + div_ceil(goppa.field().order(), 8); // TODO: Can I not use order() ???
         let mut info_set = Vec::new();
         for j in 0..k {
             info_set.push(u32::from_be_bytes(vec[i + 4 * j..i + 4 * j + 4].try_into()?) as usize);

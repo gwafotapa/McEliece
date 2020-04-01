@@ -293,8 +293,8 @@ impl<'a, F: Eq + Field> IndexMut<(usize, usize)> for Mat<'a, F> {
 impl<'a, F: Eq + F2FiniteExtension> Debug for Mat<'a, F> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let k = self.field;
-        let m = k.characteristic_exponent() as usize;
-        let width = div_ceil(m as u32, 4) as usize;
+        let m = k.characteristic_exponent();
+        let width = div_ceil(m, 4) as usize;
         write!(f, "\n")?;
         for i in 0..self.rows {
             for j in 0..self.cols - 1 {

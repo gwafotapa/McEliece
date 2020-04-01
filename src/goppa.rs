@@ -39,7 +39,7 @@ where
             q, n, t
         )?;
         write!(f, "g(x) = {:?}\n", self.poly)?;
-        if n == q as usize {
+        if n == q {
             write!(f, "L = F{}\n", q)
         } else {
             write!(f, "L = [")?;
@@ -66,7 +66,7 @@ where
             q, n, t
         )?;
         write!(f, "g(x) = {}\n", self.poly)?;
-        if n == q as usize {
+        if n == q {
             write!(f, "L = F{}\n", q)
         } else {
             write!(f, "L = [")?;
@@ -125,7 +125,7 @@ where
     /// - n &le; t * log<sub>2</sub>|F| (Goppa code dimension would be 0)
     /// - n = log<sub>2</sub>|F| and t = 1 (a Goppa code set cannot contain one of its roots)
     pub fn random(rng: &mut ThreadRng, f: &'a F, n: usize, t: usize) -> Self {
-        let q = f.order() as usize;
+        let q = f.order();
         if n > q {
             panic!("n must be at most q");
         }
@@ -137,9 +137,9 @@ where
         if poly.degree() == 1 && n == q {
             panic!("n must be strictly less than q when Goppa polynomial is of degree 1");
         }
-        let mut pool = Vec::<u32>::with_capacity(q);
-        for i in 0..q {
-            pool.push(i as u32);
+        let mut pool = Vec::with_capacity(q);
+        for i in 0..q as u32 {
+            pool.push(i);
         }
         if poly.degree() == 1 {
             let root = f.mul(f.inv(poly[1]).unwrap(), poly[0]);
@@ -359,11 +359,11 @@ impl<'a, F: Eq + F2FiniteExtension> Goppa<'a, F> {
     pub fn to_bytes(&self) -> Vec<u8> {
         let f = self.field();
         let mut vec = self.poly.to_bytes();
-        vec.reserve_exact(vec.len() + div_ceil(f.order() as usize, 8));
+        vec.reserve_exact(vec.len() + div_ceil(f.order(), 8));
         let mut byte = 0;
         let mut shift = 7;
         let mut j = 0;
-        for i in 0..f.order() {
+        for i in 0..f.order() as u32 {
             if Some(&f.u32_to_elt(i)) == self.set.get(j) {
                 byte |= 1 << shift;
                 j += 1;
@@ -390,7 +390,7 @@ impl<'a, F: Eq + F2FiniteExtension> Goppa<'a, F> {
         let mut i = 4 + 4 + 4 * (poly.degree() + 1);
         let mut set = Vec::new();
         let mut shift = 7;
-        for j in 0..f.order() {
+        for j in 0..f.order() as u32 {
             if (vec[i] >> shift) & 1 == 1 {
                 set.push(f.u32_to_elt(j));
             }

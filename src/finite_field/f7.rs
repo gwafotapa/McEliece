@@ -5,11 +5,11 @@ use rand::{rngs::ThreadRng, Rng};
 use super::{Field, FiniteField};
 
 /// Field order
-const ORDER: u32 = 7;
+const ORDER: usize = 7;
 
-const EXP: [F7Elt; ORDER as usize] = [1, 3, 2, 6, 4, 5, 1];
+const EXP: [F7Elt; ORDER] = [1, 3, 2, 6, 4, 5, 1];
 
-const LOG: [u32; ORDER as usize] = [ORDER as u32, 0, 2, 1, 4, 5, 3];
+const LOG: [u32; ORDER] = [ORDER as u32, 0, 2, 1, 4, 5, 3];
 
 /// F7 Element
 type F7Elt = u32;
@@ -53,7 +53,7 @@ impl Field for F7 {
     /// let f7 = F7 {};
     /// assert_eq!(f7.characteristic(), 7);
     /// ```
-    fn characteristic(&self) -> u32 {
+    fn characteristic(&self) -> usize {
         ORDER
     }
 
@@ -67,7 +67,7 @@ impl Field for F7 {
     /// assert_eq!(f7.add(6, 3), 2);
     /// ```
     fn add(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt {
-        (a + b) % ORDER
+        (a + b) % (ORDER as u32)
     }
 
     /// Substracts two field elements
@@ -80,13 +80,15 @@ impl Field for F7 {
     /// assert_eq!(f7.sub(2, 4), 5);
     /// ```
     fn sub(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt {
-        (ORDER + a - b) % ORDER
+        let q = ORDER as u32;
+        (q + a - b) % q
     }
 
     fn mul(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt {
+        let q = ORDER as u32;
         let modulo = |x| {
-            if x >= ORDER {
-                x - (ORDER - 1)
+            if x >= q {
+                x - (q - 1)
             } else {
                 x
             }
@@ -109,19 +111,21 @@ impl Field for F7 {
     /// assert_eq!(f7.neg(4), 3);
     /// ```
     fn neg(&self, a: Self::FElt) -> Self::FElt {
-        (ORDER - a) % ORDER
+        let q = ORDER as u32;
+        (q - a) % q
     }
 
     fn inv(&self, a: Self::FElt) -> Option<Self::FElt> {
+        let q = ORDER as u32;
         if a == 0 {
             None
         } else {
-            Some(EXP[(ORDER - 1 - LOG[a as usize]) as usize])
+            Some(EXP[(q - 1 - LOG[a as usize]) as usize])
         }
     }
 
     fn random_element(&self, rng: &mut ThreadRng) -> Self::FElt {
-        rng.gen_range(0, ORDER)
+        rng.gen_range(0, ORDER as u32)
     }
 }
 

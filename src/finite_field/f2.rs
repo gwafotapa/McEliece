@@ -37,7 +37,7 @@ impl Field for F2 {
     /// let f2 = F2 {};
     /// assert_eq!(f2.characteristic(), 2);
     /// ```
-    fn characteristic(&self) -> u32 {
+    fn characteristic(&self) -> usize {
         2
     }
 
@@ -90,7 +90,7 @@ impl Field for F2 {
     fn neg(&self, a: Self::FElt) -> Self::FElt {
         a
     }
-    
+
     /// Returns multiplicative inverse of an element
     /// ```
     /// # use mceliece::finite_field::{Field, F2};
@@ -169,9 +169,9 @@ impl F2FiniteExtension for F2 {
     ///
     /// Panics if the u32 is greater than or equal to field order.
     fn u32_to_elt(&self, n: u32) -> Self::FElt {
-        if n >= self.order() {
+        if n >= self.order() as u32 {
             panic!("u32 must be smaller than field order");
-        }        
+        }
         n
     }
 }

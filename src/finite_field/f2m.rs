@@ -7,7 +7,7 @@ use super::{CharacteristicTwo, F2FiniteExtension, Field, FiniteField};
 /// Finite field of order 2<sup>m</sup>
 #[derive(Eq)]
 pub struct F2m {
-    order: u32,
+    order: usize,
     m: u32,
     exp: Vec<<Self as Field>::FElt>,
     log: Vec<u32>,
@@ -21,7 +21,7 @@ impl PartialEq for F2m {
 
 impl Field for F2m {
     type FElt = u32;
-    
+
     /// Returns identity element of field addition
     /// ```
     /// # use mceliece::finite_field::{Field, F2m};
@@ -48,7 +48,7 @@ impl Field for F2m {
     /// let f2m = F2m::generate(32);
     /// assert_eq!(f2m.characteristic(), 2);
     /// ```
-    fn characteristic(&self) -> u32 {
+    fn characteristic(&self) -> usize {
         2
     }
 
@@ -71,9 +71,10 @@ impl Field for F2m {
     /// assert_eq!(f64.mul(b, c), f64.exp((11 + 59) % 63));
     /// ```
     fn mul(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt {
+        let q = self.order as u32;
         let modulo = |a| {
-            if a >= self.order {
-                a - (self.order - 1)
+            if a >= q {
+                a - (q - 1)
             } else {
                 a
             }
@@ -98,15 +99,16 @@ impl Field for F2m {
     }
 
     fn inv(&self, a: Self::FElt) -> Option<Self::FElt> {
+        let q = self.order as u32;
         if a == 0 {
             None
         } else {
-            Some(self.exp[(self.order - 1 - self.log[a as usize]) as usize])
+            Some(self.exp[(q - 1 - self.log[a as usize]) as usize])
         }
     }
 
     fn random_element(&self, rng: &mut ThreadRng) -> Self::FElt {
-        rng.gen_range(0, self.order)
+        rng.gen_range(0, self.order as u32)
     }
 }
 
@@ -142,7 +144,7 @@ impl F2FiniteExtension for F2m {
     }
 
     fn u32_to_elt(&self, n: u32) -> Self::FElt {
-        if n >= self.order() {
+        if n >= self.order() as u32 {
             panic!("u32 must be smaller than field order");
         }
         n
@@ -165,27 +167,27 @@ impl F2m {
     /// let f16 = F2m::generate(16);
     /// assert_eq!(f16.order(), 16);
     /// ```
-    pub fn generate(order: u32) -> Self {
-        let (_, m) = match prime_power(order) {
+    pub fn generate(order: usize) -> Self {
+        let (_, m) = match prime_power(order as u32) {
             Ok(r) => r,
             Err(s) => panic!(s),
         };
         let mut f = Self {
             order,
             m,
-            exp: vec![0; order as usize],
-            log: vec![0; order as usize],
+            exp: vec![0; order],
+            log: vec![0; order],
         };
         f.exp[0] = 1;
         f.log[1] = 0;
         let mut elt = 1;
         for i in 1..order {
             elt *= 2;
-            if elt >= order {
+            if elt >= order as u32 {
                 elt ^= Self::primitive_poly(order);
             }
-            f.exp[i as usize] = elt;
-            f.log[elt as usize] = i;
+            f.exp[i] = elt;
+            f.log[elt as usize] = i as u32;
         }
         f
     }
@@ -201,8 +203,8 @@ impl F2m {
     /// - Panics if order is not a power of 2.
     /// - Panics if order is 2 (use struct F2 instead).
     /// - Panics if order is greater than 2<sup>16</sup>.
-    pub fn primitive_poly(order: u32) -> u32 {
-        match prime_power(order) {
+    pub fn primitive_poly(order: usize) -> u32 {
+        match prime_power(order as u32) {
             Ok((_, m)) => match m {
                 2 => 0x7,
                 3 => 0xB,

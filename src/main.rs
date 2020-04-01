@@ -25,11 +25,11 @@ use mceliece::{
 // const GOPPA_T: u32 = 70; // Code correction capacity
 // // const GOPPA_K: u32 = 1278; // Code dimension
 
-const GOPPA_N_MIN: u32 = 3;
-const GOPPA_N_MAX: u32 = 4096;
-const GOPPA_N: u32 = 4096; // Code length
-const GOPPA_T: u32 = 170; // Code correction capacity
-                          // const GOPPA_K: u32 = 2056; // Code dimension
+const GOPPA_N_MIN: usize = 3;
+const GOPPA_N_MAX: usize = 4096;
+const GOPPA_N: usize = 4096; // Code length
+const GOPPA_T: usize = 170; // Code correction capacity
+                            // const GOPPA_K: u32 = 2056; // Code dimension
 
 const PLAINTEXT: &str = "plaintext.mce";
 const CIPHERTEXT: &str = "ciphertext.mce";
@@ -41,8 +41,8 @@ fn keygen(
     pk_file: &str,
     sk_file: &str,
     m: u32,
-    n: u32,
-    t: u32,
+    n: usize,
+    t: usize,
     verbose: bool,
 ) -> Result<(), MainError> {
     let f2 = &F2 {};
@@ -168,7 +168,7 @@ fn plaintext(pk_file: &str, ptxt_file: &str, verbose: bool) -> Result<(), MainEr
     }
     let f2 = &F2 {};
     let mut rng = rand::thread_rng();
-    let p = RowVec::random(&mut rng, f2, k as usize);
+    let p = RowVec::random(&mut rng, f2, k);
 
     if verbose {
         print!("ok\nWriting plaintext to {}.....", ptxt_file);
@@ -190,10 +190,10 @@ fn get_program(path: &str) -> &str {
     &path[i..]
 }
 
-fn get_code_params(matches: &Matches) -> Result<(u32, u32, u32), MainError> {
+fn get_code_params(matches: &Matches) -> Result<(u32, usize, usize), MainError> {
     let n = match matches.opt_str("n") {
         None => GOPPA_N,
-        Some(length) => u32::from_str_radix(&length, 10)?,
+        Some(length) => u32::from_str_radix(&length, 10)? as usize,
     };
     if n < GOPPA_N_MIN || GOPPA_N_MAX < n {
         return Err(format!(
@@ -204,7 +204,7 @@ fn get_code_params(matches: &Matches) -> Result<(u32, u32, u32), MainError> {
     }
     let t = match matches.opt_str("t") {
         None => GOPPA_T,
-        Some(correction) => u32::from_str_radix(&correction, 10)?,
+        Some(correction) => u32::from_str_radix(&correction, 10)? as usize,
     };
     let q = if t == 1 && n.is_power_of_two() {
         2 * n
@@ -212,7 +212,7 @@ fn get_code_params(matches: &Matches) -> Result<(u32, u32, u32), MainError> {
         n.next_power_of_two()
     };
     let m = q.trailing_zeros();
-    if n <= m * t {
+    if n <= m as usize * t {
         return Err("Code length n must be greater than m * t".into());
     }
     Ok((m, n, t))
@@ -292,3 +292,5 @@ fn main() -> Result<(), MainError> {
         .into()),
     }
 }
+
+// TODO: add a function from_two_bytes ?
