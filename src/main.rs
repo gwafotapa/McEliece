@@ -23,7 +23,7 @@ use mceliece::{
 // const GOPPA_N_MAX: usize = 2048;
 // const GOPPA_N: usize = 2048; // Code length
 // const GOPPA_T: usize = 70; // Code correction capacity
-// // const GOPPA_K: usize = 1278; // Code dimension
+//                            // const GOPPA_K: usize = 1278; // Code dimension
 
 const GOPPA_N_MIN: usize = 3;
 const GOPPA_N_MAX: usize = 4096;

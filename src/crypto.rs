@@ -19,8 +19,10 @@ type Result<T> = std::result::Result<T, Box<dyn Error>>;
 ///
 /// A public key is a couple (SGP, t) where:
 /// - SGP is the product of three matrices S, G and P
-///   (see struct [SecretKey](struct.SecretKey.html) for more)
+///   (see struct [`SecretKey`] for more)
 /// - t is the correction capacity of the Goppa code (and also the degree of the Goppa polynomial)
+///
+/// [`SecretKey`]: struct.SecretKey.html
 #[derive(Debug, Eq, PartialEq)]
 pub struct PublicKey<'a> {
     sgp: Mat<'a, F2>,
@@ -105,6 +107,13 @@ impl<'a> PublicKey<'a> {
         c + z
     }
 
+    /// Saves public key on disk
+    ///
+    /// The output file layout is:
+    /// - bytes 0-3: number k of rows of matrix sgp
+    /// - bytes 4-7: number n of columns of matrix sgp
+    /// - bytes 8-x: coefficients of matrix sgp (eight per byte)
+    /// - bytes x-x+4: correction capacity t
     pub fn write(&self, file_name: &str) -> Result<()> {
         let mut f = File::create(file_name)?;
         f.write_all(&self.sgp.to_bytes())?;
@@ -162,6 +171,23 @@ impl<'a, 'b> SecretKey<'a, 'b> {
         m
     }
 
+    /// Saves secret key on disk
+    ///
+    /// The output file layout is:
+    /// - bytes 0-3: finite field order q
+    /// - bytes 4-7: number of rows of matrix s
+    /// - bytes 8-11: number of columns of matrix s
+    /// - bytes 11-a: coefficients of matrix s (eight per byte)
+    /// - bytes a-a+4: finite field order q
+    /// - bytes a+4-a+8: correction capacity t
+    /// - bytes a+8-b: coefficients of Goppa polynomial (four bytes per coefficient)
+    /// - bytes b-c: Goppa set L (see [`Goppa`]::[`to_bytes()`] for more information)
+    /// - bytes c-d: information set (four bytes per column index)
+    /// - bytes d-d+4: length n of the code
+    /// - bytes d+4-e: permutation P (four bytes per image)
+    ///
+    /// [`Goppa`]: ../goppa/struct.Goppa.html
+    /// [`to_bytes()`]: ../goppa/struct.Goppa.html#method.to_bytes
     pub fn write(&self, file_name: &str) -> Result<()> {
         let f = File::create(file_name)?;
         let mut f = BufWriter::new(f);

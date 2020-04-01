@@ -356,6 +356,16 @@ where
 }
 
 impl<'a, F: Eq + F2FiniteExtension> Goppa<'a, F> {
+    /// Encodes the Goppa code
+    ///
+    /// The encoded byte vector has the following layout:
+    /// - bytes 0-3: finite field order q
+    /// - bytes 4-7: degree of the Goppa polynomial t
+    /// - bytes 8-a: coefficients of the Goppa polynomial (four bytes each)
+    /// - bytes a-b: Goppa set L seen as a sequence of q bits
+    ///   (the ith bit is set if [`u32_to_elt(i)`] belongs to L)
+    ///
+    /// [`u32_to_elt(i)`]: #tymethod.u32_to_elt
     pub fn to_bytes(&self) -> Vec<u8> {
         let f = self.field();
         let mut vec = self.poly.to_bytes();

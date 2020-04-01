@@ -392,7 +392,9 @@ impl<'a> Mat<'a, F2> {
         vec
     }
 
-    /// Decodes bytes encoded with [to_bytes()](struct.Mat.html#method.to_bytes) to a matrix
+    /// Decodes bytes encoded with [`to_bytes()`] to a matrix
+    ///
+    /// [`to_bytes()`]: #method.to_bytes
     pub fn from_bytes(vec: &[u8], f2: &'a F2) -> Result<(usize, Self)> {
         let rows = u32::from_be_bytes(vec[0..4].try_into()?) as usize;
         let cols = u32::from_be_bytes(vec[4..8].try_into()?) as usize;
