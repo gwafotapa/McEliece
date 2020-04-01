@@ -104,7 +104,7 @@ fn goppa_f256() {
     let c = Goppa::new(g, f256_elts);
     info!("{}", c);
 
-    let n = f256.order() as usize;
+    let n = f256.order();
     let m = f256.characteristic_exponent() as usize;
     let t = 22;
     let mut rng = rand::thread_rng();
@@ -165,7 +165,7 @@ fn goppa_random() {
     let f2 = &F2 {};
     let f2m = &F2m::generate(1 << m);
     let mut rng = rand::thread_rng();
-    let goppa = Goppa::random(&mut rng, f2m, n as usize, t as usize);
+    let goppa = Goppa::random(&mut rng, f2m, n, t);
     info!("{}", goppa);
 
     let xyz = goppa.parity_check_xyz();
@@ -186,7 +186,7 @@ fn goppa_random() {
     let cdw = &msg * &g;
     info!("codeword:{}", cdw);
 
-    let err = RowVec::random_with_weight(&mut rng, f2, n as usize, t as usize);
+    let err = RowVec::random_with_weight(&mut rng, f2, n, t);
     info!("error:{}", err);
 
     let rcv = &cdw + &err;
@@ -216,11 +216,11 @@ fn goppa_repeat() {
     }
 }
 
-fn goppa_repeated(m: u32, n: u32, t: u32) {
+fn goppa_repeated(m: u32, n: usize, t: usize) {
     let f2 = &F2 {};
     let f2m = &F2m::generate(1 << m);
     let mut rng = rand::thread_rng();
-    let goppa = Goppa::random(&mut rng, f2m, n as usize, t as usize);
+    let goppa = Goppa::random(&mut rng, f2m, n, t);
     info!("{}", goppa);
 
     let xyz = goppa.parity_check_xyz();
@@ -241,7 +241,7 @@ fn goppa_repeated(m: u32, n: u32, t: u32) {
     let cdw = &msg * &g;
     info!("codeword:{}", cdw);
 
-    let err = RowVec::random_with_weight(&mut rng, f2, n as usize, t as usize);
+    let err = RowVec::random_with_weight(&mut rng, f2, n, t);
     info!("error:{}", err);
 
     let rcv = &cdw + &err;

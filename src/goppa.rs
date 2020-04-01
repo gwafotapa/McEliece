@@ -359,7 +359,7 @@ impl<'a, F: Eq + F2FiniteExtension> Goppa<'a, F> {
     pub fn to_bytes(&self) -> Vec<u8> {
         let f = self.field();
         let mut vec = self.poly.to_bytes();
-        vec.reserve_exact(vec.len() + div_ceil(f.order(), 8));
+        vec.reserve_exact(vec.len() + crate::div_ceil(f.order(), 8));
         let mut byte = 0;
         let mut shift = 7;
         let mut j = 0;
@@ -376,35 +376,32 @@ impl<'a, F: Eq + F2FiniteExtension> Goppa<'a, F> {
                 shift -= 1;
             }
         }
-        if f.order() % 8 != 0 {
+        if shift != 7 {
             vec.push(byte);
         }
         vec
     }
 
-    // pub fn from_bytes(vec: &Vec<u8>, f: &'a F) -> Result<Self> {
-    pub fn from_bytes(vec: &[u8], f: &'a F) -> Result<Self> {
-        let poly = Poly::from_bytes(vec, f)?;
+    pub fn from_bytes(vec: &[u8], f: &'a F) -> Result<(usize, Self)> {
+        let (mut read, poly) = Poly::from_bytes(vec, f)?;
         debug!("Read polynomial:\n{}", poly);
 
-        let mut i = 4 + 4 + 4 * (poly.degree() + 1);
         let mut set = Vec::new();
         let mut shift = 7;
         for j in 0..f.order() as u32 {
-            if (vec[i] >> shift) & 1 == 1 {
+            if (vec[read] >> shift) & 1 == 1 {
                 set.push(f.u32_to_elt(j));
             }
             if shift == 0 {
                 shift = 7;
-                i += 1;
+                read += 1;
             } else {
                 shift -= 1
             }
         }
-        Ok(Goppa::new(poly, set))
+        if shift != 7 {
+            read += 1;
+        }
+        Ok((read, Goppa::new(poly, set)))
     }
-}
-
-fn div_ceil(a: usize, b: usize) -> usize {
-    a / b + if a % b == 0 { 0 } else { 1 }
 }

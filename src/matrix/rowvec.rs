@@ -310,7 +310,7 @@ impl<'a, F: Eq + Field> RowVec<'a, F> {
 impl<'a> RowVec<'a, F2> {
     pub fn write(&self, file_name: &str) -> Result<()> {
         let mut f = File::create(file_name)?;
-        let len = 4 + div_ceil(self.cols(), 8);
+        let len = 4 + crate::div_ceil(self.cols(), 8);
         let mut vec = Vec::with_capacity(len);
         vec.extend_from_slice(&(self.cols() as u32).to_be_bytes());
         let mut byte = 0;
@@ -351,8 +351,4 @@ impl<'a> RowVec<'a, F2> {
         }
         Ok(rowvec)
     }
-}
-
-fn div_ceil(a: usize, b: usize) -> usize {
-    a / b + if a % b == 0 { 0 } else { 1 }
 }

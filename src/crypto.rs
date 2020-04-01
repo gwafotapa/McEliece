@@ -6,7 +6,7 @@ use std::{
     convert::TryInto,
     error::Error,
     fs::File,
-    io::{BufRead, BufReader, BufWriter, Read, Write},
+    io::{BufWriter, Read, Write},
 };
 
 use crate::finite_field::{F2m, FiniteField, F2};
@@ -107,8 +107,8 @@ impl<'a> PublicKey<'a> {
 
     pub fn write(&self, file_name: &str) -> Result<()> {
         let mut f = File::create(file_name)?;
-        f.write_all(&self.sgp.to_bytes());
-        f.write_all(&self.t.to_be_bytes());
+        f.write_all(&self.sgp.to_bytes())?;
+        f.write_all(&(self.t as u32).to_be_bytes())?;
         Ok(())
     }
 
@@ -116,8 +116,7 @@ impl<'a> PublicKey<'a> {
         let mut f = File::open(file_name)?;
         let mut vec = Vec::new();
         f.read_to_end(&mut vec)?;
-        let sgp = Mat::from_bytes(&vec, f2)?;
-        let i = 4 + 4 + div_ceil(sgp.rows() * sgp.cols(), 8);
+        let (i, sgp) = Mat::from_bytes(&vec, f2)?;
         let t = u32::from_be_bytes(vec[i..i + 4].try_into()?) as usize;
         Ok(PublicKey { sgp, t })
     }
@@ -166,15 +165,15 @@ impl<'a, 'b> SecretKey<'a, 'b> {
     pub fn write(&self, file_name: &str) -> Result<()> {
         let f = File::create(file_name)?;
         let mut f = BufWriter::new(f);
+        f.write_all(&(self.goppa.field().order() as u32).to_be_bytes())?;
         f.write_all(&self.s.to_bytes())?;
         f.write_all(&self.goppa.to_bytes())?;
 
-        // f.write_all(self.info_set.len().to_be_bytes());
         for i in 0..self.info_set.len() {
             f.write_all(&(self.info_set[i] as u32).to_be_bytes())?;
         }
 
-        f.write_all(&(self.p.len() as u32).to_be_bytes());
+        f.write_all(&(self.p.len() as u32).to_be_bytes())?;
         for i in 0..self.p.len() {
             f.write_all(&(self.p[i] as u32).to_be_bytes())?;
         }
@@ -184,53 +183,45 @@ impl<'a, 'b> SecretKey<'a, 'b> {
     // TODO: Is it possible to eliminate this function ?
     pub fn read_finite_field(file_name: &str) -> Result<F2m> {
         let mut f = File::open(file_name)?;
-        // let mut f = BufReader::new(f);
-        let mut vec = Vec::new();
-        f.read_to_end(&mut vec)?;
-
-        // let mut buf = [0; 4];
-        // f.read_exact(&mut buf)?;
-        // let k = u32::from_be_bytes(buf);
-        let k = u32::from_be_bytes(vec[0..4].try_into()?) as usize;
-        let i = 4 + 4 + div_ceil(k * k, 8);
-        let order = u32::from_be_bytes(vec[i..i + 4].try_into()?) as usize;
-
-        // let mut line = String::new();
-        // f.read_line(&mut line)?;
-        // line.clear();
-        // f.read_line(&mut line)?;
-        // let order = u32::from_str_radix(&line[..line.find('#').ok_or("Missing hashtag")?], 16)?;
+        // let mut vec = Vec::new();
+        // f.read_to_end(&mut vec)?;
+        let mut buf = [0; 4];
+        f.read_exact(&mut buf)?;
+        let order = u32::from_be_bytes(buf) as usize;
+        // let k = u32::from_be_bytes(vec[0..4].try_into()?) as usize;
+        // let i = 4 + 4 + div_ceil(k * k, 8);
+        // let order = u32::from_be_bytes(vec[i..i + 4].try_into()?) as usize;
         Ok(F2m::generate(order))
     }
 
-    // TODO: rewrite the use of index i for all read/write functions
     pub fn read_secret_key(file_name: &str, f2: &'a F2, f2m: &'b F2m) -> Result<Self> {
         let mut f = File::open(file_name)?;
-        // let f = BufReader::new(f);
         let mut vec = Vec::new();
         f.read_to_end(&mut vec)?;
+        let mut i = 4;
 
-        let s = Mat::from_bytes(&vec, f2)?;
+        let (bytes, s) = Mat::from_bytes(&vec[i..], f2)?;
+        i += bytes;
         debug!("Read matrix s:{}", s);
 
-        let k = s.rows();
-        let mut i = 4 + 4 + div_ceil(k * k, 8);
-        let goppa = Goppa::from_bytes(&vec[i..], f2m)?;
+        let (bytes, goppa) = Goppa::from_bytes(&vec[i..], f2m)?;
+        i += bytes;
         debug!("Read Goppa code:\n{}", goppa);
 
-        i += 4 + 4 + 4 * (goppa.poly().degree() + 1) + div_ceil(goppa.field().order(), 8); // TODO: Can I not use order() ???
+        let k = s.rows();
         let mut info_set = Vec::new();
-        for j in 0..k {
-            info_set.push(u32::from_be_bytes(vec[i + 4 * j..i + 4 * j + 4].try_into()?) as usize);
+        for _j in 0..k {
+            info_set.push(u32::from_be_bytes(vec[i..i + 4].try_into()?) as usize);
+            i += 4;
         }
         debug!("Read information set:\n{:?}", info_set);
 
-        i += 4 * k;
         let p_len = u32::from_be_bytes(vec[i..i + 4].try_into()?) as usize;
         i += 4;
         let mut p = Vec::with_capacity(p_len);
-        for j in 0..p_len {
-            p.push(u32::from_be_bytes(vec[i + 4 * j..i + 4 * j + 4].try_into()?) as usize);
+        for _j in 0..p_len {
+            p.push(u32::from_be_bytes(vec[i..i + 4].try_into()?) as usize);
+            i += 4;
         }
         let p = Perm::new(p);
 
@@ -241,8 +232,4 @@ impl<'a, 'b> SecretKey<'a, 'b> {
             p,
         })
     }
-}
-
-fn div_ceil(a: usize, b: usize) -> usize {
-    a / b + if a % b == 0 { 0 } else { 1 }
 }

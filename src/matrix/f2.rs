@@ -368,7 +368,7 @@ impl<'a> Mat<'a, F2> {
     /// We start by encoding numbers of rows and columns on four bytes each.
     /// The matrix data follows.
     pub fn to_bytes(&self) -> Vec<u8> {
-        let len = 4 + 4 + div_ceil(self.rows * self.cols, 8);
+        let len = 4 + 4 + crate::div_ceil(self.rows * self.cols, 8);
         let mut vec = Vec::with_capacity(len);
         vec.extend_from_slice(&(self.rows as u32).to_be_bytes());
         vec.extend_from_slice(&(self.cols as u32).to_be_bytes());
@@ -386,31 +386,34 @@ impl<'a> Mat<'a, F2> {
                 }
             }
         }
-        if (self.rows * self.cols) % 8 != 0 {
+        if shift != 7 {
             vec.push(byte);
         }
         vec
     }
 
     /// Decodes bytes encoded with [to_bytes()](struct.Mat.html#method.to_bytes) to a matrix
-    pub fn from_bytes(vec: &Vec<u8>, f2: &'a F2) -> Result<Self> {
+    pub fn from_bytes(vec: &[u8], f2: &'a F2) -> Result<(usize, Self)> {
         let rows = u32::from_be_bytes(vec[0..4].try_into()?) as usize;
         let cols = u32::from_be_bytes(vec[4..8].try_into()?) as usize;
         let mut mat = Mat::zero(f2, rows, cols);
-        let mut k = 8;
+        let mut read = 8;
         let mut shift = 7;
         for i in 0..rows {
             for j in 0..cols {
-                mat[(i, j)] = ((vec[k] >> shift) & 1).into();
+                mat[(i, j)] = ((vec[read] >> shift) & 1).into();
                 if shift == 0 {
-                    k += 1;
+                    read += 1;
                     shift = 7;
                 } else {
                     shift -= 1;
                 }
             }
         }
-        Ok(mat)
+        if shift != 7 {
+            read += 1;
+        }
+        Ok((read, mat))
     }
 }
 
@@ -444,9 +447,4 @@ impl<'a, F: Eq + F2FiniteExtension> Mat<'a, F> {
         }
         bin
     }
-}
-
-// TODO: Should I rewrite this in each module ?
-fn div_ceil(a: usize, b: usize) -> usize {
-    a / b + if a % b == 0 { 0 } else { 1 }
 }

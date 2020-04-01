@@ -192,3 +192,32 @@ fn polynomial_f1024_inverse_mod() {
     let id = Poly::x_n(f, 0);
     assert_eq!(p, id);
 }
+
+#[test]
+fn polynomial_is_irreducible() {
+    common::log_setup();
+    let f2 = &F2 {};
+    let f1024 = &F2m::generate(1024);
+
+    let zero = Poly::zero(f2, 1);
+    assert!(!zero.is_irreducible());
+
+    let mut constant_poly = Poly::zero(f1024, 1);
+    constant_poly[0] = f1024.exp(533);
+    assert!(!constant_poly.is_irreducible());
+
+    let p = Poly::support(f2, &[0, 1, 2]);
+    assert!(p.is_irreducible());
+
+    let p = Poly::support(f2, &[0, 2]);
+    assert!(!p.is_irreducible());
+
+    let p = Poly::support(f1024, &[0, 2, 11]);
+    assert!(p.is_irreducible());
+
+    let p = Poly::support(f2, &[0, 3, 10]);
+    assert!(p.is_irreducible());
+
+    let p = Poly::support(f1024, &[0, 3, 10]);
+    assert!(!p.is_irreducible());
+}

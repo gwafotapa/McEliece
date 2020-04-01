@@ -172,7 +172,7 @@ impl<'a, F: Eq + F2FiniteExtension> Poly<'a, F> {
         let f = self.field();
         let len = 4 + 4 + 4 * (self.degree() + 1);
         let mut vec = Vec::with_capacity(len);
-        vec.extend_from_slice(&(f.order()).to_be_bytes());
+        vec.extend_from_slice(&(f.order() as u32).to_be_bytes());
         vec.extend_from_slice(&(self.degree() as u32).to_be_bytes());
         for i in 0..self.degree() + 1 {
             vec.extend_from_slice(&(f.elt_to_u32(self[i])).to_be_bytes());
@@ -180,48 +180,14 @@ impl<'a, F: Eq + F2FiniteExtension> Poly<'a, F> {
         vec
     }
 
-    pub fn from_bytes(vec: &[u8], f: &'a F) -> Result<Self> {
+    pub fn from_bytes(vec: &[u8], f: &'a F) -> Result<(usize, Self)> {
         let t = u32::from_be_bytes(vec[4..8].try_into()?) as usize;
         let mut poly = Self::zero(f, t + 1);
         for i in 0..t + 1 {
             let j = 8 + 4 * i;
             poly[i] = f.u32_to_elt(u32::from_be_bytes(vec[j..j + 4].try_into()?));
         }
-        Ok(poly)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::finite_field::{F2m, F2};
-
-    #[test]
-    fn is_irreducible() {
-        env_logger::init();
-        let f2 = &F2 {};
-        let f1024 = &F2m::generate(1024);
-
-        let zero = Poly::zero(f2, 1);
-        assert!(!zero.is_irreducible());
-
-        let mut constant_poly = Poly::zero(f1024, 1);
-        constant_poly[0] = f1024.exp(533);
-        assert!(!constant_poly.is_irreducible());
-
-        let p = Poly::support(f2, &[0, 1, 2]);
-        assert!(p.is_irreducible());
-
-        let p = Poly::support(f2, &[0, 2]);
-        assert!(!p.is_irreducible());
-
-        let p = Poly::support(f1024, &[0, 2, 11]);
-        assert!(p.is_irreducible());
-
-        let p = Poly::support(f2, &[0, 3, 10]);
-        assert!(p.is_irreducible());
-
-        let p = Poly::support(f1024, &[0, 3, 10]);
-        assert!(!p.is_irreducible());
+        let read = 4 + 4 + 4 * (t + 1);
+        Ok((read, poly))
     }
 }

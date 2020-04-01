@@ -62,7 +62,7 @@ fn crypto_decrypt_null_ciphertext() {
     let (pk, sk) = keygen(f2, f2m, n, t);
     let k = pk.sgp().rows();
     let msg = RowVec::zero(f2, k);
-    let cpt = RowVec::zero(f2, n as usize);
+    let cpt = RowVec::zero(f2, n);
     let dmsg = sk.decrypt(&cpt);
     assert_eq!(dmsg, msg);
 }
@@ -94,7 +94,7 @@ fn crypto_encrypt_decrypt_null_message() {
     let k = pk.sgp().rows();
     let msg = RowVec::zero(f2, k);
     let cpt = pk.encrypt(&msg);
-    assert_eq!(cpt.weight() as u32, t);
+    assert_eq!(cpt.weight(), t);
 
     let dmsg = sk.decrypt(&cpt);
     assert_eq!(dmsg, msg);
@@ -134,7 +134,7 @@ fn crypto_repeat() {
     }
 }
 
-fn crypto_repeated(m: u32, n: u32, t: u32) {
+fn crypto_repeated(m: u32, n: usize, t: usize) {
     let f2 = &F2 {};
     let f2m = &F2m::generate(1 << m);
     let (pk, sk) = keygen(f2, f2m, n, t);
