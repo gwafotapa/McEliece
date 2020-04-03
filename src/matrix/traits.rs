@@ -277,7 +277,7 @@ impl<'a, F: Eq + Field> Neg for &Mat<'a, F> {
 }
 
 impl<'a, F: Eq + Field> Index<(usize, usize)> for Mat<'a, F> {
-    type Output = F::FElt;
+    type Output = F::FieldElement;
 
     fn index(&self, index: (usize, usize)) -> &Self::Output {
         &self.data[index.0 * self.cols + index.1]

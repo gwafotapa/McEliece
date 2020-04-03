@@ -227,7 +227,7 @@ impl<'a, F: Eq + Field> Neg for &Poly<'a, F> {
 }
 
 impl<'a, F: Eq + Field> Index<usize> for Poly<'a, F> {
-    type Output = F::FElt;
+    type Output = F::FieldElement;
 
     fn index(&self, index: usize) -> &Self::Output {
         &self.data[index]

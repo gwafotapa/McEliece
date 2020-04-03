@@ -13,7 +13,7 @@ pub struct Mat<'a, F: Eq + Field> {
     field: &'a F,
     rows: usize,
     cols: usize,
-    data: Vec<F::FElt>,
+    data: Vec<F::FieldElement>,
 }
 
 impl<'a, F: Eq + Field> Mat<'a, F> {
@@ -24,7 +24,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
     /// # Panics
     ///
     /// Panics if the matrix is empty or if there are not exactly rows * cols coefficients.
-    pub fn new(field: &'a F, rows: usize, cols: usize, data: Vec<F::FElt>) -> Self {
+    pub fn new(field: &'a F, rows: usize, cols: usize, data: Vec<F::FieldElement>) -> Self {
         if rows == 0 || cols == 0 || data.is_empty() {
             panic!("Empty matrix");
         } else if data.len() != rows * cols {
@@ -67,7 +67,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         self.cols
     }
 
-    pub fn data(&self) -> &Vec<F::FElt> {
+    pub fn data(&self) -> &Vec<F::FieldElement> {
         &self.data
     }
 

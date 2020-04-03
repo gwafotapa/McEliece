@@ -7,12 +7,12 @@ use super::{Field, FiniteField};
 /// Field order
 const ORDER: usize = 7;
 
-const EXP: [F7Elt; ORDER] = [1, 3, 2, 6, 4, 5, 1];
+const EXP: [F7Element; ORDER] = [1, 3, 2, 6, 4, 5, 1];
 
 const LOG: [u32; ORDER] = [ORDER as u32, 0, 2, 1, 4, 5, 3];
 
 /// F7 Element
-type F7Elt = u32;
+type F7Element = u32;
 
 /// Finite field of order 7
 #[derive(Eq)]
@@ -25,7 +25,16 @@ impl PartialEq for F7 {
 }
 
 impl Field for F7 {
-    type FElt = F7Elt;
+    /// Field Element
+    type FieldElement = F7Element;
+
+    /// Parameters for field generation
+    type FieldParameters = ();
+
+    /// Generates field
+    fn generate(_params: Self::FieldParameters) -> Self {
+        F7 {}
+    }
 
     /// Returns identity element of field addition
     /// ```
@@ -33,7 +42,7 @@ impl Field for F7 {
     /// let f7 = F7 {};
     /// assert_eq!(f7.zero(), 0);
     /// ```
-    fn zero(&self) -> Self::FElt {
+    fn zero(&self) -> Self::FieldElement {
         0
     }
 
@@ -43,7 +52,7 @@ impl Field for F7 {
     /// let f7 = F7 {};
     /// assert_eq!(f7.one(), 1);
     /// ```
-    fn one(&self) -> Self::FElt {
+    fn one(&self) -> Self::FieldElement {
         1
     }
 
@@ -66,7 +75,7 @@ impl Field for F7 {
     /// assert_eq!(f7.add(6, 1), 0);
     /// assert_eq!(f7.add(6, 3), 2);
     /// ```
-    fn add(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt {
+    fn add(&self, a: Self::FieldElement, b: Self::FieldElement) -> Self::FieldElement {
         (a + b) % (ORDER as u32)
     }
 
@@ -79,12 +88,12 @@ impl Field for F7 {
     /// assert_eq!(f7.sub(0, 1), 6);
     /// assert_eq!(f7.sub(2, 4), 5);
     /// ```
-    fn sub(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt {
+    fn sub(&self, a: Self::FieldElement, b: Self::FieldElement) -> Self::FieldElement {
         let q = ORDER as u32;
         (q + a - b) % q
     }
 
-    fn mul(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt {
+    fn mul(&self, a: Self::FieldElement, b: Self::FieldElement) -> Self::FieldElement {
         let q = ORDER as u32;
         let modulo = |x| {
             if x >= q {
@@ -110,12 +119,12 @@ impl Field for F7 {
     /// assert_eq!(f7.neg(3), 4);
     /// assert_eq!(f7.neg(4), 3);
     /// ```
-    fn neg(&self, a: Self::FElt) -> Self::FElt {
+    fn neg(&self, a: Self::FieldElement) -> Self::FieldElement {
         let q = ORDER as u32;
         (q - a) % q
     }
 
-    fn inv(&self, a: Self::FElt) -> Option<Self::FElt> {
+    fn inv(&self, a: Self::FieldElement) -> Option<Self::FieldElement> {
         let q = ORDER as u32;
         if a == 0 {
             None
@@ -124,7 +133,7 @@ impl Field for F7 {
         }
     }
 
-    fn random_element(&self, rng: &mut ThreadRng) -> Self::FElt {
+    fn random_element(&self, rng: &mut ThreadRng) -> Self::FieldElement {
         rng.gen_range(0, ORDER as u32)
     }
 }
@@ -140,11 +149,11 @@ impl FiniteField for F7 {
         1
     }
 
-    fn exp(&self, n: u32) -> Self::FElt {
+    fn exp(&self, n: u32) -> Self::FieldElement {
         EXP[n as usize]
     }
 
-    fn log(&self, a: Self::FElt) -> Option<u32> {
+    fn log(&self, a: Self::FieldElement) -> Option<u32> {
         if a == 0 {
             None
         } else {

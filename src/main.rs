@@ -7,7 +7,7 @@ use std::{
 
 use mceliece::{
     crypto::{self, PublicKey, SecretKey},
-    finite_field::{F2m, F2},
+    finite_field::{F2m, Field, F2},
     matrix::RowVec,
 };
 

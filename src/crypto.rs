@@ -9,7 +9,7 @@ use std::{
     io::{BufWriter, Read, Write},
 };
 
-use crate::finite_field::{F2m, FiniteField, F2};
+use crate::finite_field::{F2m, Field, FiniteField, F2};
 use crate::goppa::Goppa;
 use crate::matrix::{Mat, Perm, RowVec};
 

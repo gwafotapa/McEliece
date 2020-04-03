@@ -21,7 +21,7 @@ type Result<T> = result::Result<T, Box<dyn Error>>;
 #[derive(Eq, PartialEq)]
 pub struct Goppa<'a, F: Eq + Field> {
     poly: Poly<'a, F>,
-    set: Vec<F::FElt>,
+    set: Vec<F::FieldElement>,
 }
 
 impl<'a, F> Debug for Goppa<'a, F>
@@ -96,7 +96,7 @@ where
     /// - set contains twice the same element
     /// - set contains a root of the polynomial
     /// - set elements are not ordered according to their u32 representation
-    pub fn new(poly: Poly<'a, F>, set: Vec<F::FElt>) -> Self {
+    pub fn new(poly: Poly<'a, F>, set: Vec<F::FieldElement>) -> Self {
         if !poly.is_irreducible() {
             panic!("Goppa polynomial is not irreducible");
         }
@@ -164,7 +164,7 @@ where
         &self.poly
     }
 
-    pub fn set(&self) -> &Vec<F::FElt> {
+    pub fn set(&self) -> &Vec<F::FieldElement> {
         &self.set
     }
 

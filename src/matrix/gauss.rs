@@ -28,14 +28,14 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
     }
 
     /// Modifies row1 such that row1 = row1 + lambda * row2
-    pub fn combine_rows(&mut self, row1: usize, lambda: F::FElt, row2: usize) {
+    pub fn combine_rows(&mut self, row1: usize, lambda: F::FieldElement, row2: usize) {
         let f = self.field;
         for j in 0..self.cols {
             self[(row1, j)] = f.add(self[(row1, j)], f.mul(lambda, self[(row2, j)]));
         }
     }
 
-    pub fn mul_row(&mut self, row: usize, lambda: F::FElt) {
+    pub fn mul_row(&mut self, row: usize, lambda: F::FieldElement) {
         for j in 0..self.cols {
             self[(row, j)] = self.field.mul(lambda, self[(row, j)]);
         }

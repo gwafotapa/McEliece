@@ -8,34 +8,40 @@ pub use f7::F7;
 
 pub trait Field {
     /// Field Element
-    type FElt: Copy + Eq;
+    type FieldElement: Copy + Eq;
+
+    /// Parameters for field generation
+    type FieldParameters;
+
+    /// Generates field
+    fn generate(params: Self::FieldParameters) -> Self;
 
     /// Returns identity element of field addition
-    fn zero(&self) -> Self::FElt;
+    fn zero(&self) -> Self::FieldElement;
 
     /// Returns identity element of field multiplication
-    fn one(&self) -> Self::FElt;
+    fn one(&self) -> Self::FieldElement;
 
     /// Returns field characteristic
     fn characteristic(&self) -> usize;
 
     /// Adds two field elements
-    fn add(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt;
+    fn add(&self, a: Self::FieldElement, b: Self::FieldElement) -> Self::FieldElement;
 
     /// Substracts two field elements
-    fn sub(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt;
+    fn sub(&self, a: Self::FieldElement, b: Self::FieldElement) -> Self::FieldElement;
 
     /// Multiplies two field elements
-    fn mul(&self, a: Self::FElt, b: Self::FElt) -> Self::FElt;
+    fn mul(&self, a: Self::FieldElement, b: Self::FieldElement) -> Self::FieldElement;
 
     /// Returns additive inverse of an element
-    fn neg(&self, a: Self::FElt) -> Self::FElt;
+    fn neg(&self, a: Self::FieldElement) -> Self::FieldElement;
 
     /// Returns multiplicative inverse of an element
-    fn inv(&self, a: Self::FElt) -> Option<Self::FElt>;
+    fn inv(&self, a: Self::FieldElement) -> Option<Self::FieldElement>;
 
     /// Returns a random element of the field
-    fn random_element(&self, rng: &mut ThreadRng) -> Self::FElt;
+    fn random_element(&self, rng: &mut ThreadRng) -> Self::FieldElement;
 }
 
 pub trait FiniteField: Field {
@@ -48,13 +54,13 @@ pub trait FiniteField: Field {
     }
 
     /// Returns the nth power of a primitive element
-    fn exp(&self, n: u32) -> Self::FElt;
+    fn exp(&self, n: u32) -> Self::FieldElement;
 
     /// Returns, if it exists, the discrete logarithm of an element
-    fn log(&self, a: Self::FElt) -> Option<u32>;
+    fn log(&self, a: Self::FieldElement) -> Option<u32>;
 
     /// Converts element to a string as a power of a primitive element
-    fn elt_to_str(&self, a: Self::FElt) -> String {
+    fn elt_to_str(&self, a: Self::FieldElement) -> String {
         if a == self.zero() {
             "0".to_owned()
         } else if a == self.one() {
@@ -74,7 +80,7 @@ pub trait F2FiniteExtension: CharacteristicTwo + FiniteField {
     ///
     /// The conversion is such that the binary representation of the u32
     /// matches the decomposition of the element on the canonical basis.
-    fn elt_to_u32(&self, a: Self::FElt) -> u32;
+    fn elt_to_u32(&self, a: Self::FieldElement) -> u32;
 
     /// Converts an u32 to an element
     ///
@@ -84,7 +90,7 @@ pub trait F2FiniteExtension: CharacteristicTwo + FiniteField {
     /// # Panics
     ///
     /// Panics if the u32 is greater than or equal to field order.
-    fn u32_to_elt(&self, n: u32) -> Self::FElt;
+    fn u32_to_elt(&self, n: u32) -> Self::FieldElement;
 }
 
 pub mod f2;

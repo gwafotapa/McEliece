@@ -8,7 +8,7 @@ use crate::finite_field::Field;
 #[derive(Eq)]
 pub struct Poly<'a, F: Eq + Field> {
     field: &'a F,
-    data: Vec<F::FElt>,
+    data: Vec<F::FieldElement>,
 }
 
 impl<'a, F: Eq + Field> Poly<'a, F> {
@@ -17,7 +17,7 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
     /// # Panics
     ///
     /// Panics if the polynomial is empty i.e. if the vector data is empty.
-    pub fn new(field: &'a F, data: Vec<F::FElt>) -> Self {
+    pub fn new(field: &'a F, data: Vec<F::FieldElement>) -> Self {
         if data.is_empty() {
             panic!("Empty polynomial");
         }
@@ -106,7 +106,7 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
     }
 
     /// Evaluates polynomial at point
-    pub fn eval(&self, point: F::FElt) -> F::FElt {
+    pub fn eval(&self, point: F::FieldElement) -> F::FieldElement {
         let f = self.field;
         let mut eval = self[0];
         for i in 1..self.degree() + 1 {

@@ -203,7 +203,7 @@ impl<'a, F: Eq + Field> Neg for &RowVec<'a, F> {
 }
 
 impl<'a, F: Eq + Field> Index<usize> for RowVec<'a, F> {
-    type Output = F::FElt;
+    type Output = F::FieldElement;
 
     fn index(&self, index: usize) -> &Self::Output {
         &self.0[(0, index)]
@@ -229,7 +229,7 @@ impl<'a, F: Eq + FiniteField> Display for RowVec<'a, F> {
 }
 
 impl<'a, F: Eq + Field> RowVec<'a, F> {
-    pub fn new(field: &'a F, data: Vec<F::FElt>) -> Self {
+    pub fn new(field: &'a F, data: Vec<F::FieldElement>) -> Self {
         if data.len() == 0 {
             panic!("Empty row vector");
         }
@@ -252,7 +252,7 @@ impl<'a, F: Eq + Field> RowVec<'a, F> {
         self.0.cols()
     }
 
-    pub fn data(&self) -> &Vec<F::FElt> {
+    pub fn data(&self) -> &Vec<F::FieldElement> {
         self.0.data()
     }
 
