@@ -2,12 +2,13 @@ use std::{
     cmp,
     fmt::{Debug, Display, Formatter, Result},
     ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign},
+    rc::Rc,
 };
 
 use super::Poly;
 use crate::finite_field::{F2FiniteExtension, Field, FiniteField};
 
-impl<'a, F: Eq + Field> PartialEq for Poly<'a, F> {
+impl<F: Eq + Field> PartialEq for Poly<F> {
     fn eq(&self, other: &Self) -> bool {
         if self.field != other.field || self.degree() != other.degree() {
             return false;
@@ -21,16 +22,16 @@ impl<'a, F: Eq + Field> PartialEq for Poly<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> Clone for Poly<'a, F> {
+impl<F: Eq + Field> Clone for Poly<F> {
     fn clone(&self) -> Self {
         Poly {
-            field: self.field, // field is shared
+            field: Rc::clone(&self.field),
             data: self.data.clone(),
         }
     }
 }
 
-impl<'a, F: Eq + Field> Add for Poly<'a, F> {
+impl<F: Eq + Field> Add for Poly<F> {
     type Output = Self;
 
     fn add(self, other: Self) -> Self::Output {
@@ -38,7 +39,7 @@ impl<'a, F: Eq + Field> Add for Poly<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> Add<&Poly<'a, F>> for Poly<'a, F> {
+impl<F: Eq + Field> Add<&Poly<F>> for Poly<F> {
     type Output = Self;
 
     fn add(self, other: &Self) -> Self::Output {
@@ -46,16 +47,16 @@ impl<'a, F: Eq + Field> Add<&Poly<'a, F>> for Poly<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> Add<Poly<'a, F>> for &Poly<'a, F> {
-    type Output = Poly<'a, F>;
+impl<F: Eq + Field> Add<Poly<F>> for &Poly<F> {
+    type Output = Poly<F>;
 
-    fn add(self, other: Poly<'a, F>) -> Self::Output {
+    fn add(self, other: Poly<F>) -> Self::Output {
         self + &other
     }
 }
 
-impl<'a, F: Eq + Field> Add for &Poly<'a, F> {
-    type Output = Poly<'a, F>;
+impl<F: Eq + Field> Add for &Poly<F> {
+    type Output = Poly<F>;
 
     fn add(self, other: Self) -> Self::Output {
         let mut sum = self.clone();
@@ -64,27 +65,28 @@ impl<'a, F: Eq + Field> Add for &Poly<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> AddAssign<Poly<'a, F>> for Poly<'a, F> {
+impl<F: Eq + Field> AddAssign<Poly<F>> for Poly<F> {
     fn add_assign(&mut self, other: Self) {
         *self += &other;
     }
 }
 
-impl<'a, F: Eq + Field> AddAssign<&Poly<'a, F>> for Poly<'a, F> {
+impl<F: Eq + Field> AddAssign<&Poly<F>> for Poly<F> {
     fn add_assign(&mut self, other: &Self) {
-        let f = self.field;
-        self.data
-            .resize(1 + cmp::max(self.degree(), other.degree()), f.zero());
+        self.data.resize(
+            1 + cmp::max(self.degree(), other.degree()),
+            self.field.zero(),
+        );
 
         for i in 0..other.degree() + 1 {
-            self[i] = f.add(self[i], other[i]);
+            self[i] = self.field.add(self[i], other[i]);
         }
 
         self.update_len();
     }
 }
 
-impl<'a, F: Eq + Field> Sub for Poly<'a, F> {
+impl<F: Eq + Field> Sub for Poly<F> {
     type Output = Self;
 
     fn sub(self, other: Self) -> Self::Output {
@@ -92,7 +94,7 @@ impl<'a, F: Eq + Field> Sub for Poly<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> Sub<&Poly<'a, F>> for Poly<'a, F> {
+impl<F: Eq + Field> Sub<&Poly<F>> for Poly<F> {
     type Output = Self;
 
     fn sub(self, other: &Self) -> Self::Output {
@@ -100,16 +102,16 @@ impl<'a, F: Eq + Field> Sub<&Poly<'a, F>> for Poly<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> Sub<Poly<'a, F>> for &Poly<'a, F> {
-    type Output = Poly<'a, F>;
+impl<F: Eq + Field> Sub<Poly<F>> for &Poly<F> {
+    type Output = Poly<F>;
 
-    fn sub(self, other: Poly<'a, F>) -> Self::Output {
+    fn sub(self, other: Poly<F>) -> Self::Output {
         self - &other
     }
 }
 
-impl<'a, F: Eq + Field> Sub for &Poly<'a, F> {
-    type Output = Poly<'a, F>;
+impl<F: Eq + Field> Sub for &Poly<F> {
+    type Output = Poly<F>;
 
     fn sub(self, other: Self) -> Self::Output {
         let mut diff = self.clone();
@@ -118,27 +120,28 @@ impl<'a, F: Eq + Field> Sub for &Poly<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> SubAssign<Poly<'a, F>> for Poly<'a, F> {
+impl<F: Eq + Field> SubAssign<Poly<F>> for Poly<F> {
     fn sub_assign(&mut self, other: Self) {
         *self -= &other;
     }
 }
 
-impl<'a, F: Eq + Field> SubAssign<&Poly<'a, F>> for Poly<'a, F> {
+impl<F: Eq + Field> SubAssign<&Poly<F>> for Poly<F> {
     fn sub_assign(&mut self, other: &Self) {
-        let f = self.field;
-        self.data
-            .resize(1 + cmp::max(self.degree(), other.degree()), f.zero());
+        self.data.resize(
+            1 + cmp::max(self.degree(), other.degree()),
+            self.field.zero(),
+        );
 
         for i in 0..other.degree() + 1 {
-            self[i] = f.sub(self[i], other[i]);
+            self[i] = self.field.sub(self[i], other[i]);
         }
 
         self.update_len();
     }
 }
 
-impl<'a, F: Eq + Field> Mul for Poly<'a, F> {
+impl<F: Eq + Field> Mul for Poly<F> {
     type Output = Self;
 
     fn mul(self, other: Self) -> Self::Output {
@@ -146,7 +149,7 @@ impl<'a, F: Eq + Field> Mul for Poly<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> Mul<&Poly<'a, F>> for Poly<'a, F> {
+impl<F: Eq + Field> Mul<&Poly<F>> for Poly<F> {
     type Output = Self;
 
     fn mul(self, other: &Self) -> Self::Output {
@@ -154,19 +157,19 @@ impl<'a, F: Eq + Field> Mul<&Poly<'a, F>> for Poly<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> Mul<Poly<'a, F>> for &Poly<'a, F> {
-    type Output = Poly<'a, F>;
+impl<F: Eq + Field> Mul<Poly<F>> for &Poly<F> {
+    type Output = Poly<F>;
 
-    fn mul(self, other: Poly<'a, F>) -> Self::Output {
+    fn mul(self, other: Poly<F>) -> Self::Output {
         self * &other
     }
 }
 
-impl<'a, F: Eq + Field> Mul for &Poly<'a, F> {
-    type Output = Poly<'a, F>;
+impl<F: Eq + Field> Mul for &Poly<F> {
+    type Output = Poly<F>;
 
     fn mul(self, other: Self) -> Self::Output {
-        let f = self.field;
+        let f = self.field();
         let mut prod = Poly::zero(f, self.degree() + other.degree() + 1);
 
         for i in 0..self.degree() + 1 {
@@ -180,23 +183,24 @@ impl<'a, F: Eq + Field> Mul for &Poly<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> MulAssign<Poly<'a, F>> for Poly<'a, F> {
+impl<F: Eq + Field> MulAssign<Poly<F>> for Poly<F> {
     fn mul_assign(&mut self, other: Self) {
         *self *= &other;
     }
 }
 
-impl<'a, F: Eq + Field> MulAssign<&Poly<'a, F>> for Poly<'a, F> {
+impl<F: Eq + Field> MulAssign<&Poly<F>> for Poly<F> {
     fn mul_assign(&mut self, other: &Self) {
-        let f = self.field;
         let tmp = self.clone();
-        self.data.iter_mut().map(|x| *x = f.zero()).count();
-        self.data
-            .resize(tmp.degree() + other.degree() + 1, f.zero());
+        let zero = self.field.zero();
+        self.data.iter_mut().map(|x| *x = zero).count();
+        self.data.resize(tmp.degree() + other.degree() + 1, zero);
 
         for i in 0..tmp.degree() + 1 {
             for j in 0..other.degree() + 1 {
-                self[i + j] = f.add(self[i + j], f.mul(tmp[i], other[j]));
+                self[i + j] = self
+                    .field
+                    .add(self[i + j], self.field.mul(tmp[i], other[j]));
             }
         }
 
@@ -204,7 +208,7 @@ impl<'a, F: Eq + Field> MulAssign<&Poly<'a, F>> for Poly<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> Neg for Poly<'a, F> {
+impl<F: Eq + Field> Neg for Poly<F> {
     type Output = Self;
 
     fn neg(self) -> Self::Output {
@@ -212,11 +216,11 @@ impl<'a, F: Eq + Field> Neg for Poly<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> Neg for &Poly<'a, F> {
-    type Output = Poly<'a, F>;
+impl<F: Eq + Field> Neg for &Poly<F> {
+    type Output = Poly<F>;
 
     fn neg(self) -> Self::Output {
-        let f = self.field;
+        let f = self.field();
         let mut opp = Poly::zero(f, self.degree() + 1);
 
         for i in 0..self.degree() + 1 {
@@ -226,7 +230,7 @@ impl<'a, F: Eq + Field> Neg for &Poly<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> Index<usize> for Poly<'a, F> {
+impl<F: Eq + Field> Index<usize> for Poly<F> {
     type Output = F::FieldElement;
 
     fn index(&self, index: usize) -> &Self::Output {
@@ -234,18 +238,18 @@ impl<'a, F: Eq + Field> Index<usize> for Poly<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> IndexMut<usize> for Poly<'a, F> {
+impl<F: Eq + Field> IndexMut<usize> for Poly<F> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.data[index]
     }
 }
 
-impl<'a, F: Eq + F2FiniteExtension> Debug for Poly<'a, F> {
+impl<F: Eq + F2FiniteExtension> Debug for Poly<F> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         if self.is_zero() {
             return write!(f, "0");
         }
-        let k = self.field;
+        let k = self.field();
         let mut i = 0;
         while i <= self.degree() {
             if self[i] != k.zero() {
@@ -267,12 +271,12 @@ impl<'a, F: Eq + F2FiniteExtension> Debug for Poly<'a, F> {
     }
 }
 
-impl<'a, F: Eq + FiniteField> Display for Poly<'a, F> {
+impl<F: Eq + FiniteField> Display for Poly<F> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         if self.is_zero() {
             return write!(f, "0");
         }
-        let k = self.field;
+        let k = self.field();
         let mut i = 0;
         while i <= self.degree() {
             if self[i] != k.zero() {

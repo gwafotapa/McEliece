@@ -1,6 +1,7 @@
 //! Matrices on a field
 
 use rand::rngs::ThreadRng;
+use std::rc::Rc;
 
 use crate::finite_field::{Field, FiniteField, F2};
 
@@ -9,14 +10,14 @@ pub use rowvec::RowVec;
 
 /// Matrix with coefficients in a field F
 #[derive(Eq, PartialEq)]
-pub struct Mat<'a, F: Eq + Field> {
-    field: &'a F,
+pub struct Mat<F: Eq + Field> {
+    field: Rc<F>,
     rows: usize,
     cols: usize,
     data: Vec<F::FieldElement>,
 }
 
-impl<'a, F: Eq + Field> Mat<'a, F> {
+impl<F: Eq + Field> Mat<F> {
     /// Creates a new matrix
     ///
     /// The vector data holds the matrix coefficients, row by row.
@@ -24,14 +25,14 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
     /// # Panics
     ///
     /// Panics if the matrix is empty or if there are not exactly rows * cols coefficients.
-    pub fn new(field: &'a F, rows: usize, cols: usize, data: Vec<F::FieldElement>) -> Self {
+    pub fn new(field: &Rc<F>, rows: usize, cols: usize, data: Vec<F::FieldElement>) -> Self {
         if rows == 0 || cols == 0 || data.is_empty() {
             panic!("Empty matrix");
         } else if data.len() != rows * cols {
             panic!("Dimensions do not match the number of coefficients");
         }
         Self {
-            field,
+            field: Rc::clone(field),
             rows,
             cols,
             data,
@@ -43,20 +44,13 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
     /// # Panics
     ///
     /// Panics if the number of either rows or columns is zero.
-    pub fn zero(field: &'a F, rows: usize, cols: usize) -> Self {
-        if rows == 0 || cols == 0 {
-            panic!("Empty matrix");
-        }
-        Self {
-            field,
-            rows,
-            cols,
-            data: vec![field.zero(); rows * cols],
-        }
+    pub fn zero(field: &Rc<F>, rows: usize, cols: usize) -> Self {
+        let data = vec![field.zero(); rows * cols];
+        Self::new(field, rows, cols, data)
     }
 
-    pub fn field(&self) -> &'a F {
-        self.field
+    pub fn field(&self) -> &Rc<F> {
+        &self.field
     }
 
     pub fn rows(&self) -> usize {
@@ -71,7 +65,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         &self.data
     }
 
-    pub fn random(rng: &mut ThreadRng, f: &'a F, n: usize, m: usize) -> Self {
+    pub fn random(rng: &mut ThreadRng, f: &Rc<F>, n: usize, m: usize) -> Self {
         let mut mat = Self::zero(f, n, m);
         for i in 0..n {
             for j in 0..m {
@@ -94,7 +88,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
 
     /// Creates a new matrix by taking the chosen columns in the given order
     pub fn extract_cols(&self, cols: &Vec<usize>) -> Self {
-        let mut res = Mat::zero(self.field(), self.rows(), cols.len());
+        let mut res = Mat::zero(&self.field(), self.rows(), cols.len());
         for j in 0..cols.len() {
             for i in 0..res.rows() {
                 res[(i, j)] = self[(i, cols[j])];
@@ -103,7 +97,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
         res
     }
 
-    pub fn identity(f: &'a F, n: usize) -> Self {
+    pub fn identity(f: &Rc<F>, n: usize) -> Self {
         let mut id = Self::zero(f, n, n);
         for i in 0..n {
             id[(i, i)] = f.one();
@@ -112,7 +106,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
     }
 
     pub fn transpose(&self) -> Self {
-        let mut t = Self::zero(self.field, self.cols, self.rows);
+        let mut t = Self::zero(&self.field(), self.cols, self.rows);
         for i in 0..t.rows {
             for j in 0..t.cols {
                 t[(i, j)] = self[(j, i)];

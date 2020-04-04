@@ -7,6 +7,7 @@ use std::{
     error::Error,
     fs::File,
     io::{BufWriter, Read, Write},
+    rc::Rc,
 };
 
 use crate::finite_field::{F2m, Field, FiniteField, F2};
@@ -24,8 +25,8 @@ type Result<T> = std::result::Result<T, Box<dyn Error>>;
 ///
 /// [`SecretKey`]: struct.SecretKey.html
 #[derive(Debug, Eq, PartialEq)]
-pub struct PublicKey<'a> {
-    sgp: Mat<'a, F2>,
+pub struct PublicKey {
+    sgp: Mat<F2>,
     t: usize,
 }
 
@@ -44,19 +45,16 @@ pub struct PublicKey<'a> {
 /// A summary of McEliece-type cryptosystems and their security.
 /// Journal of Mathematical Cryptology JMC, 1(2), 151-199.
 #[derive(Eq, PartialEq)]
-pub struct SecretKey<'a, 'b> {
-    s: Mat<'a, F2>,
-    goppa: Goppa<'b, F2m>,
+pub struct SecretKey {
+    s: Mat<F2>,
+    goppa: Goppa<F2m>,
     info_set: Vec<usize>,
     p: Perm,
 }
 
-pub fn keygen<'a, 'b>(
-    f2: &'a F2,
-    f2m: &'b F2m,
-    n: usize,
-    t: usize,
-) -> (PublicKey<'a>, SecretKey<'a, 'b>) {
+pub fn keygen(m: u32, n: usize, t: usize) -> (PublicKey, SecretKey) {
+    let f2 = &Rc::new(F2 {});
+    let f2m = &Rc::new(F2m::generate(1 << m));
     let mut rng = rand::thread_rng();
     let goppa = Goppa::random(&mut rng, f2m, n, t);
     debug!("{}", goppa);
@@ -87,8 +85,8 @@ pub fn keygen<'a, 'b>(
     (pk, sk)
 }
 
-impl<'a> PublicKey<'a> {
-    pub fn sgp(&self) -> &Mat<'a, F2> {
+impl PublicKey {
+    pub fn sgp(&self) -> &Mat<F2> {
         &self.sgp
     }
 
@@ -96,7 +94,7 @@ impl<'a> PublicKey<'a> {
         self.t
     }
 
-    pub fn encrypt(&self, m: &RowVec<'a, F2>) -> RowVec<'a, F2> {
+    pub fn encrypt(&self, m: &RowVec<F2>) -> RowVec<F2> {
         let mut rng = rand::thread_rng();
         let c = Goppa::<F2m>::g_encode(&self.sgp, m);
         debug!("Encoded plaintext:{}", c);
@@ -121,11 +119,11 @@ impl<'a> PublicKey<'a> {
         Ok(())
     }
 
-    pub fn read_public_key(file_name: &str, f2: &'a F2) -> Result<Self> {
+    pub fn read_public_key(file_name: &str) -> Result<Self> {
         let mut f = File::open(file_name)?;
         let mut vec = Vec::new();
         f.read_to_end(&mut vec)?;
-        let (i, sgp) = Mat::from_bytes(&vec, f2)?;
+        let (i, sgp) = Mat::from_bytes(&vec)?;
         let t = u32::from_be_bytes(vec[i..i + 4].try_into()?) as usize;
         Ok(PublicKey { sgp, t })
     }
@@ -139,12 +137,12 @@ impl<'a> PublicKey<'a> {
     }
 }
 
-impl<'a, 'b> SecretKey<'a, 'b> {
-    pub fn s(&self) -> &Mat<'a, F2> {
+impl SecretKey {
+    pub fn s(&self) -> &Mat<F2> {
         &self.s
     }
 
-    pub fn goppa(&self) -> &Goppa<'b, F2m> {
+    pub fn goppa(&self) -> &Goppa<F2m> {
         &self.goppa
     }
 
@@ -156,7 +154,7 @@ impl<'a, 'b> SecretKey<'a, 'b> {
         &self.p
     }
 
-    pub fn decrypt(&self, c: &RowVec<'a, F2>) -> RowVec<'a, F2> {
+    pub fn decrypt(&self, c: &RowVec<F2>) -> RowVec<F2> {
         let m_s_g_z = c * self.p.inverse();
         let m_s_g = self.goppa.decode(&m_s_g_z);
         debug!("Decoded codeword mSG:{}", m_s_g);
@@ -220,17 +218,17 @@ impl<'a, 'b> SecretKey<'a, 'b> {
         Ok(F2m::generate(order))
     }
 
-    pub fn read_secret_key(file_name: &str, f2: &'a F2, f2m: &'b F2m) -> Result<Self> {
+    pub fn read_secret_key(file_name: &str) -> Result<Self> {
         let mut f = File::open(file_name)?;
         let mut vec = Vec::new();
         f.read_to_end(&mut vec)?;
         let mut i = 4;
 
-        let (bytes, s) = Mat::from_bytes(&vec[i..], f2)?;
+        let (bytes, s) = Mat::from_bytes(&vec[i..])?;
         i += bytes;
         debug!("Read matrix s:{}", s);
 
-        let (bytes, goppa) = Goppa::from_bytes(&vec[i..], f2m)?;
+        let (bytes, goppa) = Goppa::from_bytes(&vec[i..])?;
         i += bytes;
         debug!("Read Goppa code:\n{}", goppa);
 

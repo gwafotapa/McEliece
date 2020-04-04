@@ -1,13 +1,13 @@
 use rand::rngs::ThreadRng;
-use std::{convert::TryInto, error::Error};
+use std::{convert::TryInto, error::Error, rc::Rc};
 
 use super::{Field, Poly};
-use crate::finite_field::{f2m, CharacteristicTwo, F2FiniteExtension, FiniteField};
+use crate::finite_field::{f2m, CharacteristicTwo, F2FiniteExtension, F2m, FiniteField};
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
-impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
-    pub fn random_monic_irreducible(rng: &mut ThreadRng, f: &'a F, degree: usize) -> Self
+impl<F: CharacteristicTwo + Eq + Field> Poly<F> {
+    pub fn random_monic_irreducible(rng: &mut ThreadRng, f: &Rc<F>, degree: usize) -> Self
     where
         F: FiniteField,
     {
@@ -25,15 +25,14 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
     }
 
     pub fn square(&mut self) {
-        let f = self.field;
         let t = self.degree();
-        self.data.resize(2 * t + 1, f.zero());
+        self.data.resize(2 * t + 1, self.field.zero());
 
         for i in (1..t + 1).rev() {
-            self[2 * i] = f.mul(self[i], self[i]);
-            self[2 * i - 1] = f.zero();
+            self[2 * i] = self.field.mul(self[i], self[i]);
+            self[2 * i - 1] = self.field.zero();
         }
-        self[0] = f.mul(self[0], self[0]);
+        self[0] = self.field.mul(self[0], self[0]);
     }
 
     pub fn square_root_modulo(&mut self, modulus: &Self)
@@ -109,7 +108,7 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
             return true;
         }
 
-        let f = self.field;
+        let f = self.field();
         let q = f.order() as u32;
         let mut n_prime_factors = f2m::trial_division(n);
         n_prime_factors.dedup();
@@ -140,7 +139,7 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
             panic!("Cannot compute euclidean division: fields differ")
         }
 
-        let f = g.field;
+        let f = g.field();
         let mut i = 1;
 
         let mut a = Vec::new();
@@ -163,7 +162,7 @@ impl<'a, F: CharacteristicTwo + Eq + Field> Poly<'a, F> {
     }
 }
 
-impl<'a, F: Eq + F2FiniteExtension> Poly<'a, F> {
+impl Poly<F2m> {
     /// Encodes the polynomial in bytes
     ///
     /// We start by encoding field order and degree of the polynomial followed by coefficients.
@@ -180,7 +179,9 @@ impl<'a, F: Eq + F2FiniteExtension> Poly<'a, F> {
         vec
     }
 
-    pub fn from_bytes(vec: &[u8], f: &'a F) -> Result<(usize, Self)> {
+    pub fn from_bytes(vec: &[u8]) -> Result<(usize, Self)> {
+        let order = u32::from_be_bytes(vec[0..4].try_into()?) as usize;
+        let f = &Rc::new(F2m::generate(order));
         let t = u32::from_be_bytes(vec[4..8].try_into()?) as usize;
         let mut poly = Self::zero(f, t + 1);
         for i in 0..t + 1 {

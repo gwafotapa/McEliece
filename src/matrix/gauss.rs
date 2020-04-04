@@ -1,8 +1,9 @@
 use rand::{rngs::ThreadRng, Rng};
+use std::rc::Rc;
 
 use super::{Field, Mat, Perm};
 
-impl<'a, F: Eq + Field> Mat<'a, F> {
+impl<F: Eq + Field> Mat<F> {
     pub fn swap_rows(&mut self, row1: usize, row2: usize) {
         if row1 == row2 {
             return;
@@ -29,9 +30,10 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
 
     /// Modifies row1 such that row1 = row1 + lambda * row2
     pub fn combine_rows(&mut self, row1: usize, lambda: F::FieldElement, row2: usize) {
-        let f = self.field;
         for j in 0..self.cols {
-            self[(row1, j)] = f.add(self[(row1, j)], f.mul(lambda, self[(row2, j)]));
+            self[(row1, j)] = self
+                .field
+                .add(self[(row1, j)], self.field.mul(lambda, self[(row2, j)]));
         }
     }
 
@@ -49,7 +51,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
             return None;
         }
 
-        let f = self.field;
+        let f = self.field();
         let n = self.rows;
         let mut mat = self.clone();
         let mut inv: Self = Mat::identity(f, n);
@@ -130,7 +132,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
     /// First generates a random matrix then applies to it the standard form algorithm.
     /// Keeps track of the applied transformations via an invertible matrix u.
     /// Returns u as our random invertible matrix.
-    pub fn invertible_random(rng: &mut ThreadRng, f: &'a F, n: usize) -> Self {
+    pub fn invertible_random(rng: &mut ThreadRng, f: &Rc<F>, n: usize) -> Self {
         let mut mat = Mat::random(rng, f, n, n);
         let mut u = Mat::identity(f, n);
 
@@ -177,7 +179,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
     }
 
     pub fn row_echelon_form(&mut self) -> Vec<usize> {
-        let f = self.field;
+        let f = Rc::clone(&self.field);
         let n = self.rows;
         let m = self.cols;
         let mut row_pivot = 0;
@@ -227,7 +229,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
     }
 
     pub fn reduced_row_echelon_form(&mut self) -> Vec<usize> {
-        let f = self.field;
+        let f = Rc::clone(&self.field);
         let n = self.rows;
         let m = self.cols;
         let max_set_of_independant_rows = self.row_echelon_form(); // note that all pivots are 1
@@ -275,7 +277,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
     /// Compute, if possible, (U, S, P) with U invertible, S standard form and P permutation
     /// such that S = U * self * P
     pub fn standard_form(&self) -> Option<(Self, Self, Perm)> {
-        let f = self.field;
+        let f = self.field();
         let m = self.rows;
         let n = self.cols;
         if m > n {
@@ -350,7 +352,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
     /// SP<sup>-1</sup> is a (full rank) parity-check matrix of the code  
     /// (S defines an equivalent code).
     pub fn standard_parity_check_equivalent(&self) -> (Self, Perm) {
-        let f = self.field;
+        let f = self.field();
         let m = self.rows;
         let n = self.cols;
         if m > n {
@@ -418,7 +420,7 @@ impl<'a, F: Eq + Field> Mat<'a, F> {
     }
 
     pub fn is_standard_form(&self) -> bool {
-        let f = self.field;
+        let f = self.field();
         let m = self.rows;
         let n = self.cols;
         if m > n {

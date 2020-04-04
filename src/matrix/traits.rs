@@ -1,15 +1,16 @@
 use std::{
     fmt::{self, Debug, Display, Formatter},
     ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign},
+    rc::Rc,
 };
 
 use super::{Field, FiniteField, Mat, Perm};
 use crate::finite_field::F2FiniteExtension;
 
-impl<'a, F: Eq + Field> Clone for Mat<'a, F> {
+impl<F: Eq + Field> Clone for Mat<F> {
     fn clone(&self) -> Self {
         Mat {
-            field: self.field, // field is shared
+            field: Rc::clone(&self.field),
             rows: self.rows,
             cols: self.cols,
             data: self.data.clone(),
@@ -17,7 +18,7 @@ impl<'a, F: Eq + Field> Clone for Mat<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> Add for Mat<'a, F> {
+impl<F: Eq + Field> Add for Mat<F> {
     type Output = Self;
 
     fn add(self, other: Self) -> Self::Output {
@@ -25,7 +26,7 @@ impl<'a, F: Eq + Field> Add for Mat<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> Add<&Mat<'a, F>> for Mat<'a, F> {
+impl<F: Eq + Field> Add<&Mat<F>> for Mat<F> {
     type Output = Self;
 
     fn add(self, other: &Self) -> Self::Output {
@@ -33,25 +34,25 @@ impl<'a, F: Eq + Field> Add<&Mat<'a, F>> for Mat<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> Add<Mat<'a, F>> for &Mat<'a, F> {
-    type Output = Mat<'a, F>;
+impl<F: Eq + Field> Add<Mat<F>> for &Mat<F> {
+    type Output = Mat<F>;
 
-    fn add(self, other: Mat<'a, F>) -> Self::Output {
+    fn add(self, other: Mat<F>) -> Self::Output {
         self + &other
     }
 }
 
-impl<'a, F: Eq + Field> Add for &Mat<'a, F> {
-    type Output = Mat<'a, F>;
+impl<F: Eq + Field> Add for &Mat<F> {
+    type Output = Mat<F>;
 
     fn add(self, other: Self) -> Self::Output {
-        let f = self.field;
-        if f != other.field {
+        if self.field != other.field {
             panic!("Cannot add matrices: fields don't match");
         } else if self.rows != other.rows || self.cols != other.cols {
             panic!("Cannot add matrices: dimensions don't match");
         }
 
+        let f = self.field();
         let mut sum = Mat::zero(f, self.rows, self.cols);
         for i in 0..self.rows * self.cols {
             sum.data[i] = f.add(self.data[i], other.data[i]);
@@ -60,28 +61,27 @@ impl<'a, F: Eq + Field> Add for &Mat<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> AddAssign<Mat<'a, F>> for Mat<'a, F> {
+impl<F: Eq + Field> AddAssign<Mat<F>> for Mat<F> {
     fn add_assign(&mut self, other: Self) {
         *self += &other;
     }
 }
 
-impl<'a, F: Eq + Field> AddAssign<&Mat<'a, F>> for Mat<'a, F> {
+impl<F: Eq + Field> AddAssign<&Mat<F>> for Mat<F> {
     fn add_assign(&mut self, other: &Self) {
-        let f = self.field;
-        if f != other.field {
+        if self.field != other.field {
             panic!("Cannot add matrices: fields don't match");
         } else if self.rows != other.rows || self.cols != other.cols {
             panic!("Cannot add matrices: dimensions don't match");
         }
 
         for i in 0..self.rows * self.cols {
-            self.data[i] = f.add(self.data[i], other.data[i]);
+            self.data[i] = self.field.add(self.data[i], other.data[i]);
         }
     }
 }
 
-impl<'a, F: Eq + Field> Sub for Mat<'a, F> {
+impl<F: Eq + Field> Sub for Mat<F> {
     type Output = Self;
 
     fn sub(self, other: Self) -> Self::Output {
@@ -89,7 +89,7 @@ impl<'a, F: Eq + Field> Sub for Mat<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> Sub<&Mat<'a, F>> for Mat<'a, F> {
+impl<F: Eq + Field> Sub<&Mat<F>> for Mat<F> {
     type Output = Self;
 
     fn sub(self, other: &Self) -> Self::Output {
@@ -97,25 +97,25 @@ impl<'a, F: Eq + Field> Sub<&Mat<'a, F>> for Mat<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> Sub<Mat<'a, F>> for &Mat<'a, F> {
-    type Output = Mat<'a, F>;
+impl<F: Eq + Field> Sub<Mat<F>> for &Mat<F> {
+    type Output = Mat<F>;
 
-    fn sub(self, other: Mat<'a, F>) -> Self::Output {
+    fn sub(self, other: Mat<F>) -> Self::Output {
         self - &other
     }
 }
 
-impl<'a, F: Eq + Field> Sub for &Mat<'a, F> {
-    type Output = Mat<'a, F>;
+impl<F: Eq + Field> Sub for &Mat<F> {
+    type Output = Mat<F>;
 
     fn sub(self, other: Self) -> Self::Output {
-        let f = self.field;
-        if f != other.field {
+        if self.field != other.field {
             panic!("Cannot substract matrices: fields don't match");
         } else if self.rows != other.rows || self.cols != other.cols {
             panic!("Cannot substract matrices: dimensions don't match");
         }
 
+        let f = self.field();
         let mut diff = Mat::zero(f, self.rows, self.cols);
         for i in 0..self.rows * self.cols {
             diff.data[i] = f.sub(self.data[i], other.data[i]);
@@ -124,28 +124,27 @@ impl<'a, F: Eq + Field> Sub for &Mat<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> SubAssign<Mat<'a, F>> for Mat<'a, F> {
+impl<F: Eq + Field> SubAssign<Mat<F>> for Mat<F> {
     fn sub_assign(&mut self, other: Self) {
         *self -= &other;
     }
 }
 
-impl<'a, F: Eq + Field> SubAssign<&Mat<'a, F>> for Mat<'a, F> {
+impl<F: Eq + Field> SubAssign<&Mat<F>> for Mat<F> {
     fn sub_assign(&mut self, other: &Self) {
-        let f = self.field;
-        if f != other.field {
+        if self.field != other.field {
             panic!("Cannot substract matrices: fields don't match");
         } else if self.rows != other.rows || self.cols != other.cols {
             panic!("Cannot substract matrices: dimensions don't match");
         }
 
         for i in 0..self.rows * self.cols {
-            self.data[i] = f.sub(self.data[i], other.data[i]);
+            self.data[i] = self.field.sub(self.data[i], other.data[i]);
         }
     }
 }
 
-impl<'a, F: Eq + Field> Mul for Mat<'a, F> {
+impl<F: Eq + Field> Mul for Mat<F> {
     type Output = Self;
 
     fn mul(self, other: Self) -> Self::Output {
@@ -153,7 +152,7 @@ impl<'a, F: Eq + Field> Mul for Mat<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> Mul<&Mat<'a, F>> for Mat<'a, F> {
+impl<F: Eq + Field> Mul<&Mat<F>> for Mat<F> {
     type Output = Self;
 
     fn mul(self, other: &Self) -> Self::Output {
@@ -161,25 +160,25 @@ impl<'a, F: Eq + Field> Mul<&Mat<'a, F>> for Mat<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> Mul<Mat<'a, F>> for &Mat<'a, F> {
-    type Output = Mat<'a, F>;
+impl<F: Eq + Field> Mul<Mat<F>> for &Mat<F> {
+    type Output = Mat<F>;
 
-    fn mul(self, other: Mat<'a, F>) -> Self::Output {
+    fn mul(self, other: Mat<F>) -> Self::Output {
         self * &other
     }
 }
 
-impl<'a, F: Eq + Field> Mul for &Mat<'a, F> {
-    type Output = Mat<'a, F>;
+impl<F: Eq + Field> Mul for &Mat<F> {
+    type Output = Mat<F>;
 
     fn mul(self, other: Self) -> Self::Output {
-        let f = self.field;
-        if f != other.field {
+        if self.field != other.field {
             panic!("Cannot multiply matrices: fields don't match");
         } else if self.cols != other.rows {
             panic!("Cannot multiply matrices: dimensions don't match");
         }
 
+        let f = self.field();
         let mut prod = Mat::zero(f, self.rows, other.cols);
         for i in 0..prod.rows {
             for j in 0..prod.cols {
@@ -192,22 +191,22 @@ impl<'a, F: Eq + Field> Mul for &Mat<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> MulAssign<Mat<'a, F>> for Mat<'a, F> {
+impl<F: Eq + Field> MulAssign<Mat<F>> for Mat<F> {
     fn mul_assign(&mut self, other: Self) {
         *self *= &other;
     }
 }
 
-impl<'a, F: Eq + Field> MulAssign<&Mat<'a, F>> for Mat<'a, F> {
+impl<F: Eq + Field> MulAssign<&Mat<F>> for Mat<F> {
     fn mul_assign(&mut self, other: &Self) {
-        let f = self.field;
-        if f != other.field {
+        if self.field != other.field {
             panic!("Cannot multiply matrices: fields don't match");
         } else if self.cols != other.rows || self.cols != other.cols {
             panic!("Cannot multiply matrices: dimensions don't match");
         }
 
         let tmp = self.clone();
+        let f = tmp.field();
         for i in 0..self.rows {
             for j in 0..self.cols {
                 self[(i, j)] = f.zero();
@@ -219,7 +218,7 @@ impl<'a, F: Eq + Field> MulAssign<&Mat<'a, F>> for Mat<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> Mul<Perm> for Mat<'a, F> {
+impl<F: Eq + Field> Mul<Perm> for Mat<F> {
     type Output = Self;
 
     fn mul(self, other: Perm) -> Self::Output {
@@ -227,7 +226,7 @@ impl<'a, F: Eq + Field> Mul<Perm> for Mat<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> Mul<&Perm> for Mat<'a, F> {
+impl<F: Eq + Field> Mul<&Perm> for Mat<F> {
     type Output = Self;
 
     fn mul(self, other: &Perm) -> Self::Output {
@@ -235,16 +234,16 @@ impl<'a, F: Eq + Field> Mul<&Perm> for Mat<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> Mul<Perm> for &Mat<'a, F> {
-    type Output = Mat<'a, F>;
+impl<F: Eq + Field> Mul<Perm> for &Mat<F> {
+    type Output = Mat<F>;
 
     fn mul(self, other: Perm) -> Self::Output {
         self * &other
     }
 }
 
-impl<'a, F: Eq + Field> Mul<&Perm> for &Mat<'a, F> {
-    type Output = Mat<'a, F>;
+impl<F: Eq + Field> Mul<&Perm> for &Mat<F> {
+    type Output = Mat<F>;
 
     fn mul(self, perm: &Perm) -> Self::Output {
         if self.cols() != perm.len() {
@@ -254,7 +253,7 @@ impl<'a, F: Eq + Field> Mul<&Perm> for &Mat<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> Neg for Mat<'a, F> {
+impl<F: Eq + Field> Neg for Mat<F> {
     type Output = Self;
 
     fn neg(self) -> Self::Output {
@@ -262,11 +261,11 @@ impl<'a, F: Eq + Field> Neg for Mat<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> Neg for &Mat<'a, F> {
-    type Output = Mat<'a, F>;
+impl<F: Eq + Field> Neg for &Mat<F> {
+    type Output = Mat<F>;
 
     fn neg(self) -> Self::Output {
-        let f = self.field;
+        let f = self.field();
         let mut opp = Mat::zero(f, self.rows, self.cols);
 
         for i in 0..self.rows * self.cols {
@@ -276,7 +275,7 @@ impl<'a, F: Eq + Field> Neg for &Mat<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> Index<(usize, usize)> for Mat<'a, F> {
+impl<F: Eq + Field> Index<(usize, usize)> for Mat<F> {
     type Output = F::FieldElement;
 
     fn index(&self, index: (usize, usize)) -> &Self::Output {
@@ -284,15 +283,15 @@ impl<'a, F: Eq + Field> Index<(usize, usize)> for Mat<'a, F> {
     }
 }
 
-impl<'a, F: Eq + Field> IndexMut<(usize, usize)> for Mat<'a, F> {
+impl<F: Eq + Field> IndexMut<(usize, usize)> for Mat<F> {
     fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {
         &mut self.data[index.0 * self.cols + index.1]
     }
 }
 
-impl<'a, F: Eq + F2FiniteExtension> Debug for Mat<'a, F> {
+impl<F: Eq + F2FiniteExtension> Debug for Mat<F> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let k = self.field;
+        let k = self.field();
         let m = k.characteristic_exponent() as usize;
         let width = crate::div_ceil(m, 4);
         write!(f, "\n")?;
@@ -311,9 +310,9 @@ impl<'a, F: Eq + F2FiniteExtension> Debug for Mat<'a, F> {
     }
 }
 
-impl<'a, F: Eq + FiniteField> Display for Mat<'a, F> {
+impl<F: Eq + FiniteField> Display for Mat<F> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let k = self.field;
+        let k = self.field();
 
         // Upper bound on the number of digits of order
         let digits =

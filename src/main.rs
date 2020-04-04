@@ -7,7 +7,6 @@ use std::{
 
 use mceliece::{
     crypto::{self, PublicKey, SecretKey},
-    finite_field::{F2m, Field, F2},
     matrix::RowVec,
 };
 
@@ -19,17 +18,17 @@ use mceliece::{
 // const GOPPA_T: usize = 50; // Code correction capacity
 // const GOPPA_K: usize = 524; // Code dimension
 
-// const GOPPA_N_MIN: usize = 3;
-// const GOPPA_N_MAX: usize = 2048;
-// const GOPPA_N: usize = 2048; // Code length
-// const GOPPA_T: usize = 70; // Code correction capacity
-//                            // const GOPPA_K: usize = 1278; // Code dimension
-
 const GOPPA_N_MIN: usize = 3;
-const GOPPA_N_MAX: usize = 4096;
-const GOPPA_N: usize = 4096; // Code length
-const GOPPA_T: usize = 170; // Code correction capacity
-                            // const GOPPA_K: usize = 2056; // Code dimension
+const GOPPA_N_MAX: usize = 2048;
+const GOPPA_N: usize = 2048; // Code length
+const GOPPA_T: usize = 70; // Code correction capacity
+                           // const GOPPA_K: usize = 1278; // Code dimension
+
+// const GOPPA_N_MIN: usize = 3;
+// const GOPPA_N_MAX: usize = 4096;
+// const GOPPA_N: usize = 4096; // Code length
+// const GOPPA_T: usize = 170; // Code correction capacity
+//                             // const GOPPA_K: usize = 2056; // Code dimension
 
 const PLAINTEXT: &str = "plaintext.mce";
 const CIPHERTEXT: &str = "ciphertext.mce";
@@ -45,14 +44,11 @@ fn keygen(
     t: usize,
     verbose: bool,
 ) -> Result<(), MainError> {
-    let f2 = &F2 {};
-    let f2m = &F2m::generate(1 << m);
-
     if verbose {
         print!("Generating keys (pk, sk).....");
         io::stdout().flush().unwrap();
     }
-    let (pk, sk) = crypto::keygen(f2, f2m, n, t);
+    let (pk, sk) = crypto::keygen(m, n, t);
 
     if verbose {
         print!("ok\nWriting pk to {}.....", pk_file);
@@ -78,19 +74,17 @@ fn encrypt(
     ctxt_file: &str,
     verbose: bool,
 ) -> Result<(), MainError> {
-    let f2 = &F2 {};
-
     if verbose {
         print!("Reading public key from {}.....", pk_file);
         io::stdout().flush().unwrap();
     }
-    let pk = PublicKey::read_public_key(pk_file, f2)?;
+    let pk = PublicKey::read_public_key(pk_file)?;
 
     if verbose {
         print!("ok\nReading plaintext from {}.....", ptxt_file);
         io::stdout().flush().unwrap();
     }
-    let m = RowVec::read_vector(ptxt_file, f2)?;
+    let m = RowVec::read_vector(ptxt_file)?;
     if pk.sgp().rows() != m.cols() {
         return Err("Plaintext length does not match code dimension from public key".into());
     }
@@ -114,25 +108,17 @@ fn encrypt(
 }
 
 fn decrypt(sk_file: &str, ctxt_file: &str, dec_file: &str, verbose: bool) -> Result<(), MainError> {
-    let f2 = &F2 {};
-
-    if verbose {
-        print!("Reading finite field from {}.....", sk_file);
-        io::stdout().flush().unwrap();
-    }
-    let f2m = &SecretKey::read_finite_field(sk_file)?;
-
     if verbose {
         print!("ok\nReading secret key from {}.....", sk_file);
         io::stdout().flush().unwrap();
     }
-    let sk = SecretKey::read_secret_key(sk_file, f2, f2m)?;
+    let sk = SecretKey::read_secret_key(sk_file)?;
 
     if verbose {
         print!("ok\nReading ciphertext from {}.....", ctxt_file);
         io::stdout().flush().unwrap();
     }
-    let c = RowVec::read_vector(ctxt_file, f2)?;
+    let c = RowVec::read_vector(ctxt_file)?;
     if sk.p().len() != c.cols() {
         return Err("Ciphertext length does not match code length from secret key".into());
     }
@@ -166,9 +152,8 @@ fn plaintext(pk_file: &str, ptxt_file: &str, verbose: bool) -> Result<(), MainEr
         print!("ok\nGenerating plaintext.....");
         io::stdout().flush().unwrap();
     }
-    let f2 = &F2 {};
     let mut rng = rand::thread_rng();
-    let p = RowVec::random(&mut rng, f2, k);
+    let p = RowVec::random_f2(&mut rng, k);
 
     if verbose {
         print!("ok\nWriting plaintext to {}.....", ptxt_file);
@@ -213,7 +198,7 @@ fn get_code_params(matches: &Matches) -> Result<(u32, usize, usize), MainError> 
     };
     let m = q.trailing_zeros();
     if n <= m as usize * t {
-        return Err("Code length n must be greater than m * t".into());
+        return Err("The ratio n/t is not large enough. Pick a larger n or a smaller t.".into());
     }
     Ok((m, n, t))
 }

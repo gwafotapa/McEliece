@@ -1,27 +1,31 @@
 //! Polynomials on a field
 
 use rand::rngs::ThreadRng;
+use std::rc::Rc;
 
 use crate::finite_field::Field;
 
 /// Polynomial with coefficients in a field F
 #[derive(Eq)]
-pub struct Poly<'a, F: Eq + Field> {
-    field: &'a F,
+pub struct Poly<F: Eq + Field> {
+    field: Rc<F>,
     data: Vec<F::FieldElement>,
 }
 
-impl<'a, F: Eq + Field> Poly<'a, F> {
+impl<F: Eq + Field> Poly<F> {
     /// Creates a new polynomial
     ///
     /// # Panics
     ///
     /// Panics if the polynomial is empty i.e. if the vector data is empty.
-    pub fn new(field: &'a F, data: Vec<F::FieldElement>) -> Self {
+    pub fn new(field: &Rc<F>, data: Vec<F::FieldElement>) -> Self {
         if data.is_empty() {
-            panic!("Empty polynomial");
+            panic!("Polynomial must have at least one coefficient");
         }
-        Poly { field, data }
+        Self {
+            field: Rc::clone(field),
+            data,
+        }
     }
 
     /// Creates a zero polynomial
@@ -31,21 +35,16 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
     /// # Panics
     ///
     /// Panics if len is zero.
-    pub fn zero(field: &'a F, len: usize) -> Self {
-        if len == 0 {
-            panic!("Polynomial must have at least one coefficient");
-        }
-        Self {
-            field,
-            data: vec![field.zero(); len],
-        }
+    pub fn zero(field: &Rc<F>, len: usize) -> Self {
+        let data = vec![field.zero(); len];
+        Self::new(field, data)
     }
 
     /// Creates the monic monomial x<sup>n</sup>
-    pub fn x_n(field: &'a F, n: usize) -> Self {
-        let mut v = vec![field.zero(); n + 1];
-        v[n] = field.one();
-        Self { field, data: v }
+    pub fn x_n(field: &Rc<F>, n: usize) -> Self {
+        let mut data = vec![field.zero(); n + 1];
+        data[n] = field.one();
+        Self::new(field, data)
     }
 
     /// Creates the polynomial that is the sum of the monic monomials
@@ -54,26 +53,23 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
     /// # Panics
     ///
     /// Panics if support is empty.
-    pub fn support(f: &'a F, support: &[usize]) -> Self {
+    pub fn support(f: &Rc<F>, support: &[usize]) -> Self {
         if support.is_empty() {
             panic!("Support cannot be empty");
         }
 
-        let mut vec = vec![f.zero(); support[support.len() - 1]];
+        let mut data = vec![f.zero(); support[support.len() - 1]];
         for &i in support.iter() {
-            if i >= vec.len() {
-                vec.resize(i + 1, f.zero());
+            if i >= data.len() {
+                data.resize(i + 1, f.zero());
             }
-            vec[i] = f.one();
+            data[i] = f.one();
         }
-        Self {
-            field: f,
-            data: vec,
-        }
+        Self::new(f, data)
     }
 
-    pub fn field(&self) -> &'a F {
-        self.field
+    pub fn field(&self) -> &Rc<F> {
+        &self.field
     }
 
     pub fn degree(&self) -> usize {
@@ -94,7 +90,7 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
     }
 
     /// Returns a random monic polynomial of the chosen degree
-    pub fn random(rng: &mut ThreadRng, f: &'a F, degree: usize) -> Self {
+    pub fn random(rng: &mut ThreadRng, f: &Rc<F>, degree: usize) -> Self {
         let mut p = Self::zero(f, degree + 1);
         for i in 0..degree {
             p[i] = f.random_element(rng);
@@ -107,7 +103,7 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
 
     /// Evaluates polynomial at point
     pub fn eval(&self, point: F::FieldElement) -> F::FieldElement {
-        let f = self.field;
+        let f = self.field();
         let mut eval = self[0];
         for i in 1..self.degree() + 1 {
             let mut x = f.one();
@@ -127,7 +123,7 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
         if b.is_zero() {
             panic!("Euclidean division by the null polynomial");
         }
-        let f = a.field;
+        let f = a.field();
         if a.degree() < b.degree() {
             return (Self::zero(f, 1), a.clone());
         }
@@ -151,16 +147,15 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
     }
 
     pub fn modulo(&mut self, modulus: &Self) {
-        let f = self.field;
         let m_deg = modulus.degree();
-        let m_lc_inv = f.inv(modulus[m_deg]).unwrap();
+        let m_lc_inv = self.field.inv(modulus[m_deg]).unwrap();
         while self.degree() >= m_deg && !self.is_zero() {
             let s_deg = self.degree();
             let d = s_deg - m_deg;
-            let c = f.mul(self[s_deg], m_lc_inv);
-            self[s_deg] = f.zero();
+            let c = self.field.mul(self[s_deg], m_lc_inv);
+            self[s_deg] = self.field.zero();
             for i in (0..m_deg).rev() {
-                self[i + d] = f.sub(self[i + d], f.mul(c, modulus[i]));
+                self[i + d] = self.field.sub(self[i + d], self.field.mul(c, modulus[i]));
             }
         }
 
@@ -194,7 +189,7 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
             panic!("Cannot compute euclidean division: fields differ")
         }
 
-        let f = a.field;
+        let f = a.field();
         let mut r = Vec::new();
         let mut s = Vec::new();
         let mut t = Vec::new();
@@ -237,7 +232,7 @@ impl<'a, F: Eq + Field> Poly<'a, F> {
             panic!("The null polynom has no inverse");
         }
         let (g, mut inv, _, _, _) = Self::extended_gcd(self, modulus);
-        let f = g.field;
+        let f = g.field();
         let c = f.inv(g[0]).unwrap();
         for i in 0..inv.degree() + 1 {
             inv[i] = f.mul(c, inv[i]);
