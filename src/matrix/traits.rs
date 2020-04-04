@@ -68,7 +68,7 @@ where
         }
 
         let f = self.field();
-        let mut sum = Mat::zero(f, self.rows, self.cols);
+        let mut sum = Mat::zero(Field(f), self.rows, self.cols);
         for i in 0..self.rows * self.cols {
             sum.data[i] = f.add(self.data[i], other.data[i]);
         }
@@ -149,7 +149,7 @@ where
         }
 
         let f = self.field();
-        let mut diff = Mat::zero(f, self.rows, self.cols);
+        let mut diff = Mat::zero(Field(f), self.rows, self.cols);
         for i in 0..self.rows * self.cols {
             diff.data[i] = f.sub(self.data[i], other.data[i]);
         }
@@ -230,7 +230,7 @@ where
         }
 
         let f = self.field();
-        let mut prod = Mat::zero(f, self.rows, other.cols);
+        let mut prod = Mat::zero(Field(f), self.rows, other.cols);
         for i in 0..prod.rows {
             for j in 0..prod.cols {
                 for k in 0..self.cols {
@@ -341,7 +341,7 @@ where
 
     fn neg(self) -> Self::Output {
         let f = self.field();
-        let mut opp = Mat::zero(f, self.rows, self.cols);
+        let mut opp = Mat::zero(Field(f), self.rows, self.cols);
 
         for i in 0..self.rows * self.cols {
             opp.data[i] = f.neg(self.data[i]);

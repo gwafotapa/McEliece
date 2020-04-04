@@ -10,7 +10,11 @@ use std::{
 };
 
 use super::{Mat, Perm};
-use crate::finite_field::{F2FiniteExtension, Field, FiniteField, F2};
+use crate::finite_field::{
+    F2FiniteExtension, Field,
+    FieldOption::{self, *},
+    FiniteField, F2,
+};
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
@@ -322,15 +326,15 @@ impl<F> RowVec<F>
 where
     F: Eq + Field,
 {
-    pub fn new(field: &Rc<F>, data: Vec<F::FieldElement>) -> Self {
+    pub fn new(field_option: FieldOption<F>, data: Vec<F::FieldElement>) -> Self {
         if data.len() == 0 {
             panic!("Empty row vector");
         }
-        RowVec(Mat::new(field, 1, data.len(), data))
+        RowVec(Mat::new(field_option, 1, data.len(), data))
     }
 
-    pub fn zero(field: &Rc<F>, cols: usize) -> Self {
-        RowVec(Mat::zero(field, 1, cols))
+    pub fn zero(field_option: FieldOption<F>, cols: usize) -> Self {
+        RowVec(Mat::zero(field_option, 1, cols))
     }
 
     pub fn field(&self) -> &Rc<F> {
@@ -359,13 +363,17 @@ where
         weight
     }
 
-    pub fn random(f: &Rc<F>, n: usize) -> Self {
-        RowVec(Mat::random(f, 1, n))
+    pub fn random(field_option: FieldOption<F>, n: usize) -> Self {
+        RowVec(Mat::random(field_option, 1, n))
     }
 
-    pub fn random_with_weight(f: &Rc<F>, n: usize, w: usize) -> Self {
+    pub fn random_with_weight(field_option: FieldOption<F>, n: usize, w: usize) -> Self {
         let mut rng = rand::thread_rng();
-        let mut vec = RowVec::zero(f, n);
+        let f = match field_option {
+            Field(f) => Rc::clone(f),
+            Parameters(p) => Rc::new(F::generate(p)),
+        };
+        let mut vec = RowVec::zero(Field(&f), n);
         let mut cols = Vec::with_capacity(n);
         for i in 0..n {
             cols.push(i);
@@ -402,9 +410,10 @@ where
 }
 
 impl RowVec<F2> {
+    // TODO: !!!
     pub fn f2_random(n: usize) -> Self {
         let f2 = &Rc::new(F2::generate(()));
-        RowVec::random(f2, n)
+        RowVec::random(Field(f2), n)
     }
 
     pub fn write(&self, file_name: &str) -> Result<()> {
@@ -437,7 +446,7 @@ impl RowVec<F2> {
         f.read_to_end(&mut vec)?;
         let cols = u32::from_be_bytes(vec[0..4].try_into()?) as usize;
         let f2 = &Rc::new(F2 {});
-        let mut rowvec = RowVec::zero(f2, cols);
+        let mut rowvec = RowVec::zero(Field(f2), cols);
         let mut k = 4;
         let mut shift = 7;
         for i in 0..cols {

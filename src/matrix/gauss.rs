@@ -1,7 +1,11 @@
 use rand::Rng;
 use std::rc::Rc;
 
-use super::{Field, Mat, Perm};
+use super::{Mat, Perm};
+use crate::finite_field::{
+    Field,
+    FieldOption::{self, *},
+};
 
 impl<F> Mat<F>
 where
@@ -54,10 +58,10 @@ where
             return None;
         }
 
-        let f = self.field();
+        let f = self.field(); // TODO: can I use Params 3 lines below, define f after and avoid repeating self.field (idea for other functions)
         let n = self.rows;
         let mut mat = self.clone();
-        let mut inv: Self = Mat::identity(f, n);
+        let mut inv: Self = Mat::identity(Field(f), n);
         let mut p = 0; // pivot's row and pivot's column
 
         while p < n {
@@ -135,10 +139,14 @@ where
     /// First generates a random matrix then applies to it the standard form algorithm.
     /// Keeps track of the applied transformations via an invertible matrix u.
     /// Returns u as our random invertible matrix.
-    pub fn invertible_random(f: &Rc<F>, n: usize) -> Self {
+    pub fn invertible_random(field_option: FieldOption<F>, n: usize) -> Self {
         let mut rng = rand::thread_rng();
-        let mut mat = Mat::random(f, n, n);
-        let mut u = Mat::identity(f, n);
+        let f = match field_option {
+            Field(f) => Rc::clone(f),
+            Parameters(p) => Rc::new(F::generate(p)),
+        };
+        let mut mat = Mat::random(Field(&f), n, n);
+        let mut u = Mat::identity(Field(&f), n);
 
         // Loop on columns
         for j in 0..n {
@@ -287,7 +295,7 @@ where
         if m > n {
             return None;
         }
-        let mut u = Mat::identity(f, m);
+        let mut u = Mat::identity(Field(f), m);
         let mut h = self.clone();
         let mut p = Perm::identity(n);
         let mut col = n; // index of the column to check for a pivot

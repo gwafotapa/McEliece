@@ -11,7 +11,11 @@ use std::{
 };
 
 use crate::{
-    finite_field::{F2FiniteExtension, F2m, Field, FiniteField, F2},
+    finite_field::{
+        F2FiniteExtension, F2m, Field,
+        FieldOption::{self, *},
+        FiniteField, F2,
+    },
     matrix::{Mat, RowVec},
     polynomial::Poly,
 };
@@ -180,7 +184,7 @@ where
     pub fn parity_check_x(&self) -> Mat<F> {
         let f = self.field();
         let t = self.poly.degree();
-        let mut x = Mat::zero(f, t, t);
+        let mut x = Mat::zero(Field(f), t, t);
         for i in 0..t {
             for j in 0..i + 1 {
                 x[(i, j)] = self.poly[t - i + j];
@@ -194,7 +198,7 @@ where
         let n = self.len();
         let t = self.poly.degree();
 
-        let mut y = Mat::zero(f, t, n);
+        let mut y = Mat::zero(Field(f), t, n);
         for i in 0..n {
             y[(0, i)] = f.one();
         }
@@ -211,7 +215,7 @@ where
         let f = self.field();
         let n = self.len();
 
-        let mut z = Mat::zero(f, n, n);
+        let mut z = Mat::zero(Field(f), n, n);
         for i in 0..n {
             z[(i, i)] = f.inv(self.poly.eval(self.set[i])).unwrap();
         }
@@ -225,19 +229,22 @@ where
         x * y * z
     }
 
-    pub fn parity_check_from_xyz<'b>(xyz: &Mat<F>, f2: &Rc<F2>) -> Mat<F2> {
-        let mut h = xyz.binary(f2);
+    pub fn parity_check_from_xyz<'b>(xyz: &Mat<F>, f2_option: FieldOption<F2>) -> Mat<F2> {
+        let mut h = xyz.binary(f2_option);
         h.remove_redundant_rows();
         h
     }
 
-    pub fn parity_check_matrix<'b>(&self, f2: &Rc<F2>) -> Mat<F2> {
+    pub fn parity_check_matrix<'b>(&self, f2_option: FieldOption<F2>) -> Mat<F2> {
         let xyz = self.parity_check_xyz();
-        Self::parity_check_from_xyz(&xyz, f2)
+        Self::parity_check_from_xyz(&xyz, f2_option)
     }
 
-    pub fn generator_from_xyz<'b>(xyz: &Mat<F>, f2: &Rc<F2>) -> (Mat<F2>, Vec<usize>) {
-        let xyz2 = xyz.binary(f2);
+    pub fn generator_from_xyz<'b>(
+        xyz: &Mat<F>,
+        f2_option: FieldOption<F2>,
+    ) -> (Mat<F2>, Vec<usize>) {
+        let xyz2 = xyz.binary(f2_option);
         let (hs, p) = xyz2.standard_parity_check_equivalent();
         let gs = Self::generator_from_parity_check_standard(&hs);
         let k = hs.cols() - hs.rows();
@@ -249,7 +256,7 @@ where
         let f2 = h.field();
         let n = h.cols();
         let k = n - h.rows();
-        let mut g = Mat::zero(f2, k, n);
+        let mut g = Mat::zero(Field(f2), k, n);
         for i in 0..k {
             g[(i, i)] = f2.one();
             for j in k..n {
@@ -268,9 +275,9 @@ where
         (gs * p.inverse(), information_set)
     }
 
-    pub fn generator_matrix<'b>(&self, f2: &Rc<F2>) -> Mat<F2> {
+    pub fn generator_matrix<'b>(&self, f2_option: FieldOption<F2>) -> Mat<F2> {
         let xyz = self.parity_check_xyz();
-        Self::generator_from_xyz(&xyz, f2).0
+        Self::generator_from_xyz(&xyz, f2_option).0
     }
 
     pub fn syndrome<'b>(&self, r: &RowVec<F2>) -> Mat<F> {
@@ -281,7 +288,7 @@ where
     pub fn syndrome_from_xyz<'b>(xyz: &Mat<F>, r: &RowVec<F2>) -> Mat<F> {
         let f2 = r.field();
         let f = xyz.field();
-        let mut s = Mat::zero(f, xyz.rows(), 1);
+        let mut s = Mat::zero(Field(f), xyz.rows(), 1);
         for i in 0..xyz.rows() {
             for j in 0..r.cols() {
                 if r[j] == f2.one() {
@@ -294,7 +301,7 @@ where
 
     pub fn encode<'b>(&self, msg: &RowVec<F2>) -> RowVec<F2> {
         let f2 = msg.field();
-        let g = self.generator_matrix(f2);
+        let g = self.generator_matrix(Field(f2));
         Self::g_encode(&g, msg)
     }
 
@@ -341,7 +348,7 @@ where
         debug!("sigma(x) = {}", sigma);
 
         let err = RowVec::new(
-            f2,
+            Field(f2),
             self.set
                 .iter()
                 .map(|x| {

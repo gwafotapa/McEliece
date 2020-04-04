@@ -1,6 +1,7 @@
 //! Finite fields of characteristic 2
 
 use rand::rngs::ThreadRng;
+use std::rc::Rc;
 
 pub use f2::F2;
 pub use f2m::F2m;
@@ -91,6 +92,14 @@ pub trait F2FiniteExtension: CharacteristicTwo + FiniteField {
     ///
     /// Panics if the u32 is greater than or equal to field order.
     fn u32_to_elt(&self, n: u32) -> Self::FieldElement;
+}
+
+pub enum FieldOption<'a, F>
+where
+    F: Field,
+{
+    Field(&'a Rc<F>),
+    Parameters(F::FieldParameters),
 }
 
 pub mod f2;
