@@ -1,4 +1,5 @@
 use log::{info, warn};
+use std::rc::Rc;
 
 use mceliece::{finite_field::*, goppa::*, matrix::*, polynomial::*};
 
@@ -9,8 +10,8 @@ const REPEAT: u32 = 10;
 #[test]
 fn goppa_f8() {
     common::log_setup();
-    let f2 = &F2 {};
-    let f8 = &F2m::generate(8);
+    let f2 = &Rc::new(F2::generate(()));
+    let f8 = &Rc::new(F2m::generate(8));
     let p = Poly::support(f8, &[2, 1, 0]);
     let c = Goppa::new(p, [0, 1, 2, 3, 4, 5, 6, 7].to_vec());
     info!("{}", c);
@@ -60,8 +61,8 @@ fn goppa_f8() {
 #[test]
 fn goppa_f1024() {
     common::log_setup();
-    let f2 = &F2 {};
-    let f1024 = &F2m::generate(1024);
+    let f2 = &Rc::new(F2::generate(()));
+    let f1024 = &Rc::new(F2m::generate(1024));
     let mut rng = rand::thread_rng();
     let c = Goppa::random(&mut rng, f1024, 30, 2);
     info!("{}", c);
@@ -93,8 +94,8 @@ fn goppa_f1024() {
 #[test]
 fn goppa_f256() {
     common::log_setup();
-    let f2 = &F2 {};
-    let f256 = &F2m::generate(256);
+    let f2 = &Rc::new(F2::generate(()));
+    let f256 = &Rc::new(F2m::generate(256));
     let mut g = Poly::support(f256, &[22, 17, 15, 12, 5]);
     g[0] = f256.exp(78);
     let mut f256_elts = Vec::with_capacity(256);
@@ -133,8 +134,8 @@ fn goppa_f128() {
     let n = 1 << m;
     let t = 10;
     let k = n - m * t;
-    let f2 = &F2 {};
-    let f128 = &F2m::generate(1 << m);
+    let f2 = &Rc::new(F2::generate(()));
+    let f128 = &Rc::new(F2m::generate(1 << m));
     let mut rng = rand::thread_rng();
     let goppa = Goppa::random(&mut rng, f128, n, t);
     info!("{}", goppa);
@@ -162,8 +163,8 @@ fn goppa_random() {
     let (m, n, t) = common::goppa_setup();
     info!("F2m=F{}, n={}, t={}", 1 << m, n, t);
 
-    let f2 = &F2 {};
-    let f2m = &F2m::generate(1 << m);
+    let f2 = &Rc::new(F2::generate(()));
+    let f2m = &Rc::new(F2m::generate(1 << m));
     let mut rng = rand::thread_rng();
     let goppa = Goppa::random(&mut rng, f2m, n, t);
     info!("{}", goppa);
@@ -217,8 +218,8 @@ fn goppa_repeat() {
 }
 
 fn goppa_repeated(m: u32, n: usize, t: usize) {
-    let f2 = &F2 {};
-    let f2m = &F2m::generate(1 << m);
+    let f2 = &Rc::new(F2::generate(()));
+    let f2m = &Rc::new(F2m::generate(1 << m));
     let mut rng = rand::thread_rng();
     let goppa = Goppa::random(&mut rng, f2m, n, t);
     info!("{}", goppa);

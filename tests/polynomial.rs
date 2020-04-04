@@ -1,5 +1,6 @@
 use log::info;
 use rand::Rng;
+use std::rc::Rc;
 
 use mceliece::{finite_field::*, polynomial::*};
 
@@ -8,7 +9,7 @@ pub mod common;
 #[test]
 fn polynomial_f2_division() {
     common::log_setup();
-    let f = &F2 {};
+    let f = &Rc::new(F2::generate(()));
     let a = Poly::support(f, &[0, 2, 4]);
     info!("a(x) = {:?}\n", a);
 
@@ -26,7 +27,7 @@ fn polynomial_f2_division() {
 #[test]
 fn polynomial_f2_gcd() {
     common::log_setup();
-    let f = &F2 {};
+    let f = &Rc::new(F2::generate(()));
     let a = Poly::support(f, &[0, 1, 4]);
     info!("a(x) = {:?}\n", a);
 
@@ -51,7 +52,7 @@ fn polynomial_f2_gcd() {
 #[test]
 fn polynomial_f2_extended_gcd() {
     common::log_setup();
-    let f = &F2 {};
+    let f = &Rc::new(F2::generate(()));
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(1, 100);
     let a = Poly::random(&mut rng, f, deg_a);
@@ -76,7 +77,7 @@ fn polynomial_f2_extended_gcd() {
 #[test]
 fn polynomial_f7_extended_gcd() {
     common::log_setup();
-    let f = &F7 {};
+    let f = &Rc::new(F7::generate(()));
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(1, 100);
     let a = Poly::random(&mut rng, f, deg_a);
@@ -101,7 +102,7 @@ fn polynomial_f7_extended_gcd() {
 #[test]
 fn polynomial_f1024_extended_gcd() {
     common::log_setup();
-    let f = &F2m::generate(1024);
+    let f = &Rc::new(F2m::generate(1024));
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(1, 100);
     let a = Poly::random(&mut rng, f, deg_a);
@@ -126,7 +127,7 @@ fn polynomial_f1024_extended_gcd() {
 #[test]
 fn polynomial_f1024_square() {
     common::log_setup();
-    let f = &F2m::generate(1024);
+    let f = &Rc::new(F2m::generate(1024));
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(0, 100);
     let mut a = Poly::random(&mut rng, f, deg_a);
@@ -140,7 +141,7 @@ fn polynomial_f1024_square() {
 #[test]
 fn polynomial_f1024_modulo() {
     common::log_setup();
-    let f = &F2m::generate(1024);
+    let f = &Rc::new(F2m::generate(1024));
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(0, 100);
     let mut a = Poly::random(&mut rng, f, deg_a);
@@ -158,7 +159,7 @@ fn polynomial_f1024_modulo() {
 #[test]
 fn polynomial_f1024_sq_root_mod() {
     common::log_setup();
-    let f = &F2m::generate(1024);
+    let f = &Rc::new(F2m::generate(1024));
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(0, 11);
     let a = Poly::random(&mut rng, f, deg_a);
@@ -177,7 +178,7 @@ fn polynomial_f1024_sq_root_mod() {
 #[test]
 fn polynomial_f1024_inverse_mod() {
     common::log_setup();
-    let f = &F2m::generate(1024);
+    let f = &Rc::new(F2m::generate(1024));
     let g = Poly::support(f, &[0, 2, 11]);
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(0, 11);
@@ -196,8 +197,8 @@ fn polynomial_f1024_inverse_mod() {
 #[test]
 fn polynomial_is_irreducible() {
     common::log_setup();
-    let f2 = &F2 {};
-    let f1024 = &F2m::generate(1024);
+    let f2 = &Rc::new(F2::generate(()));
+    let f1024 = &Rc::new(F2m::generate(1024));
 
     let zero = Poly::zero(f2, 1);
     assert!(!zero.is_irreducible());

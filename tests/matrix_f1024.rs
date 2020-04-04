@@ -1,5 +1,6 @@
 use log::info;
 use rand::Rng;
+use std::rc::Rc;
 
 use mceliece::{finite_field::*, matrix::*};
 
@@ -16,7 +17,7 @@ fn matrix_f1024_permutation_random() {
 #[test]
 fn matrix_f1024_is_invertible() {
     common::log_setup();
-    let f1024 = &F2m::generate(1024);
+    let f1024 = &Rc::new(F2m::generate(1024));
     let id = Mat::identity(f1024, 11);
     info!("Matrix identity:{:?}", id);
     assert!(id.is_invertible());
@@ -25,7 +26,7 @@ fn matrix_f1024_is_invertible() {
 #[test]
 fn matrix_f1024_inverse() {
     common::log_setup();
-    let f1024 = &F2m::generate(1024);
+    let f1024 = &Rc::new(F2m::generate(1024));
     let id = Mat::identity(f1024, 11);
     assert_eq!(id.inverse().as_ref(), Some(&id));
 }
@@ -33,7 +34,7 @@ fn matrix_f1024_inverse() {
 #[test]
 fn matrix_f1024_invertible_random() {
     common::log_setup();
-    let f1024 = &F2m::generate(1024);
+    let f1024 = &Rc::new(F2m::generate(1024));
     let mut rng = rand::thread_rng();
     let mat = Mat::invertible_random(&mut rng, f1024, 15);
     assert!(mat.is_invertible());
@@ -54,7 +55,7 @@ fn matrix_f1024_invertible_random() {
 #[test]
 fn matrix_f1024_add() {
     common::log_setup();
-    let f1024 = &F2m::generate(1024);
+    let f1024 = &Rc::new(F2m::generate(1024));
     let mut rng = rand::thread_rng();
     let a = &Mat::random(&mut rng, f1024, 11, 11);
     let b = &Mat::random(&mut rng, f1024, 11, 11);
@@ -78,7 +79,7 @@ fn matrix_f1024_add() {
 #[should_panic]
 fn matrix_f1024_mul_wrong_dimensions() {
     common::log_setup();
-    let f1024 = &F2m::generate(1024);
+    let f1024 = &Rc::new(F2m::generate(1024));
     let a = Mat::zero(f1024, 5, 4);
     let b = Mat::zero(f1024, 3, 5);
     let ab = a * b;
@@ -88,7 +89,7 @@ fn matrix_f1024_mul_wrong_dimensions() {
 #[test]
 fn matrix_f1024_mul() {
     common::log_setup();
-    let f1024 = &F2m::generate(1024);
+    let f1024 = &Rc::new(F2m::generate(1024));
     let mut rng = rand::thread_rng();
     let a = &Mat::random(&mut rng, f1024, 10, 8);
     let b = &Mat::random(&mut rng, f1024, 8, 13);
@@ -126,7 +127,7 @@ fn matrix_f1024_mul() {
 #[test]
 fn matrix_f1024_rank() {
     common::log_setup();
-    let f1024 = &F2m::generate(1024);
+    let f1024 = &Rc::new(F2m::generate(1024));
     let mat = Mat::zero(f1024, 23, 4);
     assert_eq!(mat.rank(), 0);
 
@@ -137,7 +138,7 @@ fn matrix_f1024_rank() {
 #[test]
 fn matrix_f1024_standard_form() {
     common::log_setup();
-    let f1024 = &F2m::generate(1024);
+    let f1024 = &Rc::new(F2m::generate(1024));
     let id = Mat::identity(f1024, 19);
     assert!(id.is_standard_form());
 
@@ -171,7 +172,7 @@ fn matrix_f1024_standard_form() {
 #[test]
 fn matrix_f1024_transpose() {
     common::log_setup();
-    let f1024 = &F2m::generate(1024);
+    let f1024 = &Rc::new(F2m::generate(1024));
     let mut rng = rand::thread_rng();
     let rows = rng.gen_range(1, 100);
     let cols = rng.gen_range(1, 100);
@@ -187,7 +188,7 @@ fn matrix_f1024_transpose() {
 #[test]
 fn matrix_f1024_rowvec_weight() {
     common::log_setup();
-    let f1024 = &F2m::generate(1024);
+    let f1024 = &Rc::new(F2m::generate(1024));
     let vec = RowVec::zero(f1024, 4);
     assert!(vec.weight() == 0);
 
