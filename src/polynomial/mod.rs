@@ -7,12 +7,18 @@ use crate::finite_field::Field;
 
 /// Polynomial with coefficients in a field F
 #[derive(Eq)]
-pub struct Poly<F: Eq + Field> {
+pub struct Poly<F>
+where
+    F: Eq + Field,
+{
     field: Rc<F>,
     data: Vec<F::FieldElement>,
 }
 
-impl<F: Eq + Field> Poly<F> {
+impl<F> Poly<F>
+where
+    F: Eq + Field,
+{
     /// Creates a new polynomial
     ///
     /// # Panics

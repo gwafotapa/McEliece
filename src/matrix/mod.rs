@@ -10,14 +10,20 @@ pub use rowvec::RowVec;
 
 /// Matrix with coefficients in a field F
 #[derive(Eq, PartialEq)]
-pub struct Mat<F: Eq + Field> {
+pub struct Mat<F>
+where
+    F: Eq + Field,
+{
     field: Rc<F>,
     rows: usize,
     cols: usize,
     data: Vec<F::FieldElement>,
 }
 
-impl<F: Eq + Field> Mat<F> {
+impl<F> Mat<F>
+where
+    F: Eq + Field,
+{
     /// Creates a new matrix
     ///
     /// The vector data holds the matrix coefficients, row by row.

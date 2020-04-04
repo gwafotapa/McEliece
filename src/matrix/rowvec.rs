@@ -15,15 +15,23 @@ use crate::finite_field::{F2FiniteExtension, Field, FiniteField, F2};
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 #[derive(Eq, PartialEq)]
-pub struct RowVec<F: Eq + Field>(Mat<F>);
+pub struct RowVec<F>(Mat<F>)
+where
+    F: Eq + Field;
 
-impl<F: Eq + Field> Clone for RowVec<F> {
+impl<F> Clone for RowVec<F>
+where
+    F: Eq + Field,
+{
     fn clone(&self) -> Self {
         RowVec(self.0.clone())
     }
 }
 
-impl<F: Eq + Field> Add for RowVec<F> {
+impl<F> Add for RowVec<F>
+where
+    F: Eq + Field,
+{
     type Output = Self;
 
     fn add(self, other: Self) -> Self::Output {
@@ -31,7 +39,10 @@ impl<F: Eq + Field> Add for RowVec<F> {
     }
 }
 
-impl<F: Eq + Field> Add<&RowVec<F>> for RowVec<F> {
+impl<F> Add<&RowVec<F>> for RowVec<F>
+where
+    F: Eq + Field,
+{
     type Output = Self;
 
     fn add(self, other: &Self) -> Self::Output {
@@ -39,7 +50,10 @@ impl<F: Eq + Field> Add<&RowVec<F>> for RowVec<F> {
     }
 }
 
-impl<F: Eq + Field> Add<RowVec<F>> for &RowVec<F> {
+impl<F> Add<RowVec<F>> for &RowVec<F>
+where
+    F: Eq + Field,
+{
     type Output = RowVec<F>;
 
     fn add(self, other: RowVec<F>) -> Self::Output {
@@ -47,7 +61,10 @@ impl<F: Eq + Field> Add<RowVec<F>> for &RowVec<F> {
     }
 }
 
-impl<F: Eq + Field> Add for &RowVec<F> {
+impl<F> Add for &RowVec<F>
+where
+    F: Eq + Field,
+{
     type Output = RowVec<F>;
 
     fn add(self, other: Self) -> Self::Output {
@@ -55,19 +72,28 @@ impl<F: Eq + Field> Add for &RowVec<F> {
     }
 }
 
-impl<F: Eq + Field> AddAssign<RowVec<F>> for RowVec<F> {
+impl<F> AddAssign<RowVec<F>> for RowVec<F>
+where
+    F: Eq + Field,
+{
     fn add_assign(&mut self, other: Self) {
         *self += &other;
     }
 }
 
-impl<F: Eq + Field> AddAssign<&RowVec<F>> for RowVec<F> {
+impl<F> AddAssign<&RowVec<F>> for RowVec<F>
+where
+    F: Eq + Field,
+{
     fn add_assign(&mut self, other: &Self) {
         self.0 += &other.0;
     }
 }
 
-impl<F: Eq + Field> Sub for RowVec<F> {
+impl<F> Sub for RowVec<F>
+where
+    F: Eq + Field,
+{
     type Output = Self;
 
     fn sub(self, other: Self) -> Self::Output {
@@ -75,7 +101,10 @@ impl<F: Eq + Field> Sub for RowVec<F> {
     }
 }
 
-impl<F: Eq + Field> Sub<&RowVec<F>> for RowVec<F> {
+impl<F> Sub<&RowVec<F>> for RowVec<F>
+where
+    F: Eq + Field,
+{
     type Output = Self;
 
     fn sub(self, other: &Self) -> Self::Output {
@@ -83,7 +112,10 @@ impl<F: Eq + Field> Sub<&RowVec<F>> for RowVec<F> {
     }
 }
 
-impl<F: Eq + Field> Sub<RowVec<F>> for &RowVec<F> {
+impl<F> Sub<RowVec<F>> for &RowVec<F>
+where
+    F: Eq + Field,
+{
     type Output = RowVec<F>;
 
     fn sub(self, other: RowVec<F>) -> Self::Output {
@@ -91,7 +123,10 @@ impl<F: Eq + Field> Sub<RowVec<F>> for &RowVec<F> {
     }
 }
 
-impl<F: Eq + Field> Sub for &RowVec<F> {
+impl<F> Sub for &RowVec<F>
+where
+    F: Eq + Field,
+{
     type Output = RowVec<F>;
 
     fn sub(self, other: Self) -> Self::Output {
@@ -99,19 +134,28 @@ impl<F: Eq + Field> Sub for &RowVec<F> {
     }
 }
 
-impl<F: Eq + Field> SubAssign<RowVec<F>> for RowVec<F> {
+impl<F> SubAssign<RowVec<F>> for RowVec<F>
+where
+    F: Eq + Field,
+{
     fn sub_assign(&mut self, other: Self) {
         *self -= &other;
     }
 }
 
-impl<F: Eq + Field> SubAssign<&RowVec<F>> for RowVec<F> {
+impl<F> SubAssign<&RowVec<F>> for RowVec<F>
+where
+    F: Eq + Field,
+{
     fn sub_assign(&mut self, other: &Self) {
         self.0 -= &other.0;
     }
 }
 
-impl<F: Eq + Field> Mul<Mat<F>> for RowVec<F> {
+impl<F> Mul<Mat<F>> for RowVec<F>
+where
+    F: Eq + Field,
+{
     type Output = Self;
 
     fn mul(self, other: Mat<F>) -> Self::Output {
@@ -119,7 +163,10 @@ impl<F: Eq + Field> Mul<Mat<F>> for RowVec<F> {
     }
 }
 
-impl<F: Eq + Field> Mul<&Mat<F>> for RowVec<F> {
+impl<F> Mul<&Mat<F>> for RowVec<F>
+where
+    F: Eq + Field,
+{
     type Output = Self;
 
     fn mul(self, other: &Mat<F>) -> Self::Output {
@@ -127,7 +174,10 @@ impl<F: Eq + Field> Mul<&Mat<F>> for RowVec<F> {
     }
 }
 
-impl<F: Eq + Field> Mul<Mat<F>> for &RowVec<F> {
+impl<F> Mul<Mat<F>> for &RowVec<F>
+where
+    F: Eq + Field,
+{
     type Output = RowVec<F>;
 
     fn mul(self, other: Mat<F>) -> Self::Output {
@@ -135,7 +185,10 @@ impl<F: Eq + Field> Mul<Mat<F>> for &RowVec<F> {
     }
 }
 
-impl<F: Eq + Field> Mul<&Mat<F>> for &RowVec<F> {
+impl<F> Mul<&Mat<F>> for &RowVec<F>
+where
+    F: Eq + Field,
+{
     type Output = RowVec<F>;
 
     fn mul(self, other: &Mat<F>) -> Self::Output {
@@ -143,19 +196,28 @@ impl<F: Eq + Field> Mul<&Mat<F>> for &RowVec<F> {
     }
 }
 
-impl<F: Eq + Field> MulAssign<Mat<F>> for RowVec<F> {
+impl<F> MulAssign<Mat<F>> for RowVec<F>
+where
+    F: Eq + Field,
+{
     fn mul_assign(&mut self, other: Mat<F>) {
         *self *= &other;
     }
 }
 
-impl<F: Eq + Field> MulAssign<&Mat<F>> for RowVec<F> {
+impl<F> MulAssign<&Mat<F>> for RowVec<F>
+where
+    F: Eq + Field,
+{
     fn mul_assign(&mut self, other: &Mat<F>) {
         self.0 *= other;
     }
 }
 
-impl<F: Eq + Field> Mul<Perm> for RowVec<F> {
+impl<F> Mul<Perm> for RowVec<F>
+where
+    F: Eq + Field,
+{
     type Output = Self;
 
     fn mul(self, other: Perm) -> Self::Output {
@@ -163,7 +225,10 @@ impl<F: Eq + Field> Mul<Perm> for RowVec<F> {
     }
 }
 
-impl<F: Eq + Field> Mul<&Perm> for RowVec<F> {
+impl<F> Mul<&Perm> for RowVec<F>
+where
+    F: Eq + Field,
+{
     type Output = Self;
 
     fn mul(self, other: &Perm) -> Self::Output {
@@ -171,7 +236,10 @@ impl<F: Eq + Field> Mul<&Perm> for RowVec<F> {
     }
 }
 
-impl<F: Eq + Field> Mul<Perm> for &RowVec<F> {
+impl<F> Mul<Perm> for &RowVec<F>
+where
+    F: Eq + Field,
+{
     type Output = RowVec<F>;
 
     fn mul(self, other: Perm) -> Self::Output {
@@ -179,7 +247,10 @@ impl<F: Eq + Field> Mul<Perm> for &RowVec<F> {
     }
 }
 
-impl<F: Eq + Field> Mul<&Perm> for &RowVec<F> {
+impl<F> Mul<&Perm> for &RowVec<F>
+where
+    F: Eq + Field,
+{
     type Output = RowVec<F>;
 
     fn mul(self, other: &Perm) -> Self::Output {
@@ -187,7 +258,10 @@ impl<F: Eq + Field> Mul<&Perm> for &RowVec<F> {
     }
 }
 
-impl<F: Eq + Field> Neg for RowVec<F> {
+impl<F> Neg for RowVec<F>
+where
+    F: Eq + Field,
+{
     type Output = Self;
 
     fn neg(self) -> Self::Output {
@@ -195,7 +269,10 @@ impl<F: Eq + Field> Neg for RowVec<F> {
     }
 }
 
-impl<F: Eq + Field> Neg for &RowVec<F> {
+impl<F> Neg for &RowVec<F>
+where
+    F: Eq + Field,
+{
     type Output = RowVec<F>;
 
     fn neg(self) -> Self::Output {
@@ -203,7 +280,10 @@ impl<F: Eq + Field> Neg for &RowVec<F> {
     }
 }
 
-impl<F: Eq + Field> Index<usize> for RowVec<F> {
+impl<F> Index<usize> for RowVec<F>
+where
+    F: Eq + Field,
+{
     type Output = F::FieldElement;
 
     fn index(&self, index: usize) -> &Self::Output {
@@ -211,25 +291,37 @@ impl<F: Eq + Field> Index<usize> for RowVec<F> {
     }
 }
 
-impl<F: Eq + Field> IndexMut<usize> for RowVec<F> {
+impl<F> IndexMut<usize> for RowVec<F>
+where
+    F: Eq + Field,
+{
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.0[(0, index)]
     }
 }
 
-impl<F: Eq + F2FiniteExtension> Debug for RowVec<F> {
+impl<F> Debug for RowVec<F>
+where
+    F: Eq + F2FiniteExtension,
+{
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", self.0)
     }
 }
 
-impl<F: Eq + FiniteField> Display for RowVec<F> {
+impl<F> Display for RowVec<F>
+where
+    F: Eq + FiniteField,
+{
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
     }
 }
 
-impl<F: Eq + Field> RowVec<F> {
+impl<F> RowVec<F>
+where
+    F: Eq + Field,
+{
     pub fn new(field: &Rc<F>, data: Vec<F::FieldElement>) -> Self {
         if data.len() == 0 {
             panic!("Empty row vector");

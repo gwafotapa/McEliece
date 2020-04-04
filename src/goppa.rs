@@ -20,7 +20,10 @@ type Result<T> = result::Result<T, Box<dyn Error>>;
 
 /// Binary irreducible Goppa code
 #[derive(Eq, PartialEq)]
-pub struct Goppa<F: Eq + Field> {
+pub struct Goppa<F>
+where
+    F: Eq + Field,
+{
     poly: Poly<F>,
     set: Vec<F::FieldElement>,
 }

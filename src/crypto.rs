@@ -52,9 +52,14 @@ pub struct SecretKey {
     p: Perm,
 }
 
-pub fn keygen(m: u32, n: usize, t: usize) -> (PublicKey, SecretKey) {
+pub fn keygen(n: usize, t: usize) -> (PublicKey, SecretKey) {
+    let q = if t == 1 && n.is_power_of_two() {
+        2 * n
+    } else {
+        n.next_power_of_two()
+    };
     let f2 = &Rc::new(F2 {});
-    let f2m = &Rc::new(F2m::generate(1 << m));
+    let f2m = &Rc::new(F2m::generate(q));
     let mut rng = rand::thread_rng();
     let goppa = Goppa::random(&mut rng, f2m, n, t);
     debug!("{}", goppa);

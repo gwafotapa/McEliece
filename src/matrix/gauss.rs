@@ -3,7 +3,10 @@ use std::rc::Rc;
 
 use super::{Field, Mat, Perm};
 
-impl<F: Eq + Field> Mat<F> {
+impl<F> Mat<F>
+where
+    F: Eq + Field,
+{
     pub fn swap_rows(&mut self, row1: usize, row2: usize) {
         if row1 == row2 {
             return;

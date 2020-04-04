@@ -6,7 +6,10 @@ use crate::finite_field::{f2m, CharacteristicTwo, F2FiniteExtension, F2m, Finite
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
-impl<F: CharacteristicTwo + Eq + Field> Poly<F> {
+impl<F> Poly<F>
+where
+    F: CharacteristicTwo + Eq + Field,
+{
     pub fn random_monic_irreducible(rng: &mut ThreadRng, f: &Rc<F>, degree: usize) -> Self
     where
         F: FiniteField,

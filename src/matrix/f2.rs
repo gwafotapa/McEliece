@@ -432,7 +432,10 @@ impl Mat<F2> {
 //     }
 // }
 
-impl<F: Eq + F2FiniteExtension> Mat<F> {
+impl<F> Mat<F>
+where
+    F: Eq + F2FiniteExtension,
+{
     /// Takes a t * n matrix on F<sub>2<sup>m</sup></sub>
     /// and outputs a mt * n matrix on F<sub>2</sub>
     /// by decomposing each coefficient on the canonical basis

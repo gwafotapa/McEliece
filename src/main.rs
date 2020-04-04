@@ -39,7 +39,6 @@ const SECRET_KEY: &str = "secret_key.mce";
 fn keygen(
     pk_file: &str,
     sk_file: &str,
-    m: u32,
     n: usize,
     t: usize,
     verbose: bool,
@@ -48,7 +47,7 @@ fn keygen(
         print!("Generating keys (pk, sk).....");
         io::stdout().flush().unwrap();
     }
-    let (pk, sk) = crypto::keygen(m, n, t);
+    let (pk, sk) = crypto::keygen(n, t);
 
     if verbose {
         print!("ok\nWriting pk to {}.....", pk_file);
@@ -175,7 +174,7 @@ fn get_program(path: &str) -> &str {
     &path[i..]
 }
 
-fn get_code_params(matches: &Matches) -> Result<(u32, usize, usize), MainError> {
+fn get_code_params(matches: &Matches) -> Result<(usize, usize), MainError> {
     let n = match matches.opt_str("n") {
         None => GOPPA_N,
         Some(length) => u32::from_str_radix(&length, 10)? as usize,
@@ -200,7 +199,7 @@ fn get_code_params(matches: &Matches) -> Result<(u32, usize, usize), MainError> 
     if n <= m as usize * t {
         return Err("The ratio n/t is not large enough. Pick a larger n or a smaller t.".into());
     }
-    Ok((m, n, t))
+    Ok((n, t))
 }
 
 fn print_help(program: &str, opts: Options) {
@@ -230,7 +229,7 @@ fn main() -> Result<(), MainError> {
         return Ok(());
     }
     let verbose = matches.opt_present("v");
-    let (m, n, t) = get_code_params(&matches)?;
+    let (n, t) = get_code_params(&matches)?;
     if verbose {
         print!("Code length n: {}\nCode correction capacity t: {}\n", n, t);
     }
@@ -250,7 +249,7 @@ fn main() -> Result<(), MainError> {
         "keygen" => {
             let pk_file = files.get(0).unwrap_or(&PUBLIC_KEY);
             let sk_file = files.get(1).unwrap_or(&SECRET_KEY);
-            keygen(pk_file, sk_file, m, n, t, verbose)
+            keygen(pk_file, sk_file, n, t, verbose)
         }
         "encrypt" => {
             let pk_file = files.get(0).unwrap_or(&PUBLIC_KEY);
