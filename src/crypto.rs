@@ -207,19 +207,19 @@ impl SecretKey {
         Ok(())
     }
 
-    // TODO: Is it possible to eliminate this function ?
-    pub fn read_finite_field(file_name: &str) -> Result<F2m> {
-        let mut f = File::open(file_name)?;
-        // let mut vec = Vec::new();
-        // f.read_to_end(&mut vec)?;
-        let mut buf = [0; 4];
-        f.read_exact(&mut buf)?;
-        let order = u32::from_be_bytes(buf) as usize;
-        // let k = u32::from_be_bytes(vec[0..4].try_into()?) as usize;
-        // let i = 4 + 4 + div_ceil(k * k, 8);
-        // let order = u32::from_be_bytes(vec[i..i + 4].try_into()?) as usize;
-        Ok(F2m::generate(order))
-    }
+    // // TODO: Is it possible to eliminate this function ?
+    // pub fn read_finite_field(file_name: &str) -> Result<F2m> {
+    //     let mut f = File::open(file_name)?;
+    //     // let mut vec = Vec::new();
+    //     // f.read_to_end(&mut vec)?;
+    //     let mut buf = [0; 4];
+    //     f.read_exact(&mut buf)?;
+    //     let order = u32::from_be_bytes(buf) as usize;
+    //     // let k = u32::from_be_bytes(vec[0..4].try_into()?) as usize;
+    //     // let i = 4 + 4 + div_ceil(k * k, 8);
+    //     // let order = u32::from_be_bytes(vec[i..i + 4].try_into()?) as usize;
+    //     Ok(F2m::generate(order))
+    // }
 
     pub fn read_secret_key(file_name: &str) -> Result<Self> {
         let mut f = File::open(file_name)?;

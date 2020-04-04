@@ -26,7 +26,7 @@ pub fn log_setup() {
     });
 }
 
-pub fn goppa_setup() -> (u32, usize, usize) {
+pub fn goppa_setup() -> (usize, usize, usize) {
     log_setup();
     let mut rng = rand::thread_rng();
     let (mut m, mut n, mut t) = (1, 0, 1);
@@ -49,5 +49,5 @@ pub fn goppa_setup() -> (u32, usize, usize) {
             m += 1;
         }
     }
-    (m, n, t)
+    (1 << m, n, t)
 }

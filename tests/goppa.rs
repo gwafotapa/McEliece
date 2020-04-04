@@ -128,11 +128,12 @@ fn goppa_f256() {
 fn goppa_f128() {
     common::log_setup();
     let m = 7;
-    let n = 1 << m;
+    let q = 1 << m;
+    let n = q;
     let t = 10;
     let k = n - m * t;
     let f2 = &Rc::new(F2::generate(()));
-    let f128 = &Rc::new(F2m::generate(1 << m));
+    let f128 = &Rc::new(F2m::generate(q));
     let goppa = Goppa::random(f128, n, t);
     info!("{}", goppa);
 
@@ -156,11 +157,11 @@ fn goppa_f128() {
 
 #[test]
 fn goppa_random() {
-    let (m, n, t) = common::goppa_setup();
-    info!("F2m=F{}, n={}, t={}", 1 << m, n, t);
+    let (q, n, t) = common::goppa_setup();
+    info!("F2m=F{}, n={}, t={}", q, n, t);
 
     let f2 = &Rc::new(F2::generate(()));
-    let f2m = &Rc::new(F2m::generate(1 << m));
+    let f2m = &Rc::new(F2m::generate(q));
     let goppa = Goppa::random(f2m, n, t);
     info!("{}", goppa);
 
@@ -200,21 +201,18 @@ fn goppa_repeat() {
     warn!("Series of {} random encoding - decoding", REPEAT);
 
     for _r in 0..REPEAT {
-        let (m, n, t) = common::goppa_setup();
+        let (q, n, t) = common::goppa_setup();
         warn!(
             "Encode - Decode #{:02}: F2m=F{:<4}, n={:<4}, t={:<4}",
-            _r,
-            1 << m,
-            n,
-            t
+            _r, q, n, t
         );
-        goppa_repeated(m, n, t);
+        goppa_repeated(q, n, t);
     }
 }
 
-fn goppa_repeated(m: u32, n: usize, t: usize) {
+fn goppa_repeated(q: usize, n: usize, t: usize) {
     let f2 = &Rc::new(F2::generate(()));
-    let f2m = &Rc::new(F2m::generate(1 << m));
+    let f2m = &Rc::new(F2m::generate(q));
     let goppa = Goppa::random(f2m, n, t);
     info!("{}", goppa);
 

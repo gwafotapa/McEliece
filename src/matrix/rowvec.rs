@@ -401,10 +401,10 @@ where
     }
 }
 
-impl<'a> RowVec<F2> {
-    pub fn random_f2(n: usize) -> Self {
+impl RowVec<F2> {
+    pub fn f2_random(n: usize) -> Self {
         let f2 = &Rc::new(F2::generate(()));
-        RowVec(Mat::random(f2, 1, n))
+        RowVec::random(f2, n)
     }
 
     pub fn write(&self, file_name: &str) -> Result<()> {

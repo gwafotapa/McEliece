@@ -362,7 +362,7 @@ impl Perm {Perm21,384
     pub fn inverse(&self) -> Self {inverse84,1915
     pub fn is_permutation(&self) -> bool {is_permutation92,2092
 
-matrix/rowvec.rs,4416
+matrix/rowvec.rs,4412
 type Result<T> = std::result::Result<T, Box<dyn Error>>;Result15,339
 pub struct RowVec<F>(Mat<F>)RowVec18,422
 impl<F> Clone for RowVec<F>RowVec22,477
@@ -436,30 +436,18 @@ impl<F> RowVec<F>RowVec321,5227
     pub fn transpose(&self) -> Mat<F> {transpose386,6752
     pub fn is_zero(&self) -> bool {is_zero390,6826
     pub fn extract_cols(&self, perm: &Vec<usize>) -> Self {extract_cols399,7018
-impl<'a> RowVec<F2> {RowVec404,7129
-    pub fn random_f2(n: usize) -> Self {random_f2405,7151
-    pub fn write(&self, file_name: &str) -> Result<()> {write410,7282
-    pub fn read_vector(file_name: &str) -> Result<RowVec<F2>> {read_vector434,7996
+impl RowVec<F2> {RowVec404,7129
+    pub fn f2_random(n: usize) -> Self {f2_random405,7147
+    pub fn write(&self, file_name: &str) -> Result<()> {write410,7270
+    pub fn read_vector(file_name: &str) -> Result<RowVec<F2>> {read_vector434,7984
 
-matrix/f2.rs,1394
-type Result<T> = std::result::Result<T, Box<dyn Error>>;Result7,156
-impl Mat<F2> {Mat10,252
-    // pub fn add_rows(&mut self, row1: usize, row2: usize) {add_rows11,267
-    // pub fn inverse_f2(&self) -> Option<Self> {inverse_f220,608
-    // pub fn invertible_random_f2(rng: &mut ThreadRng, f2: Rc<F2>, n: usize) -> Self {invertible_random_f290,3022
-    // pub fn standard_parity_check_equivalent_f2(&self) -> (Self, Perm) {standard_parity_check_equivalent_f2123,4262
-    // pub fn row_echelon_form_f2(&mut self) -> usize {row_echelon_form_f2184,6479
-    // pub fn reduced_row_echelon_form_f2(&mut self) -> usize {reduced_row_echelon_form_f2222,7672
-    // pub fn rank_f2(&self) -> usize {rank_f2252,8696
-    // pub fn standard_form_f2(&self) -> Option<(Self, Self, Perm)> {standard_form_f2259,8954
-    // pub fn max_set_of_independant_rows_f2(&mut self) -> Vec<usize> {max_set_of_independant_rows_f2320,11180
-    // pub fn remove_redundant_rows_f2(&mut self) {remove_redundant_rows_f2360,12490
-    pub fn to_bytes(&self) -> Vec<u8> {to_bytes370,12873
-    pub fn from_bytes(vec: &[u8]) -> Result<(usize, Self)> {from_bytes398,13757
-// impl<F: CharacteristicTwo + Eq> Mat<F> {Mat423,14502
-//     pub fn from<'b>(f: &'a F, mat_f2: &Mat<'b, F2>) -> Self {from424,14546
-impl<F> Mat<F>Mat435,14907
-    pub fn binary(&self, f2: &Rc<F2>) -> Mat<F2> {binary442,15135
+matrix/f2.rs,324
+type Result<T> = std::result::Result<T, Box<dyn Error>>;Result6,119
+impl Mat<F2> {Mat8,177
+    pub fn to_bytes(&self) -> Vec<u8> {to_bytes13,346
+    pub fn from_bytes(vec: &[u8]) -> Result<(usize, Self)> {from_bytes41,1230
+impl<F> Mat<F>Mat66,1975
+    pub fn binary(&self, f2: &Rc<F2>) -> Mat<F2> {binary73,2203
 
 matrix/mod.rs,1074
 pub struct Mat<F>Mat12,207
