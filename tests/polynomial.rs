@@ -55,11 +55,11 @@ fn polynomial_f2_extended_gcd() {
     let f = &Rc::new(F2::generate(()));
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(1, 100);
-    let a = Poly::random(&mut rng, f, deg_a);
+    let a = Poly::random(f, deg_a);
     info!("a(x) = {:?}\n", a);
 
     let deg_b = rng.gen_range(0, deg_a);
-    let b = Poly::random(&mut rng, f, deg_b);
+    let b = Poly::random(f, deg_b);
     info!("b(x) = {:?}\n", b);
 
     let (d, u, v, a1, b1) = Poly::extended_gcd(&a, &b);
@@ -80,11 +80,11 @@ fn polynomial_f7_extended_gcd() {
     let f = &Rc::new(F7::generate(()));
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(1, 100);
-    let a = Poly::random(&mut rng, f, deg_a);
+    let a = Poly::random(f, deg_a);
     info!("a(x) = {}\n", a);
 
     let deg_b = rng.gen_range(0, deg_a);
-    let b = Poly::random(&mut rng, f, deg_b);
+    let b = Poly::random(f, deg_b);
     info!("b(x) = {}\n", b);
 
     let (d, u, v, a1, b1) = Poly::extended_gcd(&a, &b);
@@ -105,11 +105,11 @@ fn polynomial_f1024_extended_gcd() {
     let f = &Rc::new(F2m::generate(1024));
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(1, 100);
-    let a = Poly::random(&mut rng, f, deg_a);
+    let a = Poly::random(f, deg_a);
     info!("a(x) = {:?}\n", a);
 
     let deg_b = rng.gen_range(0, deg_a);
-    let b = Poly::random(&mut rng, f, deg_b);
+    let b = Poly::random(f, deg_b);
     info!("b(x) = {:?}\n", b);
 
     let (d, u, v, a1, b1) = Poly::extended_gcd(&a, &b);
@@ -130,7 +130,7 @@ fn polynomial_f1024_square() {
     let f = &Rc::new(F2m::generate(1024));
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(0, 100);
-    let mut a = Poly::random(&mut rng, f, deg_a);
+    let mut a = Poly::random(f, deg_a);
     info!("a(x) = {:?}\n", a);
 
     let b = a.clone();
@@ -144,11 +144,11 @@ fn polynomial_f1024_modulo() {
     let f = &Rc::new(F2m::generate(1024));
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(0, 100);
-    let mut a = Poly::random(&mut rng, f, deg_a);
+    let mut a = Poly::random(f, deg_a);
     info!("a(x) = {:?}\n", a);
 
     let deg_g = rng.gen_range(0, 100);
-    let g = Poly::random(&mut rng, f, deg_g);
+    let g = Poly::random(f, deg_g);
     info!("g(x) = {:?}\n", g);
 
     let (_q, r) = Poly::euclidean_division(&a, &g);
@@ -162,7 +162,7 @@ fn polynomial_f1024_sq_root_mod() {
     let f = &Rc::new(F2m::generate(1024));
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(0, 11);
-    let a = Poly::random(&mut rng, f, deg_a);
+    let a = Poly::random(f, deg_a);
     info!("a(x) = {:?}\n", a);
 
     let mut b = &a * &a;
@@ -182,7 +182,7 @@ fn polynomial_f1024_inverse_mod() {
     let g = Poly::support(f, &[0, 2, 11]);
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(0, 11);
-    let a = Poly::random(&mut rng, f, deg_a);
+    let a = Poly::random(f, deg_a);
     info!("a(x) = {:?}\n", a);
 
     let inv = a.inverse_modulo(&g);

@@ -1,6 +1,5 @@
 //! Matrices on a field
 
-use rand::rngs::ThreadRng;
 use std::rc::Rc;
 
 use crate::finite_field::{Field, FiniteField, F2};
@@ -71,11 +70,12 @@ where
         &self.data
     }
 
-    pub fn random(rng: &mut ThreadRng, f: &Rc<F>, n: usize, m: usize) -> Self {
+    pub fn random(f: &Rc<F>, n: usize, m: usize) -> Self {
+        let mut rng = rand::thread_rng();
         let mut mat = Self::zero(f, n, m);
         for i in 0..n {
             for j in 0..m {
-                mat[(i, j)] = f.random_element(rng);
+                mat[(i, j)] = f.random_element(&mut rng);
             }
         }
         mat

@@ -71,8 +71,7 @@ fn crypto_decrypt_codeword() {
 
     let (pk, sk) = keygen(n, t);
     let k = pk.sgp().rows();
-    let mut rng = rand::thread_rng();
-    let msg = RowVec::random_f2(&mut rng, k);
+    let msg = RowVec::random_f2(k);
     let cpt = &msg * pk.sgp();
     let dmsg = sk.decrypt(&cpt);
     assert_eq!(dmsg, msg);
@@ -100,8 +99,7 @@ fn crypto_encrypt_decrypt_random_message() {
     info!("F2m=F{}, n={}, t={}", 1 << m, n, t);
     let (pk, sk) = keygen(n, t);
     let k = pk.sgp().rows();
-    let mut rng = rand::thread_rng();
-    let msg = RowVec::random_f2(&mut rng, k);
+    let msg = RowVec::random_f2(k);
     let cpt = pk.encrypt(&msg);
     let dmsg = sk.decrypt(&cpt);
     assert_eq!(dmsg, msg);
@@ -128,8 +126,7 @@ fn crypto_repeat() {
 fn crypto_repeated(n: usize, t: usize) {
     let (pk, sk) = keygen(n, t);
     let k = pk.sgp().rows();
-    let mut rng = rand::thread_rng();
-    let msg = RowVec::random_f2(&mut rng, k);
+    let msg = RowVec::random_f2(k);
     let cpt = pk.encrypt(&msg);
     let dmsg = sk.decrypt(&cpt);
     assert_eq!(dmsg, msg);

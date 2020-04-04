@@ -9,8 +9,7 @@ pub mod common;
 #[test]
 fn matrix_f1024_permutation_random() {
     common::log_setup();
-    let mut rng = rand::thread_rng();
-    let p = Perm::random(&mut rng, 10);
+    let p = Perm::random(10);
     assert!(p.is_permutation());
 }
 
@@ -35,8 +34,7 @@ fn matrix_f1024_inverse() {
 fn matrix_f1024_invertible_random() {
     common::log_setup();
     let f1024 = &Rc::new(F2m::generate(1024));
-    let mut rng = rand::thread_rng();
-    let mat = Mat::invertible_random(&mut rng, f1024, 15);
+    let mat = Mat::invertible_random(f1024, 15);
     assert!(mat.is_invertible());
 
     assert_eq!(
@@ -56,10 +54,9 @@ fn matrix_f1024_invertible_random() {
 fn matrix_f1024_add() {
     common::log_setup();
     let f1024 = &Rc::new(F2m::generate(1024));
-    let mut rng = rand::thread_rng();
-    let a = &Mat::random(&mut rng, f1024, 11, 11);
-    let b = &Mat::random(&mut rng, f1024, 11, 11);
-    let c = &Mat::random(&mut rng, f1024, 11, 11);
+    let a = &Mat::random(f1024, 11, 11);
+    let b = &Mat::random(f1024, 11, 11);
+    let c = &Mat::random(f1024, 11, 11);
     let z = &Mat::zero(f1024, 11, 11);
 
     // Associativity
@@ -90,10 +87,9 @@ fn matrix_f1024_mul_wrong_dimensions() {
 fn matrix_f1024_mul() {
     common::log_setup();
     let f1024 = &Rc::new(F2m::generate(1024));
-    let mut rng = rand::thread_rng();
-    let a = &Mat::random(&mut rng, f1024, 10, 8);
-    let b = &Mat::random(&mut rng, f1024, 8, 13);
-    let c = &Mat::random(&mut rng, f1024, 13, 4);
+    let a = &Mat::random(f1024, 10, 8);
+    let b = &Mat::random(f1024, 8, 13);
+    let c = &Mat::random(f1024, 13, 4);
 
     // Associativity
     assert_eq!((a * b) * c, a * (b * c));
@@ -112,10 +108,10 @@ fn matrix_f1024_mul() {
     assert_eq!(z10 * a, *z10_8);
 
     // Distributivity
-    let a = &Mat::random(&mut rng, f1024, 10, 12);
-    let b = &Mat::random(&mut rng, f1024, 10, 12);
-    let c = &Mat::random(&mut rng, f1024, 12, 9);
-    let d = &Mat::random(&mut rng, f1024, 12, 9);
+    let a = &Mat::random(f1024, 10, 12);
+    let b = &Mat::random(f1024, 10, 12);
+    let c = &Mat::random(f1024, 12, 9);
+    let d = &Mat::random(f1024, 12, 9);
 
     // Left: (a + b)c = ac + bc
     assert_eq!((a + b) * c, a * c + b * c);
@@ -142,7 +138,6 @@ fn matrix_f1024_standard_form() {
     let id = Mat::identity(f1024, 19);
     assert!(id.is_standard_form());
 
-    let mut rng = rand::thread_rng();
     let (u, h, p) = id
         .standard_form()
         .expect("Cannot recognize the identity matrix as a standard form");
@@ -150,8 +145,8 @@ fn matrix_f1024_standard_form() {
     assert_eq!(h, id);
     assert!(p.is_permutation());
 
-    let mut h = Mat::random(&mut rng, f1024, 13, 31);
-    let inv = Mat::invertible_random(&mut rng, f1024, 13);
+    let mut h = Mat::random(f1024, 13, 31);
+    let inv = Mat::invertible_random(f1024, 13);
     for i in 0..13 {
         for j in 0..13 {
             h[(i, j)] = inv[(i, j)];
@@ -176,7 +171,7 @@ fn matrix_f1024_transpose() {
     let mut rng = rand::thread_rng();
     let rows = rng.gen_range(1, 100);
     let cols = rng.gen_range(1, 100);
-    let mat = Mat::random(&mut rng, f1024, rows, cols);
+    let mat = Mat::random(f1024, rows, cols);
     let tmat = mat.transpose();
     for i in 0..rows {
         for j in 0..cols {
@@ -192,7 +187,6 @@ fn matrix_f1024_rowvec_weight() {
     let vec = RowVec::zero(f1024, 4);
     assert!(vec.weight() == 0);
 
-    let mut rng = rand::thread_rng();
-    let vec = RowVec::random_with_weight(&mut rng, f1024, 35, 13);
+    let vec = RowVec::random_with_weight(f1024, 35, 13);
     assert_eq!(vec.weight(), 13);
 }

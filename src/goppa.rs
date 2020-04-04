@@ -2,7 +2,7 @@
 
 use log::debug;
 
-use rand::{rngs::ThreadRng, Rng};
+use rand::Rng;
 use std::{
     error::Error,
     fmt::{self, Debug, Display, Formatter},
@@ -128,7 +128,7 @@ where
     /// - n is greater than the order of F
     /// - n &le; t * log<sub>2</sub>|F| (Goppa code dimension would be 0)
     /// - n = log<sub>2</sub>|F| and t = 1 (a Goppa code set cannot contain one of its roots)
-    pub fn random(rng: &mut ThreadRng, f: &Rc<F>, n: usize, t: usize) -> Self {
+    pub fn random(f: &Rc<F>, n: usize, t: usize) -> Self {
         let q = f.order();
         if n > q {
             panic!("n must be at most q");
@@ -137,7 +137,7 @@ where
         if n <= m * t {
             panic!("m * t must be at most n");
         }
-        let poly = Poly::random_monic_irreducible(rng, f, t);
+        let poly = Poly::random_monic_irreducible(f, t);
         if poly.degree() == 1 && n == q {
             panic!("n must be strictly less than q when Goppa polynomial is of degree 1");
         }
@@ -149,6 +149,7 @@ where
             let root = f.mul(f.inv(poly[1]).unwrap(), poly[0]);
             pool.swap_remove(f.elt_to_u32(root) as usize);
         }
+        let mut rng = rand::thread_rng();
         let mut set = Vec::with_capacity(n);
         for _i in 0..n {
             let index = rng.gen_range(0, pool.len());

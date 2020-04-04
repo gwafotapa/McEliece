@@ -129,13 +129,13 @@ fn main() -> Result<(), MainError> {
             let ptxt_file = files.get(1).unwrap_or(&PLAINTEXT);
             let ctxt_file = files.get(2).unwrap_or(&CIPHERTEXT);
             let pk = PublicKey::read_public_key(pk_file)?;
-            let m = RowVec::read_vector(ptxt_file)?;
-            if pk.sgp().rows() != m.cols() {
+            let p = RowVec::read_vector(ptxt_file)?;
+            if pk.sgp().rows() != p.cols() {
                 return Err(
                     "Plaintext length does not match code dimension from public key".into(),
                 );
             }
-            let c = pk.encrypt(&m);
+            let c = pk.encrypt(&p);
             c.write(ctxt_file)?;
             if verbose {
                 println!("Wrote ciphertext to '{}'.", ctxt_file);
@@ -151,8 +151,8 @@ fn main() -> Result<(), MainError> {
             if sk.p().len() != c.cols() {
                 return Err("Ciphertext length does not match code length from secret key".into());
             }
-            let m = sk.decrypt(&c);
-            m.write(dec_file)?;
+            let p = sk.decrypt(&c);
+            p.write(dec_file)?;
             if verbose {
                 println!("Wrote decrypted text to '{}'.", dec_file);
             }
@@ -162,8 +162,7 @@ fn main() -> Result<(), MainError> {
             let pk_file = files.get(0).unwrap_or(&PUBLIC_KEY);
             let ptxt_file = files.get(1).unwrap_or(&PLAINTEXT);
             let k = PublicKey::read_code_dimension(pk_file)?;
-            let mut rng = rand::thread_rng();
-            let p = RowVec::random_f2(&mut rng, k);
+            let p = RowVec::random_f2(k);
             p.write(ptxt_file)?;
             if verbose {
                 println!("Wrote plaintext to '{}'.", ptxt_file);

@@ -24,8 +24,7 @@ fn matrix_f2_new() {
 #[test]
 fn matrix_f2_permutation_random() {
     common::log_setup();
-    let mut rng = rand::thread_rng();
-    let p = Perm::random(&mut rng, 10);
+    let p = Perm::random(10);
     info!("Permutation matrix:{:?}", p);
     assert!(p.is_permutation());
 }
@@ -46,8 +45,7 @@ fn matrix_f2_inverse() {
     let id = Mat::identity(f2, 11);
     assert_eq!(id.inverse(), Some(id));
 
-    let mut rng = rand::thread_rng();
-    let p = Perm::random(&mut rng, 11);
+    let p = Perm::random(11);
     assert_eq!(p, p.inverse().inverse());
 }
 
@@ -55,8 +53,7 @@ fn matrix_f2_inverse() {
 fn matrix_f2_invertible_random() {
     common::log_setup();
     let f2 = &Rc::new(F2::generate(()));
-    let mut rng = rand::thread_rng();
-    let mat = Mat::invertible_random(&mut rng, f2, 15);
+    let mat = Mat::invertible_random(f2, 15);
     assert!(mat.is_invertible());
     assert_eq!(
         mat.inverse()
@@ -75,10 +72,9 @@ fn matrix_f2_invertible_random() {
 fn matrix_f2_add() {
     common::log_setup();
     let f2 = &Rc::new(F2::generate(()));
-    let mut rng = rand::thread_rng();
-    let a = &Mat::random(&mut rng, f2, 11, 11);
-    let b = &Mat::random(&mut rng, f2, 11, 11);
-    let c = &Mat::random(&mut rng, f2, 11, 11);
+    let a = &Mat::random(f2, 11, 11);
+    let b = &Mat::random(f2, 11, 11);
+    let c = &Mat::random(f2, 11, 11);
     let z = &Mat::zero(f2, 11, 11);
 
     // Associativity
@@ -109,10 +105,9 @@ fn matrix_f2_mul_wrong_dimensions() {
 fn matrix_f2_mul() {
     common::log_setup();
     let f2 = &Rc::new(F2::generate(()));
-    let mut rng = rand::thread_rng();
-    let a = &Mat::random(&mut rng, f2, 10, 8);
-    let b = &Mat::random(&mut rng, f2, 8, 13);
-    let c = &Mat::random(&mut rng, f2, 13, 4);
+    let a = &Mat::random(f2, 10, 8);
+    let b = &Mat::random(f2, 8, 13);
+    let c = &Mat::random(f2, 13, 4);
 
     // Associativity
     assert_eq!((a * b) * c, a * (b * c));
@@ -131,10 +126,10 @@ fn matrix_f2_mul() {
     assert_eq!(z10 * a, *z10_8);
 
     // Distributivity
-    let a = &Mat::random(&mut rng, f2, 10, 12);
-    let b = &Mat::random(&mut rng, f2, 10, 12);
-    let c = &Mat::random(&mut rng, f2, 12, 9);
-    let d = &Mat::random(&mut rng, f2, 12, 9);
+    let a = &Mat::random(f2, 10, 12);
+    let b = &Mat::random(f2, 10, 12);
+    let c = &Mat::random(f2, 12, 9);
+    let d = &Mat::random(f2, 12, 9);
     assert_eq!((a + b) * c, a * c + b * c);
     assert_eq!(a * (c + d), a * c + a * d);
 }
@@ -157,7 +152,6 @@ fn matrix_f2_standard_form() {
     let mat = Mat::identity(f2, 19);
     assert!(mat.is_standard_form());
 
-    let mut rng = rand::thread_rng();
     let (u, h, p) = mat
         .standard_form()
         .expect("Cannot recognize the identity matrix as a standard form");
@@ -165,8 +159,8 @@ fn matrix_f2_standard_form() {
     assert_eq!(h, mat);
     assert!(p.is_permutation());
 
-    let mut h = Mat::random(&mut rng, f2, 13, 31);
-    let inv = Mat::invertible_random(&mut rng, f2, 13);
+    let mut h = Mat::random(f2, 13, 31);
+    let inv = Mat::invertible_random(f2, 13);
     for i in 0..13 {
         for j in 0..13 {
             h[(i, j)] = inv[(i, j)];
@@ -191,7 +185,7 @@ fn matrix_f2_transpose() {
     let mut rng = rand::thread_rng();
     let rows = rng.gen_range(1, 100);
     let cols = rng.gen_range(1, 100);
-    let mat = Mat::random(&mut rng, f2, rows, cols);
+    let mat = Mat::random(f2, rows, cols);
     let tmat = mat.transpose();
     for i in 0..rows {
         for j in 0..cols {
@@ -207,8 +201,7 @@ fn matrix_f2_rowvec_weight() {
     let vec = RowVec::zero(f2, 4);
     assert!(vec.weight() == 0);
 
-    let mut rng = rand::thread_rng();
-    let vec = RowVec::random_with_weight(&mut rng, f2, 35, 13);
+    let vec = RowVec::random_with_weight(f2, 35, 13);
     assert_eq!(vec.weight(), 13);
 }
 
@@ -218,7 +211,7 @@ fn rowvec_f2_write_read() {
     let f2 = &Rc::new(F2::generate(()));
     let mut rng = rand::thread_rng();
     let n = rng.gen_range(10, 1000);
-    let vec = RowVec::random(&mut rng, f2, n);
+    let vec = RowVec::random(f2, n);
     let file_name = "vec_write_read_test.mce";
     vec.write(file_name).unwrap();
     let vec_read = RowVec::read_vector(file_name).unwrap();

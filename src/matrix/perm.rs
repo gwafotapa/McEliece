@@ -1,4 +1,4 @@
-use rand::{rngs::ThreadRng, Rng};
+use rand::Rng;
 use std::ops::{Index, IndexMut};
 
 #[derive(Debug, Eq, PartialEq)]
@@ -45,7 +45,8 @@ impl Perm {
         Perm(vec)
     }
 
-    pub fn random(rng: &mut ThreadRng, n: usize) -> Self {
+    pub fn random(n: usize) -> Self {
+        let mut rng = rand::thread_rng();
         let mut cols = Vec::with_capacity(n);
         for i in 0..n {
             cols.push(i);

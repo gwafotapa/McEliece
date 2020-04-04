@@ -1,4 +1,3 @@
-use rand::rngs::ThreadRng;
 use std::{convert::TryInto, error::Error, rc::Rc};
 
 use super::{Field, Poly};
@@ -10,18 +9,19 @@ impl<F> Poly<F>
 where
     F: CharacteristicTwo + Eq + Field,
 {
-    pub fn random_monic_irreducible(rng: &mut ThreadRng, f: &Rc<F>, degree: usize) -> Self
+    pub fn random_monic_irreducible(f: &Rc<F>, degree: usize) -> Self
     where
         F: FiniteField,
     {
+        let mut rng = rand::thread_rng();
         let mut p = Self::zero(f, degree + 1);
         p[degree] = f.one();
         for i in 0..degree {
-            p[i] = f.random_element(rng);
+            p[i] = f.random_element(&mut rng);
         }
         while !p.is_irreducible() {
             for i in 0..degree {
-                p[i] = f.random_element(rng);
+                p[i] = f.random_element(&mut rng);
             }
         }
         p

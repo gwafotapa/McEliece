@@ -39,14 +39,13 @@ fn goppa_f8() {
     let z = &h * &g.transpose();
     assert!(z.is_zero());
 
-    let mut rng = rand::thread_rng();
-    let msg = RowVec::random(&mut rng, f2, 2);
+    let msg = RowVec::random(f2, 2);
     info!("Message:{}", msg);
 
     let cdw = c.encode(&msg);
     info!("cdw:{}", cdw);
 
-    let err = RowVec::random_with_weight(&mut rng, f2, 8, 2);
+    let err = RowVec::random_with_weight(f2, 8, 2);
     info!("err:{}", err);
 
     let rcv = &cdw + err;
@@ -63,8 +62,7 @@ fn goppa_f1024() {
     common::log_setup();
     let f2 = &Rc::new(F2::generate(()));
     let f1024 = &Rc::new(F2m::generate(1024));
-    let mut rng = rand::thread_rng();
-    let c = Goppa::random(&mut rng, f1024, 30, 2);
+    let c = Goppa::random(f1024, 30, 2);
     info!("{}", c);
 
     let h = c.parity_check_matrix(f2);
@@ -79,7 +77,7 @@ fn goppa_f1024() {
 
     assert!(syndrome.is_zero());
 
-    let err = RowVec::random_with_weight(&mut rng, f2, 30, 2);
+    let err = RowVec::random_with_weight(f2, 30, 2);
     info!("error:{}", err);
 
     let rcv = &cdw + &err;
@@ -108,14 +106,13 @@ fn goppa_f256() {
     let n = f256.order();
     let m = f256.characteristic_exponent() as usize;
     let t = 22;
-    let mut rng = rand::thread_rng();
-    let msg = RowVec::random(&mut rng, f2, n - m * t);
+    let msg = RowVec::random(f2, n - m * t);
     info!("msg:{}", msg);
 
     let cdw = c.encode(&msg);
     info!("cdw:{}", cdw);
 
-    let err = RowVec::random_with_weight(&mut rng, f2, n, t);
+    let err = RowVec::random_with_weight(f2, n, t);
     info!("err:{}", err);
 
     let rcv = &cdw + err;
@@ -136,17 +133,16 @@ fn goppa_f128() {
     let k = n - m * t;
     let f2 = &Rc::new(F2::generate(()));
     let f128 = &Rc::new(F2m::generate(1 << m));
-    let mut rng = rand::thread_rng();
-    let goppa = Goppa::random(&mut rng, f128, n, t);
+    let goppa = Goppa::random(f128, n, t);
     info!("{}", goppa);
 
-    let msg = RowVec::random(&mut rng, f2, k);
+    let msg = RowVec::random(f2, k);
     info!("msg:{}", msg);
 
     let cdw = goppa.encode(&msg);
     info!("cdw:{}", cdw);
 
-    let err = RowVec::random_with_weight(&mut rng, f2, n, t);
+    let err = RowVec::random_with_weight(f2, n, t);
     info!("err:{}", err);
 
     let rcv = &cdw + err;
@@ -165,8 +161,7 @@ fn goppa_random() {
 
     let f2 = &Rc::new(F2::generate(()));
     let f2m = &Rc::new(F2m::generate(1 << m));
-    let mut rng = rand::thread_rng();
-    let goppa = Goppa::random(&mut rng, f2m, n, t);
+    let goppa = Goppa::random(f2m, n, t);
     info!("{}", goppa);
 
     let xyz = goppa.parity_check_xyz();
@@ -181,13 +176,13 @@ fn goppa_random() {
     let k = g.rows();
     info!("Code dimension k = {}", k);
 
-    let msg = RowVec::random(&mut rng, f2, k);
+    let msg = RowVec::random(f2, k);
     info!("message:{}", msg);
 
     let cdw = &msg * &g;
     info!("codeword:{}", cdw);
 
-    let err = RowVec::random_with_weight(&mut rng, f2, n, t);
+    let err = RowVec::random_with_weight(f2, n, t);
     info!("error:{}", err);
 
     let rcv = &cdw + &err;
@@ -220,8 +215,7 @@ fn goppa_repeat() {
 fn goppa_repeated(m: u32, n: usize, t: usize) {
     let f2 = &Rc::new(F2::generate(()));
     let f2m = &Rc::new(F2m::generate(1 << m));
-    let mut rng = rand::thread_rng();
-    let goppa = Goppa::random(&mut rng, f2m, n, t);
+    let goppa = Goppa::random(f2m, n, t);
     info!("{}", goppa);
 
     let xyz = goppa.parity_check_xyz();
@@ -236,13 +230,13 @@ fn goppa_repeated(m: u32, n: usize, t: usize) {
     let k = g.rows();
     info!("Code dimension k = {}", k);
 
-    let msg = RowVec::random(&mut rng, f2, k);
+    let msg = RowVec::random(f2, k);
     info!("message:{}", msg);
 
     let cdw = &msg * &g;
     info!("codeword:{}", cdw);
 
-    let err = RowVec::random_with_weight(&mut rng, f2, n, t);
+    let err = RowVec::random_with_weight(f2, n, t);
     info!("error:{}", err);
 
     let rcv = &cdw + &err;

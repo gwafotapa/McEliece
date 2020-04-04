@@ -1,4 +1,4 @@
-use rand::{rngs::ThreadRng, Rng};
+use rand::Rng;
 use std::{
     convert::TryInto,
     error::Error,
@@ -359,11 +359,12 @@ where
         weight
     }
 
-    pub fn random(rng: &mut ThreadRng, f: &Rc<F>, n: usize) -> Self {
-        RowVec(Mat::random(rng, f, 1, n))
+    pub fn random(f: &Rc<F>, n: usize) -> Self {
+        RowVec(Mat::random(f, 1, n))
     }
 
-    pub fn random_with_weight(rng: &mut ThreadRng, f: &Rc<F>, n: usize, w: usize) -> Self {
+    pub fn random_with_weight(f: &Rc<F>, n: usize, w: usize) -> Self {
+        let mut rng = rand::thread_rng();
         let mut vec = RowVec::zero(f, n);
         let mut cols = Vec::with_capacity(n);
         for i in 0..n {
@@ -371,9 +372,9 @@ where
         }
 
         for _i in 0..w {
-            let mut elt = f.random_element(rng);
+            let mut elt = f.random_element(&mut rng);
             while elt == f.zero() {
-                elt = f.random_element(rng);
+                elt = f.random_element(&mut rng);
             }
             let index = rng.gen_range(0, cols.len());
             vec[cols[index]] = elt;
@@ -401,9 +402,9 @@ where
 }
 
 impl<'a> RowVec<F2> {
-    pub fn random_f2(rng: &mut ThreadRng, n: usize) -> Self {
+    pub fn random_f2(n: usize) -> Self {
         let f2 = &Rc::new(F2::generate(()));
-        RowVec(Mat::random(rng, f2, 1, n))
+        RowVec(Mat::random(f2, 1, n))
     }
 
     pub fn write(&self, file_name: &str) -> Result<()> {

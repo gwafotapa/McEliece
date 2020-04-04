@@ -1,4 +1,4 @@
-use rand::{rngs::ThreadRng, Rng};
+use rand::Rng;
 use std::rc::Rc;
 
 use super::{Field, Mat, Perm};
@@ -135,8 +135,9 @@ where
     /// First generates a random matrix then applies to it the standard form algorithm.
     /// Keeps track of the applied transformations via an invertible matrix u.
     /// Returns u as our random invertible matrix.
-    pub fn invertible_random(rng: &mut ThreadRng, f: &Rc<F>, n: usize) -> Self {
-        let mut mat = Mat::random(rng, f, n, n);
+    pub fn invertible_random(f: &Rc<F>, n: usize) -> Self {
+        let mut rng = rand::thread_rng();
+        let mut mat = Mat::random(f, n, n);
         let mut u = Mat::identity(f, n);
 
         // Loop on columns
@@ -151,7 +152,7 @@ where
             if i == n {
                 i = rng.gen_range(j, n);
                 while mat[(i, j)] == f.zero() {
-                    mat[(i, j)] = f.random_element(rng);
+                    mat[(i, j)] = f.random_element(&mut rng);
                 }
             }
 

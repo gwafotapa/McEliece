@@ -60,8 +60,7 @@ pub fn keygen(n: usize, t: usize) -> (PublicKey, SecretKey) {
     };
     let f2 = &Rc::new(F2 {});
     let f2m = &Rc::new(F2m::generate(q));
-    let mut rng = rand::thread_rng();
-    let goppa = Goppa::random(&mut rng, f2m, n, t);
+    let goppa = Goppa::random(f2m, n, t);
     debug!("{}", goppa);
 
     let xyz = goppa.parity_check_xyz();
@@ -70,11 +69,11 @@ pub fn keygen(n: usize, t: usize) -> (PublicKey, SecretKey) {
     debug!("Information set of generator matrix G:\n{:?}\n", info_set);
 
     let k = g.rows();
-    let s = Mat::invertible_random(&mut rng, f2, k);
+    let s = Mat::invertible_random(f2, k);
     debug!("Code dimension k = {}", k);
     debug!("Singular matrix S:{}", s);
 
-    let p = Perm::random(&mut rng, n);
+    let p = Perm::random(n);
     debug!("Permutation P:\n{:?}\n", p);
 
     let sgp = &s * &g * &p;
@@ -100,11 +99,10 @@ impl PublicKey {
     }
 
     pub fn encrypt(&self, m: &RowVec<F2>) -> RowVec<F2> {
-        let mut rng = rand::thread_rng();
         let c = Goppa::<F2m>::g_encode(&self.sgp, m);
         debug!("Encoded plaintext:{}", c);
 
-        let z = RowVec::random_with_weight(&mut rng, m.field(), self.sgp.cols(), self.t);
+        let z = RowVec::random_with_weight(m.field(), self.sgp.cols(), self.t);
         debug!("Error vector:{}", z);
 
         c + z

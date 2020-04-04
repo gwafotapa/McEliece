@@ -1,6 +1,5 @@
 //! Polynomials on a field
 
-use rand::rngs::ThreadRng;
 use std::rc::Rc;
 
 use crate::finite_field::Field;
@@ -96,13 +95,14 @@ where
     }
 
     /// Returns a random monic polynomial of the chosen degree
-    pub fn random(rng: &mut ThreadRng, f: &Rc<F>, degree: usize) -> Self {
+    pub fn random(f: &Rc<F>, degree: usize) -> Self {
+        let mut rng = rand::thread_rng();
         let mut p = Self::zero(f, degree + 1);
         for i in 0..degree {
-            p[i] = f.random_element(rng);
+            p[i] = f.random_element(&mut rng);
         }
         while p[degree] == f.zero() {
-            p[degree] = f.random_element(rng);
+            p[degree] = f.random_element(&mut rng);
         }
         p
     }
