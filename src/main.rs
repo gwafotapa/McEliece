@@ -1,9 +1,6 @@
 use getopts::{Matches, Options};
 use main_error::MainError;
-use std::{
-    env,
-    io::{self, Write},
-};
+use std::env;
 
 use mceliece::{
     crypto::{self, PublicKey, SecretKey},
@@ -12,17 +9,17 @@ use mceliece::{
 
 // TODO: remove commented code
 
-// const GOPPA_N_MIN: usize = 3;
-// const GOPPA_N_MAX: usize = 1024;
-// const GOPPA_N: usize = 1024; // Code length
-// const GOPPA_T: usize = 50; // Code correction capacity
-// const GOPPA_K: usize = 524; // Code dimension
-
 const GOPPA_N_MIN: usize = 3;
-const GOPPA_N_MAX: usize = 2048;
-const GOPPA_N: usize = 2048; // Code length
-const GOPPA_T: usize = 70; // Code correction capacity
-                           // const GOPPA_K: usize = 1278; // Code dimension
+const GOPPA_N_MAX: usize = 1024;
+const GOPPA_N: usize = 1024; // Code length
+const GOPPA_T: usize = 50; // Code correction capacity
+                           // const GOPPA_K: usize = 524; // Code dimension
+
+// const GOPPA_N_MIN: usize = 3;
+// const GOPPA_N_MAX: usize = 2048;
+// const GOPPA_N: usize = 2048; // Code length
+// const GOPPA_T: usize = 70; // Code correction capacity
+//                            // const GOPPA_K: usize = 1278; // Code dimension
 
 // const GOPPA_N_MIN: usize = 3;
 // const GOPPA_N_MAX: usize = 4096;
@@ -35,136 +32,6 @@ const CIPHERTEXT: &str = "ciphertext.mce";
 const DECRYPTED: &str = "decrypted.mce";
 const PUBLIC_KEY: &str = "public_key.mce";
 const SECRET_KEY: &str = "secret_key.mce";
-
-fn keygen(
-    pk_file: &str,
-    sk_file: &str,
-    n: usize,
-    t: usize,
-    verbose: bool,
-) -> Result<(), MainError> {
-    if verbose {
-        print!("Generating keys (pk, sk).....");
-        io::stdout().flush().unwrap();
-    }
-    let (pk, sk) = crypto::keygen(n, t);
-
-    if verbose {
-        print!("ok\nWriting pk to {}.....", pk_file);
-        io::stdout().flush().unwrap();
-    }
-    pk.write(pk_file)?;
-
-    if verbose {
-        print!("ok\nWriting sk to {}.....", sk_file);
-        io::stdout().flush().unwrap();
-    }
-    sk.write(sk_file)?;
-
-    if verbose {
-        print!("ok\n");
-    }
-    Ok(())
-}
-
-fn encrypt(
-    pk_file: &str,
-    ptxt_file: &str,
-    ctxt_file: &str,
-    verbose: bool,
-) -> Result<(), MainError> {
-    if verbose {
-        print!("Reading public key from {}.....", pk_file);
-        io::stdout().flush().unwrap();
-    }
-    let pk = PublicKey::read_public_key(pk_file)?;
-
-    if verbose {
-        print!("ok\nReading plaintext from {}.....", ptxt_file);
-        io::stdout().flush().unwrap();
-    }
-    let m = RowVec::read_vector(ptxt_file)?;
-    if pk.sgp().rows() != m.cols() {
-        return Err("Plaintext length does not match code dimension from public key".into());
-    }
-
-    if verbose {
-        print!("ok\nEncrypting plaintext.....");
-        io::stdout().flush().unwrap();
-    }
-    let c = pk.encrypt(&m);
-
-    if verbose {
-        print!("ok\nWriting ciphertext to {}", ctxt_file);
-        io::stdout().flush().unwrap();
-    }
-    c.write(ctxt_file)?;
-
-    if verbose {
-        print!("ok\n");
-    }
-    Ok(())
-}
-
-fn decrypt(sk_file: &str, ctxt_file: &str, dec_file: &str, verbose: bool) -> Result<(), MainError> {
-    if verbose {
-        print!("ok\nReading secret key from {}.....", sk_file);
-        io::stdout().flush().unwrap();
-    }
-    let sk = SecretKey::read_secret_key(sk_file)?;
-
-    if verbose {
-        print!("ok\nReading ciphertext from {}.....", ctxt_file);
-        io::stdout().flush().unwrap();
-    }
-    let c = RowVec::read_vector(ctxt_file)?;
-    if sk.p().len() != c.cols() {
-        return Err("Ciphertext length does not match code length from secret key".into());
-    }
-
-    if verbose {
-        print!("ok\nDecrypting ciphertext.....");
-        io::stdout().flush().unwrap();
-    }
-    let m = sk.decrypt(&c);
-
-    if verbose {
-        print!("ok\nWriting decrypted text to {}.....", dec_file);
-        io::stdout().flush().unwrap();
-    }
-    m.write(dec_file)?;
-
-    if verbose {
-        print!("ok\n");
-    }
-    Ok(())
-}
-
-fn plaintext(pk_file: &str, ptxt_file: &str, verbose: bool) -> Result<(), MainError> {
-    if verbose {
-        print!("Reading code dimension k from {}.....", pk_file);
-        io::stdout().flush().unwrap();
-    }
-    let k = PublicKey::read_code_dimension(pk_file)?;
-
-    if verbose {
-        print!("ok\nGenerating plaintext.....");
-        io::stdout().flush().unwrap();
-    }
-    let mut rng = rand::thread_rng();
-    let p = RowVec::random_f2(&mut rng, k);
-
-    if verbose {
-        print!("ok\nWriting plaintext to {}.....", ptxt_file);
-        io::stdout().flush().unwrap();
-    }
-    p.write(ptxt_file)?;
-
-    if verbose {
-        print!("ok\n");
-    }
-    Ok(())
-}
 
 fn get_program(path: &str) -> &str {
     let i = match path.rfind('/') {
@@ -222,7 +89,7 @@ fn main() -> Result<(), MainError> {
     opts.optflag("h", "help", "Display this help");
     opts.optopt("n", "length", "Set Goppa code length", "N");
     opts.optopt("t", "correction", "Set Goppa code correction capacity", "T");
-    opts.optflag("v", "verbose", "Explain what is being done");
+    opts.optflag("v", "verbose", "Detail created files");
     let matches = opts.parse(&args[1..]).map_err(|e| e.to_string())?;
     if matches.opt_present("h") {
         print_help(program, opts);
@@ -230,9 +97,6 @@ fn main() -> Result<(), MainError> {
     }
     let verbose = matches.opt_present("v");
     let (n, t) = get_code_params(&matches)?;
-    if verbose {
-        print!("Code length n: {}\nCode correction capacity t: {}\n", n, t);
-    }
     let command = match matches.free.get(0) {
         Some(cmd) => cmd.as_str(),
         None => {
@@ -249,24 +113,62 @@ fn main() -> Result<(), MainError> {
         "keygen" => {
             let pk_file = files.get(0).unwrap_or(&PUBLIC_KEY);
             let sk_file = files.get(1).unwrap_or(&SECRET_KEY);
-            keygen(pk_file, sk_file, n, t, verbose)
+            let (pk, sk) = crypto::keygen(n, t);
+            pk.write(pk_file)?;
+            sk.write(sk_file)?;
+            if verbose {
+                println!(
+                    "Wrote public key to '{}'.\nWrote secret key to '{}'.",
+                    pk_file, sk_file
+                );
+            }
+            Ok(())
         }
         "encrypt" => {
             let pk_file = files.get(0).unwrap_or(&PUBLIC_KEY);
             let ptxt_file = files.get(1).unwrap_or(&PLAINTEXT);
             let ctxt_file = files.get(2).unwrap_or(&CIPHERTEXT);
-            encrypt(pk_file, ptxt_file, ctxt_file, verbose)
+            let pk = PublicKey::read_public_key(pk_file)?;
+            let m = RowVec::read_vector(ptxt_file)?;
+            if pk.sgp().rows() != m.cols() {
+                return Err(
+                    "Plaintext length does not match code dimension from public key".into(),
+                );
+            }
+            let c = pk.encrypt(&m);
+            c.write(ctxt_file)?;
+            if verbose {
+                println!("Wrote ciphertext to '{}'.", ctxt_file);
+            }
+            Ok(())
         }
         "decrypt" => {
             let sk_file = files.get(0).unwrap_or(&SECRET_KEY);
             let ctxt_file = files.get(1).unwrap_or(&CIPHERTEXT);
             let dec_file = files.get(2).unwrap_or(&DECRYPTED);
-            decrypt(sk_file, ctxt_file, dec_file, verbose)
+            let sk = SecretKey::read_secret_key(sk_file)?;
+            let c = RowVec::read_vector(ctxt_file)?;
+            if sk.p().len() != c.cols() {
+                return Err("Ciphertext length does not match code length from secret key".into());
+            }
+            let m = sk.decrypt(&c);
+            m.write(dec_file)?;
+            if verbose {
+                println!("Wrote decrypted text to '{}'.", dec_file);
+            }
+            Ok(())
         }
         "plaintext" => {
             let pk_file = files.get(0).unwrap_or(&PUBLIC_KEY);
             let ptxt_file = files.get(1).unwrap_or(&PLAINTEXT);
-            plaintext(pk_file, ptxt_file, verbose)
+            let k = PublicKey::read_code_dimension(pk_file)?;
+            let mut rng = rand::thread_rng();
+            let p = RowVec::random_f2(&mut rng, k);
+            p.write(ptxt_file)?;
+            if verbose {
+                println!("Wrote plaintext to '{}'.", ptxt_file);
+            }
+            Ok(())
         }
         _ => Err(format!(
             "Unexpected command\n\
