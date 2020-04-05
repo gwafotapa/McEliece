@@ -22,7 +22,7 @@ type Result<T> = result::Result<T, Box<dyn Error>>;
 #[derive(Eq, PartialEq)]
 pub struct Goppa<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     poly: Poly<F>,
     set: Vec<F::FieldElement>,
@@ -84,7 +84,7 @@ where
 
 impl<F> Goppa<F>
 where
-    F: Eq + FieldTrait + F2FiniteExtension,
+    F: FieldTrait + F2FiniteExtension,
 {
     /// Creates a binary irreducible Goppa code
     ///

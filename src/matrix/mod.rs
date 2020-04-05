@@ -11,7 +11,7 @@ pub use rowvec::RowVec;
 #[derive(Eq, PartialEq)]
 pub struct Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     field: Rc<F>,
     rows: usize,
@@ -21,7 +21,7 @@ where
 
 impl<F> Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     /// Creates a new matrix
     ///

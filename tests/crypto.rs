@@ -7,8 +7,6 @@ pub mod common;
 
 const REPEAT: u32 = 10;
 
-// TODO: Replace RowVec::f2_random
-
 #[test]
 fn crypto_keygen() {
     let (q, n, t) = common::goppa_setup();
@@ -68,7 +66,7 @@ fn crypto_decrypt_codeword() {
 
     let (pk, sk) = keygen(n, t);
     let k = pk.sgp().rows();
-    let msg = RowVec::f2_random(k);
+    let msg = RowVec::random(Field::Parameters(()), k);
     let cpt = &msg * pk.sgp();
     let dmsg = sk.decrypt(&cpt);
     assert_eq!(dmsg, msg);
@@ -96,7 +94,7 @@ fn crypto_encrypt_decrypt_random_message() {
     info!("F2m=F{}, n={}, t={}", q, n, t);
     let (pk, sk) = keygen(n, t);
     let k = pk.sgp().rows();
-    let msg = RowVec::f2_random(k);
+    let msg = RowVec::random(Field::Parameters(()), k);
     let cpt = pk.encrypt(&msg);
     let dmsg = sk.decrypt(&cpt);
     assert_eq!(dmsg, msg);
@@ -120,7 +118,7 @@ fn crypto_repeat() {
 fn crypto_repeated(n: usize, t: usize) {
     let (pk, sk) = keygen(n, t);
     let k = pk.sgp().rows();
-    let msg = RowVec::f2_random(k);
+    let msg = RowVec::random(Field::Parameters(()), k);
     let cpt = pk.encrypt(&msg);
     let dmsg = sk.decrypt(&cpt);
     assert_eq!(dmsg, msg);

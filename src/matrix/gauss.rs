@@ -6,7 +6,7 @@ use crate::finite_field::{Field, FieldTrait};
 
 impl<F> Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     pub fn swap_rows(&mut self, row1: usize, row2: usize) {
         if row1 == row2 {

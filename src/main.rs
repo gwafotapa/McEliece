@@ -4,6 +4,7 @@ use std::env;
 
 use mceliece::{
     crypto::{self, PublicKey, SecretKey},
+    finite_field::Field,
     matrix::RowVec,
 };
 
@@ -162,7 +163,7 @@ fn main() -> Result<(), MainError> {
             let pk_file = files.get(0).unwrap_or(&PUBLIC_KEY);
             let ptxt_file = files.get(1).unwrap_or(&PLAINTEXT);
             let k = PublicKey::read_code_dimension(pk_file)?;
-            let p = RowVec::f2_random(k);
+            let p = RowVec::random(Field::Parameters(()), k);
             p.write(ptxt_file)?;
             if verbose {
                 println!("Wrote plaintext to '{}'.", ptxt_file);

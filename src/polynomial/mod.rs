@@ -8,7 +8,7 @@ use crate::finite_field::{Field, FieldTrait};
 #[derive(Eq)]
 pub struct Poly<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     field: Rc<F>,
     data: Vec<F::FieldElement>,
@@ -16,7 +16,7 @@ where
 
 impl<F> Poly<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     /// Creates a new polynomial
     ///

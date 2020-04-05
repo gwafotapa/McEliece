@@ -9,7 +9,7 @@ type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 impl<F> Poly<F>
 where
-    F: CharacteristicTwo + Eq + FieldTrait,
+    F: CharacteristicTwo + FieldTrait,
 {
     pub fn random_monic_irreducible(field: Field<F>, degree: usize) -> Self
     where

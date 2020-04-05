@@ -9,7 +9,7 @@ use crate::finite_field::{F2FiniteExtension, Field}; // TODO: make some order he
 
 impl<F> Clone for Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     fn clone(&self) -> Self {
         Mat {
@@ -23,7 +23,7 @@ where
 
 impl<F> Add for Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     type Output = Self;
 
@@ -34,7 +34,7 @@ where
 
 impl<F> Add<&Mat<F>> for Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     type Output = Self;
 
@@ -45,7 +45,7 @@ where
 
 impl<F> Add<Mat<F>> for &Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     type Output = Mat<F>;
 
@@ -56,7 +56,7 @@ where
 
 impl<F> Add for &Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     type Output = Mat<F>;
 
@@ -78,7 +78,7 @@ where
 
 impl<F> AddAssign<Mat<F>> for Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     fn add_assign(&mut self, other: Self) {
         *self += &other;
@@ -87,7 +87,7 @@ where
 
 impl<F> AddAssign<&Mat<F>> for Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     fn add_assign(&mut self, other: &Self) {
         if self.field != other.field {
@@ -104,7 +104,7 @@ where
 
 impl<F> Sub for Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     type Output = Self;
 
@@ -115,7 +115,7 @@ where
 
 impl<F> Sub<&Mat<F>> for Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     type Output = Self;
 
@@ -126,7 +126,7 @@ where
 
 impl<F> Sub<Mat<F>> for &Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     type Output = Mat<F>;
 
@@ -137,7 +137,7 @@ where
 
 impl<F> Sub for &Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     type Output = Mat<F>;
 
@@ -159,7 +159,7 @@ where
 
 impl<F> SubAssign<Mat<F>> for Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     fn sub_assign(&mut self, other: Self) {
         *self -= &other;
@@ -168,7 +168,7 @@ where
 
 impl<F> SubAssign<&Mat<F>> for Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     fn sub_assign(&mut self, other: &Self) {
         if self.field != other.field {
@@ -185,7 +185,7 @@ where
 
 impl<F> Mul for Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     type Output = Self;
 
@@ -196,7 +196,7 @@ where
 
 impl<F> Mul<&Mat<F>> for Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     type Output = Self;
 
@@ -207,7 +207,7 @@ where
 
 impl<F> Mul<Mat<F>> for &Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     type Output = Mat<F>;
 
@@ -218,7 +218,7 @@ where
 
 impl<F> Mul for &Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     type Output = Mat<F>;
 
@@ -244,7 +244,7 @@ where
 
 impl<F> MulAssign<Mat<F>> for Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     fn mul_assign(&mut self, other: Self) {
         *self *= &other;
@@ -253,7 +253,7 @@ where
 
 impl<F> MulAssign<&Mat<F>> for Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     fn mul_assign(&mut self, other: &Self) {
         if self.field != other.field {
@@ -277,7 +277,7 @@ where
 
 impl<F> Mul<Perm> for Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     type Output = Self;
 
@@ -288,7 +288,7 @@ where
 
 impl<F> Mul<&Perm> for Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     type Output = Self;
 
@@ -299,7 +299,7 @@ where
 
 impl<F> Mul<Perm> for &Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     type Output = Mat<F>;
 
@@ -310,7 +310,7 @@ where
 
 impl<F> Mul<&Perm> for &Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     type Output = Mat<F>;
 
@@ -324,7 +324,7 @@ where
 
 impl<F> Neg for Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     type Output = Self;
 
@@ -335,7 +335,7 @@ where
 
 impl<F> Neg for &Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     type Output = Mat<F>;
 
@@ -352,7 +352,7 @@ where
 
 impl<F> Index<(usize, usize)> for Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     type Output = F::FieldElement;
 
@@ -363,7 +363,7 @@ where
 
 impl<F> IndexMut<(usize, usize)> for Mat<F>
 where
-    F: Eq + FieldTrait,
+    F: FieldTrait,
 {
     fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {
         &mut self.data[index.0 * self.cols + index.1]

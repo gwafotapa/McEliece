@@ -7,7 +7,8 @@ pub use f2::F2;
 pub use f2m::F2m;
 pub use f7::F7;
 
-pub trait FieldTrait {
+/// FieldTrait requires implementing Eq as field isomorphism
+pub trait FieldTrait: Eq {
     /// Field Element
     type FieldElement: Copy + Eq;
 
