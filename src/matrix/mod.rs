@@ -2,7 +2,7 @@
 
 use std::rc::Rc;
 
-use crate::finite_field::{Field, FieldTrait, FiniteField, F2};
+use crate::finite_field::{Field, FieldTrait};
 
 pub use perm::Perm;
 pub use rowvec::RowVec;
@@ -30,12 +30,7 @@ where
     /// # Panics
     ///
     /// Panics if the matrix is empty or if there are not exactly rows * cols coefficients.
-    pub fn new(
-        field: Field<F>,
-        rows: usize,
-        cols: usize,
-        data: Vec<F::FieldElement>,
-    ) -> Self {
+    pub fn new(field: Field<F>, rows: usize, cols: usize, data: Vec<F::FieldElement>) -> Self {
         if rows == 0 || cols == 0 || data.is_empty() {
             panic!("Empty matrix");
         } else if data.len() != rows * cols {

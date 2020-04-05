@@ -30,7 +30,7 @@ where
 
 impl<F> Debug for Goppa<F>
 where
-    F: Eq + F2FiniteExtension,
+    F: F2FiniteExtension,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let fq = self.poly.field();
@@ -57,7 +57,7 @@ where
 
 impl<F> Display for Goppa<F>
 where
-    F: Eq + F2FiniteExtension,
+    F: F2FiniteExtension,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let fq = self.poly.field();
@@ -84,7 +84,7 @@ where
 
 impl<F> Goppa<F>
 where
-    F: FieldTrait + F2FiniteExtension,
+    F: F2FiniteExtension,
 {
     /// Creates a binary irreducible Goppa code
     ///
@@ -129,23 +129,21 @@ where
     /// - n &le; t * log<sub>2</sub>|F| (Goppa code dimension would be 0)
     /// - n = log<sub>2</sub>|F| and t = 1 (a Goppa code set cannot contain one of its roots)
     pub fn random(field: Field<F>, n: usize, t: usize) -> Self {
-        let f = match field {
-            Field::Some(f) => Rc::clone(f),
-            Field::Parameters(p) => Rc::new(F::generate(p)),
-        };
-
+        let poly = Poly::random_monic_irreducible(field, t);
+        let f = poly.field();
         let q = f.order();
+        let m = f.characteristic_exponent() as usize;
+
         if n > q {
             panic!("n must be at most q");
         }
-        let m = f.characteristic_exponent() as usize;
-        if n <= m * t {
-            panic!("m * t must be at most n");
-        }
-        let poly = Poly::random_monic_irreducible(Field::Some(&f), t);
         if poly.degree() == 1 && n == q {
             panic!("n must be strictly less than q when Goppa polynomial is of degree 1");
         }
+        if n <= m * t {
+            panic!("m * t must be at most n");
+        }
+
         let mut pool = Vec::with_capacity(q);
         for i in 0..q as u32 {
             pool.push(i);
@@ -230,19 +228,19 @@ where
         x * y * z
     }
 
-    pub fn parity_check_from_xyz<'b>(xyz: &Mat<F>, f2_option: Field<F2>) -> Mat<F2> {
-        let mut h = xyz.binary(f2_option);
+    pub fn parity_check_from_xyz(xyz: &Mat<F>, f2: Field<F2>) -> Mat<F2> {
+        let mut h = xyz.binary(f2);
         h.remove_redundant_rows();
         h
     }
 
-    pub fn parity_check_matrix<'b>(&self, f2_option: Field<F2>) -> Mat<F2> {
+    pub fn parity_check_matrix(&self, f2: Field<F2>) -> Mat<F2> {
         let xyz = self.parity_check_xyz();
-        Self::parity_check_from_xyz(&xyz, f2_option)
+        Self::parity_check_from_xyz(&xyz, f2)
     }
 
-    pub fn generator_from_xyz<'b>(xyz: &Mat<F>, f2_option: Field<F2>) -> (Mat<F2>, Vec<usize>) {
-        let xyz2 = xyz.binary(f2_option);
+    pub fn generator_from_xyz(xyz: &Mat<F>, f2: Field<F2>) -> (Mat<F2>, Vec<usize>) {
+        let xyz2 = xyz.binary(f2);
         let (hs, p) = xyz2.standard_parity_check_equivalent();
         let gs = Self::generator_from_parity_check_standard(&hs);
         let k = hs.cols() - hs.rows();
@@ -250,7 +248,7 @@ where
         (gs * p.inverse(), information_set)
     }
 
-    pub fn generator_from_parity_check_standard<'b>(h: &Mat<F2>) -> Mat<F2> {
+    pub fn generator_from_parity_check_standard(h: &Mat<F2>) -> Mat<F2> {
         let f2 = h.field();
         let n = h.cols();
         let k = n - h.rows();
@@ -264,7 +262,7 @@ where
         g
     }
 
-    pub fn generator_from_parity_check<'b>(h: &Mat<F2>) -> (Mat<F2>, Vec<usize>) {
+    pub fn generator_from_parity_check(h: &Mat<F2>) -> (Mat<F2>, Vec<usize>) {
         let n = h.cols();
         let k = n - h.rows();
         let (hs, p) = h.standard_parity_check_equivalent();
@@ -273,23 +271,23 @@ where
         (gs * p.inverse(), information_set)
     }
 
-    pub fn generator_matrix<'b>(&self, f2_option: Field<F2>) -> Mat<F2> {
+    pub fn generator_matrix(&self, f2: Field<F2>) -> Mat<F2> {
         let xyz = self.parity_check_xyz();
-        Self::generator_from_xyz(&xyz, f2_option).0
+        Self::generator_from_xyz(&xyz, f2).0
     }
 
-    pub fn syndrome<'b>(&self, r: &RowVec<F2>) -> Mat<F> {
+    pub fn syndrome(&self, r: &RowVec<F2>) -> Mat<F> {
         let xyz = self.parity_check_xyz();
         Self::syndrome_from_xyz(&xyz, r)
     }
 
-    pub fn syndrome_from_xyz<'b>(xyz: &Mat<F>, r: &RowVec<F2>) -> Mat<F> {
-        let f2 = r.field();
+    pub fn syndrome_from_xyz(xyz: &Mat<F>, rcv: &RowVec<F2>) -> Mat<F> {
+        let f2 = rcv.field();
         let f = xyz.field();
         let mut s = Mat::zero(Field::Some(f), xyz.rows(), 1);
         for i in 0..xyz.rows() {
-            for j in 0..r.cols() {
-                if r[j] == f2.one() {
+            for j in 0..rcv.cols() {
+                if rcv[j] == f2.one() {
                     s[(i, 0)] = f.add(s[(i, 0)], xyz[(i, j)]);
                 }
             }
@@ -297,22 +295,22 @@ where
         s
     }
 
-    pub fn encode<'b>(&self, msg: &RowVec<F2>) -> RowVec<F2> {
+    pub fn encode(&self, msg: &RowVec<F2>) -> RowVec<F2> {
         let f2 = msg.field();
         let g = self.generator_matrix(Field::Some(f2));
         Self::g_encode(&g, msg)
     }
 
-    pub fn g_encode<'b>(g: &Mat<F2>, msg: &RowVec<F2>) -> RowVec<F2> {
+    pub fn g_encode(g: &Mat<F2>, msg: &RowVec<F2>) -> RowVec<F2> {
         msg * g
     }
 
-    pub fn decode<'b>(&self, rcv: &RowVec<F2>) -> RowVec<F2> {
+    pub fn decode(&self, rcv: &RowVec<F2>) -> RowVec<F2> {
         let xyz = self.parity_check_xyz();
         self.xyz_decode(&xyz, rcv)
     }
 
-    pub fn xyz_decode<'b>(&self, xyz: &Mat<F>, rcv: &RowVec<F2>) -> RowVec<F2> {
+    pub fn xyz_decode(&self, xyz: &Mat<F>, rcv: &RowVec<F2>) -> RowVec<F2> {
         let f = self.field();
         let f2 = rcv.field();
         let syndrome = Self::syndrome_from_xyz(xyz, rcv);

@@ -1,8 +1,8 @@
-use std::{convert::TryInto, error::Error, rc::Rc};
+use std::{convert::TryInto, error::Error};
 
-use super::{FieldTrait, Poly};
+use super::Poly;
 use crate::finite_field::{
-    f2m, CharacteristicTwo, F2FiniteExtension, F2m, Field, FiniteField,
+    f2m, CharacteristicTwo, F2FiniteExtension, F2m, Field, FieldTrait, FiniteField,
 };
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
@@ -186,12 +186,13 @@ impl Poly<F2m> {
 
     pub fn from_bytes(vec: &[u8]) -> Result<(usize, Self)> {
         let order = u32::from_be_bytes(vec[0..4].try_into()?) as usize;
-        let f = &Rc::new(F2m::generate(order));
         let t = u32::from_be_bytes(vec[4..8].try_into()?) as usize;
-        let mut poly = Self::zero(Field::Some(f), t + 1);
+        let mut poly = Self::zero(Field::Parameters(order), t + 1);
         for i in 0..t + 1 {
             let j = 8 + 4 * i;
-            poly[i] = f.u32_to_elt(u32::from_be_bytes(vec[j..j + 4].try_into()?));
+            poly[i] = poly
+                .field()
+                .u32_to_elt(u32::from_be_bytes(vec[j..j + 4].try_into()?));
         }
         let read = 4 + 4 + 4 * (t + 1);
         Ok((read, poly))

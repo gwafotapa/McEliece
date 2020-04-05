@@ -302,7 +302,7 @@ where
 
 impl<F> Debug for RowVec<F>
 where
-    F: Eq + F2FiniteExtension,
+    F: F2FiniteExtension,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", self.0)
@@ -311,7 +311,7 @@ where
 
 impl<F> Display for RowVec<F>
 where
-    F: Eq + FiniteField,
+    F: FiniteField,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
@@ -323,9 +323,6 @@ where
     F: FieldTrait,
 {
     pub fn new(field: Field<F>, data: Vec<F::FieldElement>) -> Self {
-        if data.len() == 0 {
-            panic!("Empty row vector");
-        }
         RowVec(Mat::new(field, 1, data.len(), data))
     }
 
@@ -365,20 +362,19 @@ where
 
     pub fn random_with_weight(field: Field<F>, n: usize, w: usize) -> Self {
         let mut rng = rand::thread_rng();
-        let f = match field {
-            Field::Some(f) => Rc::clone(f),
-            Field::Parameters(p) => Rc::new(F::generate(p)),
-        };
-        let mut vec = RowVec::zero(Field::Some(&f), n);
+        let mut vec = RowVec::zero(field, n);
         let mut cols = Vec::with_capacity(n);
         for i in 0..n {
             cols.push(i);
         }
 
         for _i in 0..w {
-            let mut elt = f.random_element(&mut rng);
-            while elt == f.zero() {
-                elt = f.random_element(&mut rng);
+            let mut elt;
+            loop {
+                elt = vec.field().random_element(&mut rng);
+                if elt != vec.field().zero() {
+                    break;
+                }
             }
             let index = rng.gen_range(0, cols.len());
             vec[cols[index]] = elt;
@@ -435,8 +431,7 @@ impl RowVec<F2> {
         let mut vec = Vec::new();
         f.read_to_end(&mut vec)?;
         let cols = u32::from_be_bytes(vec[0..4].try_into()?) as usize;
-        let f2 = &Rc::new(F2 {});
-        let mut rowvec = RowVec::zero(Field::Some(f2), cols);
+        let mut rowvec = RowVec::zero(Field::Parameters(()), cols);
         let mut k = 4;
         let mut shift = 7;
         for i in 0..cols {

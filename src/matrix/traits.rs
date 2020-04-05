@@ -4,8 +4,8 @@ use std::{
     rc::Rc,
 };
 
-use super::{FieldTrait, FiniteField, Mat, Perm};
-use crate::finite_field::{F2FiniteExtension, Field}; // TODO: make some order here and in the crate
+use super::{Mat, Perm};
+use crate::finite_field::{F2FiniteExtension, Field, FieldTrait, FiniteField};
 
 impl<F> Clone for Mat<F>
 where
@@ -340,11 +340,10 @@ where
     type Output = Mat<F>;
 
     fn neg(self) -> Self::Output {
-        let f = self.field();
-        let mut opp = Mat::zero(Field::Some(f), self.rows, self.cols);
+        let mut opp = Mat::zero(Field::Some(self.field()), self.rows, self.cols);
 
         for i in 0..self.rows * self.cols {
-            opp.data[i] = f.neg(self.data[i]);
+            opp.data[i] = opp.field.neg(self.data[i]);
         }
         opp
     }
@@ -372,7 +371,7 @@ where
 
 impl<F> Debug for Mat<F>
 where
-    F: Eq + F2FiniteExtension,
+    F: F2FiniteExtension,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let k = self.field();
@@ -396,7 +395,7 @@ where
 
 impl<F> Display for Mat<F>
 where
-    F: Eq + FiniteField,
+    F: FiniteField,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         let k = self.field();

@@ -61,8 +61,7 @@ fn goppa_f8() {
 fn goppa_f1024() {
     common::log_setup();
     let f2 = &Rc::new(F2::generate(()));
-    let f1024 = &Rc::new(F2m::generate(1024));
-    let c = Goppa::random(Field::Some(f1024), 30, 2);
+    let c = Goppa::<F2m>::random(Field::Parameters(1024), 30, 2);
     info!("{}", c);
 
     let h = c.parity_check_matrix(Field::Some(f2));
@@ -92,21 +91,16 @@ fn goppa_f1024() {
 #[test]
 fn goppa_f256() {
     common::log_setup();
+    let (n, k, t) = (256, 80, 22);
     let f2 = &Rc::new(F2::generate(()));
-    let f256 = &Rc::new(F2m::generate(256));
+    let f256 = &Rc::new(F2m::generate(n));
     let mut g = Poly::support(Field::Some(f256), &[22, 17, 15, 12, 5]);
     g[0] = f256.exp(78);
-    let mut f256_elts = Vec::with_capacity(256);
-    for i in 0..256 {
-        f256_elts.push(i);
-    }
-    let c = Goppa::new(g, f256_elts);
+    let l = f256.to_vec();
+    let c = Goppa::new(g, l);
     info!("{}", c);
 
-    let n = f256.order();
-    let m = f256.characteristic_exponent() as usize;
-    let t = 22;
-    let msg = RowVec::random(Field::Some(f2), n - m * t);
+    let msg = RowVec::random(Field::Some(f2), k);
     info!("msg:{}", msg);
 
     let cdw = c.encode(&msg);
@@ -127,14 +121,9 @@ fn goppa_f256() {
 #[test]
 fn goppa_f128() {
     common::log_setup();
-    let m = 7;
-    let q = 1 << m;
-    let n = q;
-    let t = 10;
-    let k = n - m * t;
+    let (n, k, t) = (128, 58, 10);
     let f2 = &Rc::new(F2::generate(()));
-    let f128 = &Rc::new(F2m::generate(q));
-    let goppa = Goppa::random(Field::Some(f128), n, t);
+    let goppa = Goppa::<F2m>::random(Field::Parameters(n), n, t);
     info!("{}", goppa);
 
     let msg = RowVec::random(Field::Some(f2), k);
@@ -212,8 +201,7 @@ fn goppa_repeat() {
 
 fn goppa_repeated(q: usize, n: usize, t: usize) {
     let f2 = &Rc::new(F2::generate(()));
-    let f2m = &Rc::new(F2m::generate(q));
-    let goppa = Goppa::random(Field::Some(f2m), n, t);
+    let goppa = Goppa::<F2m>::random(Field::Parameters(q), n, t);
     info!("{}", goppa);
 
     let xyz = goppa.parity_check_xyz();

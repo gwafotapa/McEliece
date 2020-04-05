@@ -1,7 +1,7 @@
 use std::{convert::TryInto, error::Error};
 
-use super::{Mat, F2};
-use crate::finite_field::{F2FiniteExtension, Field};
+use super::Mat;
+use crate::finite_field::{F2FiniteExtension, Field, F2};
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
@@ -39,7 +39,6 @@ impl Mat<F2> {
     ///
     /// [`to_bytes()`]: #method.to_bytes
     pub fn from_bytes(vec: &[u8]) -> Result<(usize, Self)> {
-        // let f2 = &Rc::new(F2 {});
         let rows = u32::from_be_bytes(vec[0..4].try_into()?) as usize;
         let cols = u32::from_be_bytes(vec[4..8].try_into()?) as usize;
         let mut mat = Mat::zero(Field::Parameters(()), rows, cols);
@@ -65,7 +64,7 @@ impl Mat<F2> {
 
 impl<F> Mat<F>
 where
-    F: Eq + F2FiniteExtension,
+    F: F2FiniteExtension,
 {
     /// Takes a t * n matrix on F<sub>2<sup>m</sup></sub>
     /// and outputs a mt * n matrix on F<sub>2</sub>

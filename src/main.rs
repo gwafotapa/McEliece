@@ -9,12 +9,14 @@ use mceliece::{
 };
 
 // TODO: remove commented code
+// TODO: check the use of generic F or F2m across the crate
+// TODO: Reorganise crate (use io files)
 
-const GOPPA_N_MIN: usize = 3;
-const GOPPA_N_MAX: usize = 1024;
-const GOPPA_N: usize = 1024; // Code length
-const GOPPA_T: usize = 50; // Code correction capacity
-                           // const GOPPA_K: usize = 524; // Code dimension
+// const GOPPA_N_MIN: usize = 3;
+// const GOPPA_N_MAX: usize = 1024;
+// const GOPPA_N: usize = 1024; // Code length
+// const GOPPA_T: usize = 50; // Code correction capacity
+//                            // const GOPPA_K: usize = 524; // Code dimension
 
 // const GOPPA_N_MIN: usize = 3;
 // const GOPPA_N_MAX: usize = 2048;
@@ -22,11 +24,11 @@ const GOPPA_T: usize = 50; // Code correction capacity
 // const GOPPA_T: usize = 70; // Code correction capacity
 //                            // const GOPPA_K: usize = 1278; // Code dimension
 
-// const GOPPA_N_MIN: usize = 3;
-// const GOPPA_N_MAX: usize = 4096;
-// const GOPPA_N: usize = 4096; // Code length
-// const GOPPA_T: usize = 170; // Code correction capacity
-//                             // const GOPPA_K: usize = 2056; // Code dimension
+const GOPPA_N_MIN: usize = 3;
+const GOPPA_N_MAX: usize = 4096;
+const GOPPA_N: usize = 4096; // Code length
+const GOPPA_T: usize = 170; // Code correction capacity
+                            // const GOPPA_K: usize = 2056; // Code dimension
 
 const PLAINTEXT: &str = "plaintext.mce";
 const CIPHERTEXT: &str = "ciphertext.mce";
@@ -130,13 +132,13 @@ fn main() -> Result<(), MainError> {
             let ptxt_file = files.get(1).unwrap_or(&PLAINTEXT);
             let ctxt_file = files.get(2).unwrap_or(&CIPHERTEXT);
             let pk = PublicKey::read_public_key(pk_file)?;
-            let p = RowVec::read_vector(ptxt_file)?;
-            if pk.sgp().rows() != p.cols() {
+            let m = RowVec::read_vector(ptxt_file)?;
+            if pk.sgp().rows() != m.cols() {
                 return Err(
                     "Plaintext length does not match code dimension from public key".into(),
                 );
             }
-            let c = pk.encrypt(&p);
+            let c = pk.encrypt(&m);
             c.write(ctxt_file)?;
             if verbose {
                 println!("Wrote ciphertext to '{}'.", ctxt_file);
@@ -152,8 +154,8 @@ fn main() -> Result<(), MainError> {
             if sk.p().len() != c.cols() {
                 return Err("Ciphertext length does not match code length from secret key".into());
             }
-            let p = sk.decrypt(&c);
-            p.write(dec_file)?;
+            let m = sk.decrypt(&c);
+            m.write(dec_file)?;
             if verbose {
                 println!("Wrote decrypted text to '{}'.", dec_file);
             }
@@ -163,8 +165,8 @@ fn main() -> Result<(), MainError> {
             let pk_file = files.get(0).unwrap_or(&PUBLIC_KEY);
             let ptxt_file = files.get(1).unwrap_or(&PLAINTEXT);
             let k = PublicKey::read_code_dimension(pk_file)?;
-            let p = RowVec::random(Field::Parameters(()), k);
-            p.write(ptxt_file)?;
+            let m = RowVec::random(Field::Parameters(()), k);
+            m.write(ptxt_file)?;
             if verbose {
                 println!("Wrote plaintext to '{}'.", ptxt_file);
             }

@@ -127,10 +127,9 @@ fn polynomial_f1024_extended_gcd() {
 #[test]
 fn polynomial_f1024_square() {
     common::log_setup();
-    let f = &Rc::new(F2m::generate(1024));
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(0, 100);
-    let mut a = Poly::random(Field::Some(f), deg_a);
+    let mut a = Poly::<F2m>::random(Field::Parameters(1024), deg_a);
     info!("a(x) = {:?}\n", a);
 
     let b = a.clone();

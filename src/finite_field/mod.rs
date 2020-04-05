@@ -93,6 +93,21 @@ pub trait F2FiniteExtension: CharacteristicTwo + FiniteField {
     ///
     /// Panics if the u32 is greater than or equal to field order.
     fn u32_to_elt(&self, n: u32) -> Self::FieldElement;
+
+    /// Returns a vector containing all elements of the field
+    ///
+    /// Elements are ranged in ascending order according to their u32 representation
+    /// as given by the [`elt_to_u32()`] method.
+    ///
+    /// [`elt_to_u32()`]: #tymethod.elt_to_u32
+    fn to_vec(&self) -> Vec<Self::FieldElement> {
+        let q = self.order();
+        let mut vec = Vec::with_capacity(q);
+        for i in 0..q as u32 {
+            vec.push(self.u32_to_elt(i));
+        }
+        vec
+    }
 }
 
 pub enum Field<'a, F>

@@ -2,10 +2,7 @@ use log::info;
 use rand::Rng;
 use std::rc::Rc;
 
-use mceliece::{
-    finite_field::*, // TODO: Why do I have to add FieldTrait if * is here ?
-    matrix::*,
-};
+use mceliece::{finite_field::*, matrix::*};
 
 pub mod common;
 
@@ -40,8 +37,7 @@ fn matrix_f2_permutation_random() {
 #[test]
 fn matrix_f2_is_invertible() {
     common::log_setup();
-    let f2 = &Rc::new(F2::generate(()));
-    let id = Mat::identity(Field::Some(f2), 11);
+    let id = Mat::<F2>::identity(Field::Parameters(()), 11);
     info!("Matrix identity:{:?}", id);
     assert!(id.is_invertible());
 }
@@ -49,8 +45,7 @@ fn matrix_f2_is_invertible() {
 #[test]
 fn matrix_f2_inverse() {
     common::log_setup();
-    let f2 = &Rc::new(F2::generate(()));
-    let id = Mat::identity(Field::Some(f2), 11);
+    let id = Mat::<F2>::identity(Field::Parameters(()), 11);
     assert_eq!(id.inverse(), Some(id));
 
     let p = Perm::random(11);
@@ -189,11 +184,10 @@ fn matrix_f2_standard_form() {
 #[test]
 fn matrix_f2_transpose() {
     common::log_setup();
-    let f2 = &Rc::new(F2::generate(()));
     let mut rng = rand::thread_rng();
     let rows = rng.gen_range(1, 100);
     let cols = rng.gen_range(1, 100);
-    let mat = Mat::random(Field::Some(f2), rows, cols);
+    let mat = Mat::<F2>::random(Field::Parameters(()), rows, cols);
     let tmat = mat.transpose();
     for i in 0..rows {
         for j in 0..cols {
@@ -216,10 +210,9 @@ fn matrix_f2_rowvec_weight() {
 #[test]
 fn rowvec_f2_write_read() {
     common::log_setup();
-    let f2 = &Rc::new(F2::generate(()));
     let mut rng = rand::thread_rng();
     let n = rng.gen_range(10, 1000);
-    let vec = RowVec::random(Field::Some(f2), n);
+    let vec = RowVec::random(Field::Parameters(()), n);
     let file_name = "vec_write_read_test.mce";
     vec.write(file_name).unwrap();
     let vec_read = RowVec::read_vector(file_name).unwrap();

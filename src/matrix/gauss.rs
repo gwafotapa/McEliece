@@ -55,7 +55,7 @@ where
             return None;
         }
 
-        let f = self.field(); // TODO: can I use Params 3 lines below, define f after and avoid repeating self.field (idea for other functions)
+        let f = self.field();
         let n = self.rows;
         let mut mat = self.clone();
         let mut inv: Self = Mat::identity(Field::Some(f), n);
@@ -156,8 +156,11 @@ where
             // If column j has no pivot, create it
             if i == n {
                 i = rng.gen_range(j, n);
-                while mat[(i, j)] == f.zero() {
+                loop {
                     mat[(i, j)] = f.random_element(&mut rng);
+                    if mat[(i, j)] != f.zero() {
+                        break;
+                    }
                 }
             }
 

@@ -37,6 +37,8 @@ where
     }
 }
 
+// TODO: Can I do this better since self is consumed ?
+// If so, check sub, mul, ... and other modules
 impl<F> Add for Poly<F>
 where
     F: FieldTrait,
@@ -252,15 +254,14 @@ where
 {
     fn mul_assign(&mut self, other: &Self) {
         let tmp = self.clone();
-        let zero = self.field.zero();
-        self.data.iter_mut().map(|x| *x = zero).count();
-        self.data.resize(tmp.degree() + other.degree() + 1, zero);
+        let f = tmp.field();
+        self.data.iter_mut().map(|x| *x = f.zero()).count();
+        self.data
+            .resize(tmp.degree() + other.degree() + 1, f.zero());
 
         for i in 0..tmp.degree() + 1 {
             for j in 0..other.degree() + 1 {
-                self[i + j] = self
-                    .field
-                    .add(self[i + j], self.field.mul(tmp[i], other[j]));
+                self[i + j] = f.add(self[i + j], f.mul(tmp[i], other[j]));
             }
         }
 
@@ -318,7 +319,7 @@ where
 
 impl<F> Debug for Poly<F>
 where
-    F: Eq + F2FiniteExtension,
+    F: F2FiniteExtension,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         if self.is_zero() {
@@ -348,7 +349,7 @@ where
 
 impl<F> Display for Poly<F>
 where
-    F: Eq + FiniteField,
+    F: FiniteField,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         if self.is_zero() {

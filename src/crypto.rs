@@ -7,10 +7,9 @@ use std::{
     error::Error,
     fs::File,
     io::{BufWriter, Read, Write},
-    rc::Rc,
 };
 
-use crate::finite_field::{F2m, Field, FieldTrait, FiniteField, F2};
+use crate::finite_field::{F2m, Field, FiniteField, F2};
 use crate::goppa::Goppa;
 use crate::matrix::{Mat, Perm, RowVec};
 
@@ -58,18 +57,16 @@ pub fn keygen(n: usize, t: usize) -> (PublicKey, SecretKey) {
     } else {
         n.next_power_of_two()
     };
-    let f2 = &Rc::new(F2 {});
-    let f2m = &Rc::new(F2m::generate(q));
-    let goppa = Goppa::random(Field::Some(f2m), n, t);
+    let goppa = Goppa::random(Field::Parameters(q), n, t);
     debug!("{}", goppa);
 
     let xyz = goppa.parity_check_xyz();
-    let (g, info_set) = Goppa::generator_from_xyz(&xyz, Field::Some(f2));
+    let (g, info_set) = Goppa::generator_from_xyz(&xyz, Field::Parameters(()));
     debug!("Generator matrix G:{}", g);
     debug!("Information set of generator matrix G:\n{:?}\n", info_set);
 
     let k = g.rows();
-    let s = Mat::invertible_random(Field::Some(f2), k);
+    let s = Mat::invertible_random(Field::Some(g.field()), k);
     debug!("Code dimension k = {}", k);
     debug!("Singular matrix S:{}", s);
 
@@ -102,10 +99,10 @@ impl PublicKey {
         let c = Goppa::<F2m>::g_encode(&self.sgp, m);
         debug!("Encoded plaintext:{}", c);
 
-        let z = RowVec::random_with_weight(Field::Some(m.field()), self.sgp.cols(), self.t);
-        debug!("Error vector:{}", z);
+        let e = RowVec::random_with_weight(Field::Some(m.field()), self.sgp.cols(), self.t);
+        debug!("Error vector:{}", e);
 
-        c + z
+        c + e
     }
 
     /// Saves public key on disk
@@ -158,17 +155,17 @@ impl SecretKey {
     }
 
     pub fn decrypt(&self, c: &RowVec<F2>) -> RowVec<F2> {
-        let m_s_g_z = c * self.p.inverse();
-        let m_s_g = self.goppa.decode(&m_s_g_z);
-        debug!("Decoded codeword mSG:{}", m_s_g);
+        let c1 = c * self.p.inverse();
+        let m1 = self.goppa.decode(&c1);
+        debug!("Decoded codeword mSG:{}", m1);
 
-        let m_s = m_s_g.extract_cols(&self.info_set);
+        let ms = m1.extract_cols(&self.info_set);
         debug!(
             "Use information set {:?} to extract mS:{}",
-            self.info_set, m_s
+            self.info_set, ms
         );
 
-        let m = m_s * self.s.inverse().unwrap();
+        let m = ms * self.s.inverse().unwrap();
         m
     }
 
@@ -206,20 +203,6 @@ impl SecretKey {
         }
         Ok(())
     }
-
-    // // TODO: Is it possible to eliminate this function ?
-    // pub fn read_finite_field(file_name: &str) -> Result<F2m> {
-    //     let mut f = File::open(file_name)?;
-    //     // let mut vec = Vec::new();
-    //     // f.read_to_end(&mut vec)?;
-    //     let mut buf = [0; 4];
-    //     f.read_exact(&mut buf)?;
-    //     let order = u32::from_be_bytes(buf) as usize;
-    //     // let k = u32::from_be_bytes(vec[0..4].try_into()?) as usize;
-    //     // let i = 4 + 4 + div_ceil(k * k, 8);
-    //     // let order = u32::from_be_bytes(vec[i..i + 4].try_into()?) as usize;
-    //     Ok(F2m::generate(order))
-    // }
 
     pub fn read_secret_key(file_name: &str) -> Result<Self> {
         let mut f = File::open(file_name)?;

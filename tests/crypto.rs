@@ -12,9 +12,8 @@ fn crypto_keygen() {
     let (q, n, t) = common::goppa_setup();
     info!("F2m=F{}, n={}, t={}", q, n, t);
 
-    let f2 = &Rc::new(F2::generate(()));
     let (pk, sk) = keygen(n, t);
-    let g = sk.goppa().generator_matrix(Field::Some(f2));
+    let g = sk.goppa().generator_matrix(Field::Parameters(()));
     assert!(sk.s().is_invertible());
     assert_eq!(g.rank(), g.rows());
     assert!(sk.p().is_permutation());
@@ -77,10 +76,9 @@ fn crypto_encrypt_decrypt_null_message() {
     let (q, n, t) = common::goppa_setup();
     info!("F2m=F{}, n={}, t={}", q, n, t);
 
-    let f2 = &Rc::new(F2::generate(()));
     let (pk, sk) = keygen(n, t);
     let k = pk.sgp().rows();
-    let msg = RowVec::zero(Field::Some(f2), k);
+    let msg = RowVec::zero(Field::Parameters(()), k);
     let cpt = pk.encrypt(&msg);
     assert_eq!(cpt.weight(), t);
 
