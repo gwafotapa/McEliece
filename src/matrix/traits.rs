@@ -1,5 +1,5 @@
 use std::{
-    fmt::{self, Debug, Display, Formatter},
+    fmt::{Debug, Display, Formatter, Result},
     ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign},
     rc::Rc,
 };
@@ -373,7 +373,7 @@ impl<F> Debug for Mat<F>
 where
     F: F2FiniteExtension,
 {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let k = self.field();
         let m = k.characteristic_exponent() as usize;
         let width = crate::div_ceil(m, 4);
@@ -397,7 +397,7 @@ impl<F> Display for Mat<F>
 where
     F: FiniteField,
 {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         let k = self.field();
 
         // Upper bound on the number of digits of order

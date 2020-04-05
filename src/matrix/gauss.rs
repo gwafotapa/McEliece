@@ -8,188 +8,6 @@ impl<F> Mat<F>
 where
     F: FieldTrait,
 {
-    pub fn swap_rows(&mut self, row1: usize, row2: usize) {
-        if row1 == row2 {
-            return;
-        }
-        let row1_start = row1 * self.cols;
-        let row1_end = row1_start + self.cols;
-        let row2_start = row2 * self.cols;
-        let row2_end = row2_start + self.cols;
-        let mut slice = self.data[row1_start..row1_end].to_vec();
-        slice.swap_with_slice(&mut self.data[row2_start..row2_end]);
-        slice.swap_with_slice(&mut self.data[row1_start..row1_end]);
-    }
-
-    pub fn swap_cols(&mut self, col1: usize, col2: usize) {
-        if col1 == col2 {
-            return;
-        }
-        for i in 0..self.rows {
-            let tmp = self[(i, col1)];
-            self[(i, col1)] = self[(i, col2)];
-            self[(i, col2)] = tmp;
-        }
-    }
-
-    /// Modifies row1 such that row1 = row1 + lambda * row2
-    pub fn combine_rows(&mut self, row1: usize, lambda: F::FieldElement, row2: usize) {
-        for j in 0..self.cols {
-            self[(row1, j)] = self
-                .field
-                .add(self[(row1, j)], self.field.mul(lambda, self[(row2, j)]));
-        }
-    }
-
-    pub fn mul_row(&mut self, row: usize, lambda: F::FieldElement) {
-        for j in 0..self.cols {
-            self[(row, j)] = self.field.mul(lambda, self[(row, j)]);
-        }
-    }
-
-    /// Inverse computation via gaussian elimination
-    ///
-    /// See <https://en.wikipedia.org/wiki/Gaussian_elimination>.
-    pub fn inverse(&self) -> Option<Self> {
-        if self.rows != self.cols {
-            return None;
-        }
-
-        let f = self.field();
-        let n = self.rows;
-        let mut mat = self.clone();
-        let mut inv: Self = Mat::identity(Field::Some(f), n);
-        let mut p = 0; // pivot's row and pivot's column
-
-        while p < n {
-            // Find pivot
-            let mut i = p;
-            while i < n && mat[(i, p)] == f.zero() {
-                i += 1;
-            }
-            if i == n {
-                return None;
-            }
-
-            // Swap rows and mimic operation on matrix 'inv'
-            mat.swap_rows(i, p);
-            inv.swap_rows(i, p);
-
-            // Normalize pivot's row: L(p) = pivot^-1 * L(p)
-            let pivot_inv = f.inv(mat[(p, p)]).unwrap();
-            for j in p + 1..n {
-                // first p+1 columns are zero
-                mat[(p, j)] = f.mul(pivot_inv, mat[(p, j)]);
-            }
-            mat[(p, p)] = f.one();
-
-            // Mimic normalization on matrix 'inv'
-            for j in 0..n {
-                inv[(p, j)] = f.mul(pivot_inv, inv[(p, j)]);
-            }
-
-            // Adjust all rows below pivot's row: L(k) = L(k) - c(k,p) * L(p)
-            // where L(k) is the kth row and c(k,p) is the coefficient [k,p] of our matrix
-            for k in p + 1..n {
-                if mat[(k, p)] == f.zero() {
-                    continue;
-                }
-
-                let lambda = mat[(k, p)];
-                mat[(k, p)] = f.zero();
-                for l in p + 1..n {
-                    // first p+1 columns are zero
-                    mat[(k, l)] = f.sub(mat[(k, l)], f.mul(lambda, mat[(p, l)]));
-                }
-
-                // Mimic operation on matrix 'inv'
-                for l in 0..n {
-                    inv[(k, l)] = f.sub(inv[(k, l)], f.mul(lambda, inv[(p, l)]));
-                }
-            }
-
-            p += 1;
-        }
-
-        // Matrix 'mat' is now in triangular form
-
-        for j in (0..n).rev() {
-            for i in (0..j).rev() {
-                // Perform the row operation to set c(i, j) to 0:
-                // L(i) = L(i) - c(i, j) * L(j)
-                // We don't actually need to operate on the original matrix here.
-                // Mimic the row operation on matrix 'inv'.
-                if mat[(i, j)] == f.zero() {
-                    continue;
-                }
-
-                for l in 0..n {
-                    inv[(i, l)] = f.sub(inv[(i, l)], f.mul(mat[(i, j)], inv[(j, l)]));
-                }
-            }
-        }
-        Some(inv)
-    }
-
-    /// Generates a random invertible matrix
-    ///
-    /// First generates a random matrix then applies to it the standard form algorithm.
-    /// Keeps track of the applied transformations via an invertible matrix u.
-    /// Returns u as our random invertible matrix.
-    pub fn invertible_random(field: Field<F>, n: usize) -> Self {
-        let mut rng = rand::thread_rng();
-        let f = match field {
-            Field::Some(f) => Rc::clone(f),
-            Field::Parameters(p) => Rc::new(F::generate(p)),
-        };
-        let mut mat = Mat::random(Field::Some(&f), n, n);
-        let mut u = Mat::identity(Field::Some(&f), n);
-
-        // Loop on columns
-        for j in 0..n {
-            // Find a pivot in column j
-            let mut i = j;
-            while i < n && mat[(i, j)] == f.zero() {
-                i += 1;
-            }
-
-            // If column j has no pivot, create it
-            if i == n {
-                i = rng.gen_range(j, n);
-                loop {
-                    mat[(i, j)] = f.random_element(&mut rng);
-                    if mat[(i, j)] != f.zero() {
-                        break;
-                    }
-                }
-            }
-
-            // Put pivot in position (j, j) and mirror operation on matrix u
-            mat.swap_rows(i, j);
-            u.swap_rows(i, j);
-
-            // Normalize pivot's row and mirror operation on matrix u
-            let pivot = mat[(j, j)];
-            let inv_pivot = f.inv(pivot).unwrap();
-            mat.mul_row(j, inv_pivot);
-            u.mul_row(j, inv_pivot);
-
-            // Zero coefficients under the pivot and mirror operation on matrix u
-            for i in j + 1..n {
-                if mat[(i, j)] == f.zero() {
-                    continue;
-                }
-                let lambda = mat[(i, j)];
-                mat[(i, j)] = f.zero();
-                for k in j + 1..n {
-                    mat[(i, k)] = f.sub(mat[(i, k)], f.mul(lambda, mat[(j, k)]));
-                }
-                u.combine_rows(i, lambda, j);
-            }
-        }
-        u
-    }
-
     pub fn row_echelon_form(&mut self) -> Vec<usize> {
         let f = Rc::clone(&self.field);
         let n = self.rows;
@@ -271,19 +89,6 @@ where
             }
         }
         max_set_of_independant_rows
-    }
-
-    pub fn rank(&self) -> usize {
-        let mut mat = self.clone();
-        mat.row_echelon_form().len()
-    }
-
-    pub fn max_set_of_independant_rows(&mut self) -> Vec<usize> {
-        self.row_echelon_form()
-    }
-
-    pub fn is_invertible(&self) -> bool {
-        self.rows == self.cols && self.rows == self.rank()
     }
 
     /// Compute, if possible, (U, S, P) with U invertible, S standard form and P permutation
@@ -431,6 +236,168 @@ where
         (h, p)
     }
 
+    /// Inverse computation via gaussian elimination
+    ///
+    /// See <https://en.wikipedia.org/wiki/Gaussian_elimination>.
+    pub fn inverse(&self) -> Option<Self> {
+        if self.rows != self.cols {
+            return None;
+        }
+
+        let f = self.field();
+        let n = self.rows;
+        let mut mat = self.clone();
+        let mut inv: Self = Mat::identity(Field::Some(f), n);
+        let mut p = 0; // pivot's row and pivot's column
+
+        while p < n {
+            // Find pivot
+            let mut i = p;
+            while i < n && mat[(i, p)] == f.zero() {
+                i += 1;
+            }
+            if i == n {
+                return None;
+            }
+
+            // Swap rows and mimic operation on matrix 'inv'
+            mat.swap_rows(i, p);
+            inv.swap_rows(i, p);
+
+            // Normalize pivot's row: L(p) = pivot^-1 * L(p)
+            let pivot_inv = f.inv(mat[(p, p)]).unwrap();
+            for j in p + 1..n {
+                // first p+1 columns are zero
+                mat[(p, j)] = f.mul(pivot_inv, mat[(p, j)]);
+            }
+            mat[(p, p)] = f.one();
+
+            // Mimic normalization on matrix 'inv'
+            for j in 0..n {
+                inv[(p, j)] = f.mul(pivot_inv, inv[(p, j)]);
+            }
+
+            // Adjust all rows below pivot's row: L(k) = L(k) - c(k,p) * L(p)
+            // where L(k) is the kth row and c(k,p) is the coefficient [k,p] of our matrix
+            for k in p + 1..n {
+                if mat[(k, p)] == f.zero() {
+                    continue;
+                }
+
+                let lambda = mat[(k, p)];
+                mat[(k, p)] = f.zero();
+                for l in p + 1..n {
+                    // first p+1 columns are zero
+                    mat[(k, l)] = f.sub(mat[(k, l)], f.mul(lambda, mat[(p, l)]));
+                }
+
+                // Mimic operation on matrix 'inv'
+                for l in 0..n {
+                    inv[(k, l)] = f.sub(inv[(k, l)], f.mul(lambda, inv[(p, l)]));
+                }
+            }
+
+            p += 1;
+        }
+
+        // Matrix 'mat' is now in triangular form
+
+        for j in (0..n).rev() {
+            for i in (0..j).rev() {
+                // Perform the row operation to set c(i, j) to 0:
+                // L(i) = L(i) - c(i, j) * L(j)
+                // We don't actually need to operate on the original matrix here.
+                // Mimic the row operation on matrix 'inv'.
+                if mat[(i, j)] == f.zero() {
+                    continue;
+                }
+
+                for l in 0..n {
+                    inv[(i, l)] = f.sub(inv[(i, l)], f.mul(mat[(i, j)], inv[(j, l)]));
+                }
+            }
+        }
+        Some(inv)
+    }
+
+    /// Generates a random invertible matrix
+    ///
+    /// First generates a random matrix then applies to it the standard form algorithm.
+    /// Keeps track of the applied transformations via an invertible matrix u.
+    /// Returns u as our random invertible matrix.
+    pub fn invertible_random(field: Field<F>, n: usize) -> Self {
+        let mut rng = rand::thread_rng();
+        let f = match field {
+            Field::Some(f) => Rc::clone(f),
+            Field::Parameters(p) => Rc::new(F::generate(p)),
+        };
+        let mut mat = Mat::random(Field::Some(&f), n, n);
+        let mut u = Mat::identity(Field::Some(&f), n);
+
+        // Loop on columns
+        for j in 0..n {
+            // Find a pivot in column j
+            let mut i = j;
+            while i < n && mat[(i, j)] == f.zero() {
+                i += 1;
+            }
+
+            // If column j has no pivot, create it
+            if i == n {
+                i = rng.gen_range(j, n);
+                loop {
+                    mat[(i, j)] = f.random_element(&mut rng);
+                    if mat[(i, j)] != f.zero() {
+                        break;
+                    }
+                }
+            }
+
+            // Put pivot in position (j, j) and mirror operation on matrix u
+            mat.swap_rows(i, j);
+            u.swap_rows(i, j);
+
+            // Normalize pivot's row and mirror operation on matrix u
+            let pivot = mat[(j, j)];
+            let inv_pivot = f.inv(pivot).unwrap();
+            mat.mul_row(j, inv_pivot);
+            u.mul_row(j, inv_pivot);
+
+            // Zero coefficients under the pivot and mirror operation on matrix u
+            for i in j + 1..n {
+                if mat[(i, j)] == f.zero() {
+                    continue;
+                }
+                let lambda = mat[(i, j)];
+                mat[(i, j)] = f.zero();
+                for k in j + 1..n {
+                    mat[(i, k)] = f.sub(mat[(i, k)], f.mul(lambda, mat[(j, k)]));
+                }
+                u.combine_rows(i, lambda, j);
+            }
+        }
+        u
+    }
+
+    pub fn remove_redundant_rows(&mut self) {
+        let mut clone = self.clone();
+        let rows = clone.max_set_of_independant_rows();
+        self.keep_rows(&rows);
+    }
+
+    pub fn max_set_of_independant_rows(&mut self) -> Vec<usize> {
+        self.row_echelon_form()
+    }
+
+    pub fn rank(&self) -> usize {
+        let mut mat = self.clone();
+        mat.row_echelon_form().len()
+    }
+
+    pub fn is_invertible(&self) -> bool {
+        self.rows == self.cols && self.rows == self.rank()
+    }
+
     pub fn is_standard_form(&self) -> bool {
         let f = self.field();
         let m = self.rows;
@@ -454,9 +421,42 @@ where
         true
     }
 
-    pub fn remove_redundant_rows(&mut self) {
-        let mut clone = self.clone();
-        let rows = clone.max_set_of_independant_rows();
-        self.keep_rows(&rows);
+    pub fn swap_rows(&mut self, row1: usize, row2: usize) {
+        if row1 == row2 {
+            return;
+        }
+        let row1_start = row1 * self.cols;
+        let row1_end = row1_start + self.cols;
+        let row2_start = row2 * self.cols;
+        let row2_end = row2_start + self.cols;
+        let mut slice = self.data[row1_start..row1_end].to_vec();
+        slice.swap_with_slice(&mut self.data[row2_start..row2_end]);
+        slice.swap_with_slice(&mut self.data[row1_start..row1_end]);
+    }
+
+    pub fn swap_cols(&mut self, col1: usize, col2: usize) {
+        if col1 == col2 {
+            return;
+        }
+        for i in 0..self.rows {
+            let tmp = self[(i, col1)];
+            self[(i, col1)] = self[(i, col2)];
+            self[(i, col2)] = tmp;
+        }
+    }
+
+    pub fn mul_row(&mut self, row: usize, lambda: F::FieldElement) {
+        for j in 0..self.cols {
+            self[(row, j)] = self.field.mul(lambda, self[(row, j)]);
+        }
+    }
+
+    /// Modifies row1 such that row1 = row1 + lambda * row2
+    pub fn combine_rows(&mut self, row1: usize, lambda: F::FieldElement, row2: usize) {
+        for j in 0..self.cols {
+            self[(row1, j)] = self
+                .field
+                .add(self[(row1, j)], self.field.mul(lambda, self[(row2, j)]));
+        }
     }
 }

@@ -53,21 +53,17 @@ impl<F> Debug for Poly<F>Poly320,5843
 impl<F> Display for Poly<F>Poly350,6612
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {fmt354,6668
 
-polynomial/characteristic_two.rs,877
-type Result<T> = std::result::Result<T, Box<dyn Error>>;Result8,176
-impl<F> Poly<F>Poly10,234
-    pub fn random_monic_irreducible(field: Field<F>, degree: usize) -> Selfrandom_monic_irreducible14,297
-    pub fn square(&mut self) {square32,800
-    pub fn square_root_modulo(&mut self, modulus: &Self)square_root_modulo43,1133
-    pub fn inverse_modulo_by_fast_exponentiation(&mut self, modulus: &Self)inverse_modulo_by_fast_exponentiation58,1548
-    pub fn pow_modulo(&mut self, mut n: u32, modulus: &Self) {pow_modulo81,2236
-    pub fn is_irreducible(&self) -> boolis_irreducible104,2863
-    pub(crate) fn goppa_extended_gcd(g: &Self, t: &Self) -> (Self, Self) {goppa_extended_gcd142,3921
-impl Poly<F2m> {Poly170,4691
-    pub fn to_bytes(&self) -> Vec<u8> {to_bytes175,4898
-    pub fn from_bytes(vec: &[u8]) -> Result<(usize, Self)> {from_bytes187,5346
+polynomial/characteristic_two.rs,636
+impl<F> Poly<F>Poly4,107
+    pub fn random_monic_irreducible(field: Field<F>, degree: usize) -> Selfrandom_monic_irreducible8,170
+    pub fn is_irreducible(&self) -> boolis_irreducible26,679
+    pub fn square_root_modulo(&mut self, modulus: &Self)square_root_modulo64,1743
+    pub fn inverse_modulo_by_fast_exponentiation(&mut self, modulus: &Self)inverse_modulo_by_fast_exponentiation79,2164
+    pub fn square(&mut self) {square101,2813
+    pub fn pow_modulo(&mut self, mut n: u32, modulus: &Self) {pow_modulo113,3191
+    pub(crate) fn goppa_extended_gcd(g: &Self, t: &Self) -> (Self, Self) {goppa_extended_gcd136,3818
 
-polynomial/mod.rs,1253
+polynomial/mod.rs,1277
 pub struct Poly<F>Poly9,153
 impl<F> Poly<F>Poly17,252
     pub fn new(field: Field<F>, data: Vec<F::FieldElement>) -> Self {new26,437
@@ -87,67 +83,77 @@ impl<F> Poly<F>Poly17,252
     pub fn extended_gcd(a: &Self, b: &Self) -> (Self, Self, Self, Self, Self) {extended_gcd209,6129
     pub fn inverse_modulo(&self, modulus: &Self) -> Self {inverse_modulo252,7380
 pub mod characteristic_two;characteristic_two266,7777
-pub mod traits;traits267,7805
+pub mod io;io267,7805
+pub mod traits;traits268,7817
 
-goppa.rs,2323
-type Result<T> = result::Result<T, Box<dyn Error>>;Result19,315
-pub struct Goppa<F>Goppa23,427
-impl<F> Debug for Goppa<F>Goppa31,527
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {fmt35,588
-impl<F> Display for Goppa<F>Goppa58,1259
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {fmt62,1322
-impl<F> Goppa<F>Goppa85,1987
-    pub fn new(poly: Poly<F>, set: Vec<F::FieldElement>) -> Self {new103,2605
-    pub fn random(field: Field<F>, n: usize, t: usize) -> Self {random131,3747
-    pub fn len(&self) -> usize {len167,4928
-    pub fn poly(&self) -> &Poly<F> {poly171,4991
-    pub fn set(&self) -> &Vec<F::FieldElement> {set175,5054
-    pub fn field(&self) -> &Rc<F> {field179,5128
-    pub fn parity_check_x(&self) -> Mat<F> {parity_check_x183,5197
-    pub fn parity_check_y(&self) -> Mat<F> {parity_check_y195,5508
-    pub fn parity_check_z(&self) -> Mat<F> {parity_check_z213,5955
-    pub fn parity_check_xyz(&self) -> Mat<F> {parity_check_xyz224,6232
-    pub fn parity_check_from_xyz(xyz: &Mat<F>, f2: Field<F2>) -> Mat<F2> {parity_check_from_xyz231,6421
-    pub fn parity_check_matrix(&self, f2: Field<F2>) -> Mat<F2> {parity_check_matrix237,6584
-    pub fn generator_from_xyz(xyz: &Mat<F>, f2: Field<F2>) -> (Mat<F2>, Vec<usize>) {generator_from_xyz242,6746
-    pub fn generator_from_parity_check_standard(h: &Mat<F2>) -> Mat<F2> {generator_from_parity_check_standard251,7141
-    pub fn generator_from_parity_check(h: &Mat<F2>) -> (Mat<F2>, Vec<usize>) {generator_from_parity_check265,7531
-    pub fn generator_matrix(&self, f2: Field<F2>) -> Mat<F2> {generator_matrix274,7904
-    pub fn syndrome(&self, r: &RowVec<F2>) -> Mat<F> {syndrome279,8062
-    pub fn syndrome_from_xyz(xyz: &Mat<F>, rcv: &RowVec<F2>) -> Mat<F> {syndrome_from_xyz284,8208
-    pub fn encode(&self, msg: &RowVec<F2>) -> RowVec<F2> {encode298,8634
-    pub fn g_encode(g: &Mat<F2>, msg: &RowVec<F2>) -> RowVec<F2> {g_encode304,8818
-    pub fn decode(&self, rcv: &RowVec<F2>) -> RowVec<F2> {decode308,8908
-    pub fn xyz_decode(&self, xyz: &Mat<F>, rcv: &RowVec<F2>) -> RowVec<F2> {xyz_decode313,9052
-impl Goppa<F2m> {Goppa369,10569
-    pub fn to_bytes(&self) -> Vec<u8> {to_bytes380,11039
-    pub fn from_bytes(vec: &[u8]) -> Result<(usize, Self)> {from_bytes406,11738
+polynomial/byte_vector.rs,234
+type Result<T> = std::result::Result<T, Box<dyn Error>>;Result8,223
+impl Poly<F2m> {Poly10,281
+    pub fn to_bytes(&self) -> Vec<u8> {to_bytes15,488
+    pub fn from_bytes(vec: &[u8]) -> Result<(usize, Self)> {from_bytes27,936
+
+goppa/mod.rs,2096
+pub struct Goppa<F>Goppa18,327
+impl<F> Debug for Goppa<F>Goppa26,427
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {fmt30,488
+impl<F> Display for Goppa<F>Goppa53,1154
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {fmt57,1217
+impl<F> Goppa<F>Goppa80,1877
+    pub fn new(poly: Poly<F>, set: Vec<F::FieldElement>) -> Self {new98,2495
+    pub fn random(field: Field<F>, n: usize, t: usize) -> Self {random126,3637
+    pub fn len(&self) -> usize {len162,4818
+    pub fn poly(&self) -> &Poly<F> {poly166,4881
+    pub fn set(&self) -> &Vec<F::FieldElement> {set170,4944
+    pub fn field(&self) -> &Rc<F> {field174,5018
+    pub fn parity_check_x(&self) -> Mat<F> {parity_check_x178,5087
+    pub fn parity_check_y(&self) -> Mat<F> {parity_check_y190,5398
+    pub fn parity_check_z(&self) -> Mat<F> {parity_check_z208,5845
+    pub fn parity_check_xyz(&self) -> Mat<F> {parity_check_xyz219,6122
+    pub fn parity_check_from_xyz(xyz: &Mat<F>, f2: Field<F2>) -> Mat<F2> {parity_check_from_xyz226,6311
+    pub fn parity_check_matrix(&self, f2: Field<F2>) -> Mat<F2> {parity_check_matrix232,6474
+    pub fn generator_from_xyz(xyz: &Mat<F>, f2: Field<F2>) -> (Mat<F2>, Vec<usize>) {generator_from_xyz237,6636
+    pub fn generator_from_parity_check_standard(h: &Mat<F2>) -> Mat<F2> {generator_from_parity_check_standard246,7031
+    pub fn generator_from_parity_check(h: &Mat<F2>) -> (Mat<F2>, Vec<usize>) {generator_from_parity_check260,7421
+    pub fn generator_matrix(&self, f2: Field<F2>) -> Mat<F2> {generator_matrix269,7794
+    pub fn syndrome(&self, r: &RowVec<F2>) -> Mat<F> {syndrome274,7952
+    pub fn syndrome_from_xyz(xyz: &Mat<F>, rcv: &RowVec<F2>) -> Mat<F> {syndrome_from_xyz279,8098
+    pub fn encode(&self, msg: &RowVec<F2>) -> RowVec<F2> {encode293,8524
+    pub fn g_encode(g: &Mat<F2>, msg: &RowVec<F2>) -> RowVec<F2> {g_encode299,8708
+    pub fn decode(&self, rcv: &RowVec<F2>) -> RowVec<F2> {decode303,8798
+    pub fn xyz_decode(&self, xyz: &Mat<F>, rcv: &RowVec<F2>) -> RowVec<F2> {xyz_decode308,8942
+pub mod io;io364,10459
+
+goppa/byte_vector.rs,233
+type Result<T> = result::Result<T, Box<dyn Error>>;Result12,254
+impl Goppa<F2m> {Goppa14,307
+    pub fn to_bytes(&self) -> Vec<u8> {to_bytes25,777
+    pub fn from_bytes(vec: &[u8]) -> Result<(usize, Self)> {from_bytes51,1476
 
 main.rs,1574
-// const GOPPA_N_MIN: usize = 3;GOPPA_N_MIN15,315
-// const GOPPA_N_MAX: usize = 1024;GOPPA_N_MAX16,348
-// const GOPPA_N: usize = 1024; // Code lengthGOPPA_N17,384
-// const GOPPA_T: usize = 50; // Code correction capacityGOPPA_T18,431
-//                            // const GOPPA_K: usize = 524; // Code dimensionGOPPA_K19,489
-// const GOPPA_N_MIN: usize = 3;GOPPA_N_MIN21,569
-// const GOPPA_N_MAX: usize = 2048;GOPPA_N_MAX22,602
-// const GOPPA_N: usize = 2048; // Code lengthGOPPA_N23,638
-// const GOPPA_T: usize = 70; // Code correction capacityGOPPA_T24,685
-//                            // const GOPPA_K: usize = 1278; // Code dimensionGOPPA_K25,743
-const GOPPA_N_MIN: usize = 3;GOPPA_N_MIN27,824
-const GOPPA_N_MAX: usize = 4096;GOPPA_N_MAX28,854
-const GOPPA_N: usize = 4096; // Code lengthGOPPA_N29,887
-const GOPPA_T: usize = 170; // Code correction capacityGOPPA_T30,931
-                            // const GOPPA_K: usize = 2056; // Code dimensionGOPPA_K31,987
-const PLAINTEXT: &str = "plaintext.mce";PLAINTEXT33,1066
-const CIPHERTEXT: &str = "ciphertext.mce";CIPHERTEXT34,1107
-const DECRYPTED: &str = "decrypted.mce";DECRYPTED35,1150
-const PUBLIC_KEY: &str = "public_key.mce";PUBLIC_KEY36,1191
-const SECRET_KEY: &str = "secret_key.mce";SECRET_KEY37,1234
-fn get_program(path: &str) -> &str {get_program39,1278
-fn get_code_params(matches: &Matches) -> Result<(usize, usize), MainError> {get_code_params47,1429
-fn print_help(program: &str, opts: Options) {print_help75,2303
-fn main() -> Result<(), MainError> {main87,2694
+// const GOPPA_N_MIN: usize = 3;GOPPA_N_MIN14,272
+// const GOPPA_N_MAX: usize = 1024;GOPPA_N_MAX15,305
+// const GOPPA_N: usize = 1024; // Code lengthGOPPA_N16,341
+// const GOPPA_T: usize = 50; // Code correction capacityGOPPA_T17,388
+//                            // const GOPPA_K: usize = 524; // Code dimensionGOPPA_K18,446
+// const GOPPA_N_MIN: usize = 3;GOPPA_N_MIN20,526
+// const GOPPA_N_MAX: usize = 2048;GOPPA_N_MAX21,559
+// const GOPPA_N: usize = 2048; // Code lengthGOPPA_N22,595
+// const GOPPA_T: usize = 70; // Code correction capacityGOPPA_T23,642
+//                            // const GOPPA_K: usize = 1278; // Code dimensionGOPPA_K24,700
+const GOPPA_N_MIN: usize = 3;GOPPA_N_MIN26,781
+const GOPPA_N_MAX: usize = 4096;GOPPA_N_MAX27,811
+const GOPPA_N: usize = 4096; // Code lengthGOPPA_N28,844
+const GOPPA_T: usize = 170; // Code correction capacityGOPPA_T29,888
+                            // const GOPPA_K: usize = 2056; // Code dimensionGOPPA_K30,944
+const PLAINTEXT: &str = "plaintext.mce";PLAINTEXT32,1023
+const CIPHERTEXT: &str = "ciphertext.mce";CIPHERTEXT33,1064
+const DECRYPTED: &str = "decrypted.mce";DECRYPTED34,1107
+const PUBLIC_KEY: &str = "public_key.mce";PUBLIC_KEY35,1148
+const SECRET_KEY: &str = "secret_key.mce";SECRET_KEY36,1191
+fn get_program(path: &str) -> &str {get_program38,1235
+fn get_code_params(matches: &Matches) -> Result<(usize, usize), MainError> {get_code_params46,1386
+fn print_help(program: &str, opts: Options) {print_help74,2260
+fn main() -> Result<(), MainError> {main86,2651
 
 finite_field/f7.rs,1632
 const ORDER: usize = 7;ORDER8,128
@@ -269,83 +275,109 @@ pub mod matrix;matrix4,53
 pub mod polynomial;polynomial5,69
 fn div_ceil(a: usize, b: usize) -> usize {div_ceil7,90
 
-matrix/gauss.rs,1268
-impl<F> Mat<F>Mat7,104
-    pub fn swap_rows(&mut self, row1: usize, row2: usize) {swap_rows11,146
-    pub fn swap_cols(&mut self, col1: usize, col2: usize) {swap_cols24,653
-    pub fn combine_rows(&mut self, row1: usize, lambda: F::FieldElement, row2: usize) {combine_rows36,999
-    pub fn mul_row(&mut self, row: usize, lambda: F::FieldElement) {mul_row44,1274
-    pub fn inverse(&self) -> Option<Self> {inverse53,1588
-    pub fn invertible_random(field: Field<F>, n: usize) -> Self {invertible_random139,4460
-    pub fn row_echelon_form(&mut self) -> Vec<usize> {row_echelon_form193,6263
-    pub fn reduced_row_echelon_form(&mut self) -> Vec<usize> {reduced_row_echelon_form243,7860
-    pub fn rank(&self) -> usize {rank276,8963
-    pub fn max_set_of_independant_rows(&mut self) -> Vec<usize> {max_set_of_independant_rows281,9077
-    pub fn is_invertible(&self) -> bool {is_invertible285,9182
-    pub fn standard_form(&self) -> Option<(Self, Self, Perm)> {standard_form291,9418
-    pub fn standard_parity_check_equivalent(&self) -> (Self, Perm) {standard_parity_check_equivalent366,12182
-    pub fn is_standard_form(&self) -> bool {is_standard_form434,14585
-    pub fn remove_redundant_rows(&mut self) {remove_redundant_rows457,15167
+crypto/io.rs,547
+type Result<T> = std::result::Result<T, Box<dyn Error>>;Result18,272
+impl PublicKey {PublicKey20,330
+    pub fn write(&self, file_name: &str) -> Result<()> {write28,640
+    pub fn read_public_key(file_name: &str) -> Result<Self> {read_public_key35,863
+    pub fn read_code_dimension(file_name: &str) -> Result<usize> {read_code_dimension44,1196
+impl SecretKey {SecretKey53,1443
+    pub fn write(&self, file_name: &str) -> Result<()> {write71,2296
+    pub fn read_secret_key(file_name: &str) -> Result<Self> {read_secret_key89,2906
 
-matrix/traits.rs,3103
-impl<F> Clone for Mat<F>Mat10,255
-    fn clone(&self) -> Self {clone14,307
-impl<F> Add for Mat<F>Mat24,508
-    fn add(self, other: Self) -> Self::Output {add30,583
-impl<F> Add<&Mat<F>> for Mat<F>Add35,663
-    fn add(self, other: &Self) -> Self::Output {add41,747
-impl<F> Add<Mat<F>> for &Mat<F>Add46,827
-    fn add(self, other: Mat<F>) -> Self::Output {add52,913
-impl<F> Add for &Mat<F>Add57,994
-    fn add(self, other: Self) -> Self::Output {add63,1072
-impl<F> AddAssign<Mat<F>> for Mat<F>AddAssign79,1609
-    fn add_assign(&mut self, other: Self) {add_assign83,1673
-impl<F> AddAssign<&Mat<F>> for Mat<F>AddAssign88,1751
-    fn add_assign(&mut self, other: &Self) {add_assign92,1816
-impl<F> Sub for Mat<F>Mat105,2247
-    fn sub(self, other: Self) -> Self::Output {sub111,2322
-impl<F> Sub<&Mat<F>> for Mat<F>Sub116,2402
-    fn sub(self, other: &Self) -> Self::Output {sub122,2486
-impl<F> Sub<Mat<F>> for &Mat<F>Sub127,2566
-    fn sub(self, other: Mat<F>) -> Self::Output {sub133,2652
-impl<F> Sub for &Mat<F>Sub138,2733
-    fn sub(self, other: Self) -> Self::Output {sub144,2811
-impl<F> SubAssign<Mat<F>> for Mat<F>SubAssign160,3363
-    fn sub_assign(&mut self, other: Self) {sub_assign164,3427
-impl<F> SubAssign<&Mat<F>> for Mat<F>SubAssign169,3505
-    fn sub_assign(&mut self, other: &Self) {sub_assign173,3570
-impl<F> Mul for Mat<F>Mat186,4013
-    fn mul(self, other: Self) -> Self::Output {mul192,4088
-impl<F> Mul<&Mat<F>> for Mat<F>Mul197,4168
-    fn mul(self, other: &Self) -> Self::Output {mul203,4252
-impl<F> Mul<Mat<F>> for &Mat<F>Mul208,4332
-    fn mul(self, other: Mat<F>) -> Self::Output {mul214,4418
-impl<F> Mul for &Mat<F>Mul219,4499
-    fn mul(self, other: Self) -> Self::Output {mul225,4577
-impl<F> MulAssign<Mat<F>> for Mat<F>MulAssign245,5226
-    fn mul_assign(&mut self, other: Self) {mul_assign249,5290
-impl<F> MulAssign<&Mat<F>> for Mat<F>MulAssign254,5368
-    fn mul_assign(&mut self, other: &Self) {mul_assign258,5433
-impl<F> Mul<Perm> for Mat<F>Mat278,6090
-    fn mul(self, other: Perm) -> Self::Output {mul284,6171
-impl<F> Mul<&Perm> for Mat<F>Mat289,6251
-    fn mul(self, other: &Perm) -> Self::Output {mul295,6333
-impl<F> Mul<Perm> for &Mat<F>Mul300,6413
-    fn mul(self, other: Perm) -> Self::Output {mul306,6497
-impl<F> Mul<&Perm> for &Mat<F>Mul311,6576
-    fn mul(self, perm: &Perm) -> Self::Output {mul317,6661
-impl<F> Neg for Mat<F>Mat325,6878
-    fn neg(self) -> Self::Output {neg331,6953
-impl<F> Neg for &Mat<F>Neg336,7012
-    fn neg(self) -> Self::Output {neg342,7090
-impl<F> Index<(usize, usize)> for Mat<F>Mat352,7338
-    fn index(&self, index: (usize, usize)) -> &Self::Output {index358,7442
-impl<F> IndexMut<(usize, usize)> for Mat<F>Mat363,7563
-    fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {index_mut367,7634
-impl<F> Debug for Mat<F>Mat372,7771
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {fmt376,7830
-impl<F> Display for Mat<F>Mat396,8406
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {fmt400,8461
+crypto/mod.rs,696
+pub struct PublicKey {PublicKey20,517
+pub struct SecretKey {SecretKey40,1282
+pub fn keygen(n: usize, t: usize) -> (PublicKey, SecretKey) {keygen47,1386
+impl PublicKey {PublicKey82,2333
+    pub fn sgp(&self) -> &Mat<F2> {sgp83,2350
+    pub fn t(&self) -> usize {t87,2411
+    pub fn encrypt(&self, m: &RowVec<F2>) -> RowVec<F2> {encrypt91,2464
+impl SecretKey {SecretKey102,2775
+    pub fn s(&self) -> &Mat<F2> {s103,2792
+    pub fn goppa(&self) -> &Goppa<F2m> {goppa107,2849
+    pub fn info_set(&self) -> &Vec<usize> {info_set111,2917
+    pub fn p(&self) -> &Perm {p115,2991
+    pub fn decrypt(&self, c: &RowVec<F2>) -> RowVec<F2> {decrypt119,3045
+pub mod io;io135,3463
+
+matrix/gauss.rs,1279
+impl<F> Mat<F>Mat7,104
+    pub fn row_echelon_form(&mut self) -> Vec<usize> {row_echelon_form11,146
+    pub fn reduced_row_echelon_form(&mut self) -> Vec<usize> {reduced_row_echelon_form61,1743
+    pub fn standard_form(&self) -> Option<(Self, Self, Perm)> {standard_form96,2974
+    pub fn standard_parity_check_equivalent(&self) -> (Self, Perm) {standard_parity_check_equivalent171,5738
+    pub fn inverse(&self) -> Option<Self> {inverse242,8268
+    pub fn invertible_random(field: Field<F>, n: usize) -> Self {invertible_random328,11140
+    pub fn remove_redundant_rows(&mut self) {remove_redundant_rows382,12943
+    pub fn max_set_of_independant_rows(&mut self) -> Vec<usize> {max_set_of_independant_rows388,13121
+    pub fn rank(&self) -> usize {rank392,13226
+    pub fn is_invertible(&self) -> bool {is_invertible397,13340
+    pub fn is_standard_form(&self) -> bool {is_standard_form401,13448
+    pub fn swap_rows(&mut self, row1: usize, row2: usize) {swap_rows424,14030
+    pub fn swap_cols(&mut self, col1: usize, col2: usize) {swap_cols437,14537
+    pub fn mul_row(&mut self, row: usize, lambda: F::FieldElement) {mul_row448,14823
+    pub fn combine_rows(&mut self, row1: usize, lambda: F::FieldElement, row2: usize) {combine_rows455,15070
+
+matrix/traits.rs,3093
+impl<F> Clone for Mat<F>Mat10,257
+    fn clone(&self) -> Self {clone14,309
+impl<F> Add for Mat<F>Mat24,510
+    fn add(self, other: Self) -> Self::Output {add30,585
+impl<F> Add<&Mat<F>> for Mat<F>Add35,665
+    fn add(self, other: &Self) -> Self::Output {add41,749
+impl<F> Add<Mat<F>> for &Mat<F>Add46,829
+    fn add(self, other: Mat<F>) -> Self::Output {add52,915
+impl<F> Add for &Mat<F>Add57,996
+    fn add(self, other: Self) -> Self::Output {add63,1074
+impl<F> AddAssign<Mat<F>> for Mat<F>AddAssign79,1611
+    fn add_assign(&mut self, other: Self) {add_assign83,1675
+impl<F> AddAssign<&Mat<F>> for Mat<F>AddAssign88,1753
+    fn add_assign(&mut self, other: &Self) {add_assign92,1818
+impl<F> Sub for Mat<F>Mat105,2249
+    fn sub(self, other: Self) -> Self::Output {sub111,2324
+impl<F> Sub<&Mat<F>> for Mat<F>Sub116,2404
+    fn sub(self, other: &Self) -> Self::Output {sub122,2488
+impl<F> Sub<Mat<F>> for &Mat<F>Sub127,2568
+    fn sub(self, other: Mat<F>) -> Self::Output {sub133,2654
+impl<F> Sub for &Mat<F>Sub138,2735
+    fn sub(self, other: Self) -> Self::Output {sub144,2813
+impl<F> SubAssign<Mat<F>> for Mat<F>SubAssign160,3365
+    fn sub_assign(&mut self, other: Self) {sub_assign164,3429
+impl<F> SubAssign<&Mat<F>> for Mat<F>SubAssign169,3507
+    fn sub_assign(&mut self, other: &Self) {sub_assign173,3572
+impl<F> Mul for Mat<F>Mat186,4015
+    fn mul(self, other: Self) -> Self::Output {mul192,4090
+impl<F> Mul<&Mat<F>> for Mat<F>Mul197,4170
+    fn mul(self, other: &Self) -> Self::Output {mul203,4254
+impl<F> Mul<Mat<F>> for &Mat<F>Mul208,4334
+    fn mul(self, other: Mat<F>) -> Self::Output {mul214,4420
+impl<F> Mul for &Mat<F>Mul219,4501
+    fn mul(self, other: Self) -> Self::Output {mul225,4579
+impl<F> MulAssign<Mat<F>> for Mat<F>MulAssign245,5228
+    fn mul_assign(&mut self, other: Self) {mul_assign249,5292
+impl<F> MulAssign<&Mat<F>> for Mat<F>MulAssign254,5370
+    fn mul_assign(&mut self, other: &Self) {mul_assign258,5435
+impl<F> Mul<Perm> for Mat<F>Mat278,6092
+    fn mul(self, other: Perm) -> Self::Output {mul284,6173
+impl<F> Mul<&Perm> for Mat<F>Mat289,6253
+    fn mul(self, other: &Perm) -> Self::Output {mul295,6335
+impl<F> Mul<Perm> for &Mat<F>Mul300,6415
+    fn mul(self, other: Perm) -> Self::Output {mul306,6499
+impl<F> Mul<&Perm> for &Mat<F>Mul311,6578
+    fn mul(self, perm: &Perm) -> Self::Output {mul317,6663
+impl<F> Neg for Mat<F>Mat325,6880
+    fn neg(self) -> Self::Output {neg331,6955
+impl<F> Neg for &Mat<F>Neg336,7014
+    fn neg(self) -> Self::Output {neg342,7092
+impl<F> Index<(usize, usize)> for Mat<F>Mat352,7340
+    fn index(&self, index: (usize, usize)) -> &Self::Output {index358,7444
+impl<F> IndexMut<(usize, usize)> for Mat<F>Mat363,7565
+    fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {index_mut367,7636
+impl<F> Debug for Mat<F>Mat372,7773
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {fmt376,7832
+impl<F> Display for Mat<F>Mat396,8403
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {fmt400,8458
 
 matrix/perm.rs,736
 pub struct Perm(Vec<usize>);Perm5,81
@@ -363,131 +395,115 @@ impl Perm {Perm21,384
     pub fn inverse(&self) -> Self {inverse84,1915
     pub fn is_permutation(&self) -> bool {is_permutation92,2092
 
-matrix/rowvec.rs,4368
-type Result<T> = std::result::Result<T, Box<dyn Error>>;Result15,351
-pub struct RowVec<F>(Mat<F>)RowVec18,434
-impl<F> Clone for RowVec<F>RowVec22,489
-    fn clone(&self) -> Self {clone26,544
-impl<F> Add for RowVec<F>RowVec31,614
-    fn add(self, other: Self) -> Self::Output {add37,692
-impl<F> Add<&RowVec<F>> for RowVec<F>Add42,772
-    fn add(self, other: &Self) -> Self::Output {add48,862
-impl<F> Add<RowVec<F>> for &RowVec<F>Add53,942
-    fn add(self, other: RowVec<F>) -> Self::Output {add59,1037
-impl<F> Add for &RowVec<F>Add64,1121
-    fn add(self, other: Self) -> Self::Output {add70,1205
-impl<F> AddAssign<RowVec<F>> for RowVec<F>AddAssign75,1297
-    fn add_assign(&mut self, other: Self) {add_assign79,1367
-impl<F> AddAssign<&RowVec<F>> for RowVec<F>AddAssign84,1445
-    fn add_assign(&mut self, other: &Self) {add_assign88,1516
-impl<F> Sub for RowVec<F>RowVec93,1598
-    fn sub(self, other: Self) -> Self::Output {sub99,1676
-impl<F> Sub<&RowVec<F>> for RowVec<F>Sub104,1756
-    fn sub(self, other: &Self) -> Self::Output {sub110,1846
-impl<F> Sub<RowVec<F>> for &RowVec<F>Sub115,1926
-    fn sub(self, other: RowVec<F>) -> Self::Output {sub121,2021
-impl<F> Sub for &RowVec<F>Sub126,2105
-    fn sub(self, other: Self) -> Self::Output {sub132,2189
-impl<F> SubAssign<RowVec<F>> for RowVec<F>SubAssign137,2281
-    fn sub_assign(&mut self, other: Self) {sub_assign141,2351
-impl<F> SubAssign<&RowVec<F>> for RowVec<F>SubAssign146,2429
-    fn sub_assign(&mut self, other: &Self) {sub_assign150,2500
-impl<F> Mul<Mat<F>> for RowVec<F>Mul155,2582
-    fn mul(self, other: Mat<F>) -> Self::Output {mul161,2668
-impl<F> Mul<&Mat<F>> for RowVec<F>Mul166,2750
-    fn mul(self, other: &Mat<F>) -> Self::Output {mul172,2837
-impl<F> Mul<Mat<F>> for &RowVec<F>Mul177,2919
-    fn mul(self, other: Mat<F>) -> Self::Output {mul183,3011
-impl<F> Mul<&Mat<F>> for &RowVec<F>Mul188,3092
-    fn mul(self, other: &Mat<F>) -> Self::Output {mul194,3185
-impl<F> MulAssign<Mat<F>> for RowVec<F>MulAssign199,3277
-    fn mul_assign(&mut self, other: Mat<F>) {mul_assign203,3344
-impl<F> MulAssign<&Mat<F>> for RowVec<F>MulAssign208,3424
-    fn mul_assign(&mut self, other: &Mat<F>) {mul_assign212,3492
-impl<F> Mul<Perm> for RowVec<F>RowVec217,3573
-    fn mul(self, other: Perm) -> Self::Output {mul223,3657
-impl<F> Mul<&Perm> for RowVec<F>RowVec228,3737
-    fn mul(self, other: &Perm) -> Self::Output {mul234,3822
-impl<F> Mul<Perm> for &RowVec<F>Mul239,3902
-    fn mul(self, other: Perm) -> Self::Output {mul245,3992
-impl<F> Mul<&Perm> for &RowVec<F>Mul250,4071
-    fn mul(self, other: &Perm) -> Self::Output {mul256,4162
-impl<F> Neg for RowVec<F>RowVec261,4260
-    fn neg(self) -> Self::Output {neg267,4338
-impl<F> Neg for &RowVec<F>Neg272,4397
-    fn neg(self) -> Self::Output {neg278,4481
-impl<F> Index<usize> for RowVec<F>RowVec283,4550
-    fn index(&self, index: usize) -> &Self::Output {index289,4648
-impl<F> IndexMut<usize> for RowVec<F>RowVec294,4738
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {index_mut298,4803
-impl<F> Debug for RowVec<F>RowVec303,4909
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {fmt307,4971
-impl<F> Display for RowVec<F>RowVec312,5072
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {fmt316,5130
-impl<F> RowVec<F>RowVec321,5229
-    pub fn new(field: Field<F>, data: Vec<F::FieldElement>) -> Self {new325,5274
-    pub fn zero(field: Field<F>, cols: usize) -> Self {zero329,5404
-    pub fn field(&self) -> &Rc<F> {field333,5509
-    pub fn rows(&self) -> usize {rows337,5575
-    pub fn cols(&self) -> usize {cols341,5626
-    pub fn data(&self) -> &Vec<F::FieldElement> {data345,5689
-    pub fn weight(&self) -> usize {weight349,5768
-    pub fn random(field: Field<F>, n: usize) -> Self {random359,5989
-    pub fn random_with_weight(field: Field<F>, n: usize, w: usize) -> Self {random_with_weight363,6092
-    pub fn transpose(&self) -> Mat<F> {transpose386,6755
-    pub fn is_zero(&self) -> bool {is_zero390,6829
-    pub fn extract_cols(&self, perm: &Vec<usize>) -> Self {extract_cols399,7021
-impl RowVec<F2> {RowVec404,7132
-    pub fn write(&self, file_name: &str) -> Result<()> {write405,7150
-    pub fn read_vector(file_name: &str) -> Result<RowVec<F2>> {read_vector429,7864
+matrix/mod.rs,1162
+pub struct Mat<F>Mat12,225
+impl<F> Mat<F>Mat22,357
+    pub fn new(field: Field<F>, rows: usize, cols: usize, data: Vec<F::FieldElement>) -> Self {new33,628
+    pub fn zero(field: Field<F>, rows: usize, cols: usize) -> Self {zero56,1358
+    pub fn field(&self) -> &Rc<F> {field74,1873
+    pub fn rows(&self) -> usize {rows78,1936
+    pub fn cols(&self) -> usize {cols82,1995
+    pub fn data(&self) -> &Vec<F::FieldElement> {data86,2054
+    pub fn random(field: Field<F>, n: usize, m: usize) -> Self {random90,2130
+    pub fn is_zero(&self) -> bool {is_zero101,2445
+    pub fn extract_cols(&self, cols: &Vec<usize>) -> Self {extract_cols113,2777
+    pub fn identity(field: Field<F>, n: usize) -> Self {identity123,3085
+    pub fn transpose(&self) -> Self {transpose131,3281
+    pub fn keep_rows(&mut self, rows: &Vec<usize>) {keep_rows146,3696
+    pub fn remove_rows(&mut self, rows: &Vec<usize>) {remove_rows169,4476
+    pub fn binary(&self, field: Field<F2>) -> Mat<F2>binary184,5036
+pub mod gauss;gauss203,5575
+pub mod io;io204,5590
+pub mod perm;perm205,5602
+pub mod rowvec;rowvec206,5616
+pub mod traits;traits207,5632
 
-matrix/f2.rs,329
-type Result<T> = std::result::Result<T, Box<dyn Error>>;Result6,118
-impl Mat<F2> {Mat8,176
-    pub fn to_bytes(&self) -> Vec<u8> {to_bytes13,345
-    pub fn from_bytes(vec: &[u8]) -> Result<(usize, Self)> {from_bytes41,1229
-impl<F> Mat<F>Mat65,1959
-    pub fn binary(&self, field: Field<F2>) -> Mat<F2> {binary72,2182
+matrix/byte_vector.rs,232
+type Result<T> = std::result::Result<T, Box<dyn Error>>;Result8,173
+impl Mat<F2> {Mat10,231
+    pub fn to_bytes(&self) -> Vec<u8> {to_bytes15,400
+    pub fn from_bytes(vec: &[u8]) -> Result<(usize, Self)> {from_bytes43,1284
 
-matrix/mod.rs,1092
-pub struct Mat<F>Mat12,202
-impl<F> Mat<F>Mat22,334
-    pub fn new(field: Field<F>, rows: usize, cols: usize, data: Vec<F::FieldElement>) -> Self {new33,605
-    pub fn zero(field: Field<F>, rows: usize, cols: usize) -> Self {zero56,1335
-    pub fn field(&self) -> &Rc<F> {field74,1850
-    pub fn rows(&self) -> usize {rows78,1913
-    pub fn cols(&self) -> usize {cols82,1972
-    pub fn data(&self) -> &Vec<F::FieldElement> {data86,2031
-    pub fn random(field: Field<F>, n: usize, m: usize) -> Self {random90,2107
-    pub fn is_zero(&self) -> bool {is_zero101,2422
-    pub fn extract_cols(&self, cols: &Vec<usize>) -> Self {extract_cols113,2754
-    pub fn identity(field: Field<F>, n: usize) -> Self {identity123,3062
-    pub fn transpose(&self) -> Self {transpose131,3258
-    pub fn keep_rows(&mut self, rows: &Vec<usize>) {keep_rows146,3673
-    pub fn remove_rows(&mut self, rows: &Vec<usize>) {remove_rows169,4453
-pub mod f2;f2182,4841
-pub mod gauss;gauss183,4853
-pub mod perm;perm184,4868
-pub mod rowvec;rowvec185,4882
-pub mod traits;traits186,4898
+matrix/rowvec/traits.rs,3227
+impl<F> Clone for RowVec<F>RowVec9,246
+    fn clone(&self) -> Self {clone13,301
+impl<F> Add for RowVec<F>RowVec18,371
+    fn add(self, other: Self) -> Self::Output {add24,449
+impl<F> Add<&RowVec<F>> for RowVec<F>Add29,529
+    fn add(self, other: &Self) -> Self::Output {add35,619
+impl<F> Add<RowVec<F>> for &RowVec<F>Add40,699
+    fn add(self, other: RowVec<F>) -> Self::Output {add46,794
+impl<F> Add for &RowVec<F>Add51,878
+    fn add(self, other: Self) -> Self::Output {add57,962
+impl<F> AddAssign<RowVec<F>> for RowVec<F>AddAssign62,1054
+    fn add_assign(&mut self, other: Self) {add_assign66,1124
+impl<F> AddAssign<&RowVec<F>> for RowVec<F>AddAssign71,1202
+    fn add_assign(&mut self, other: &Self) {add_assign75,1273
+impl<F> Sub for RowVec<F>RowVec80,1355
+    fn sub(self, other: Self) -> Self::Output {sub86,1433
+impl<F> Sub<&RowVec<F>> for RowVec<F>Sub91,1513
+    fn sub(self, other: &Self) -> Self::Output {sub97,1603
+impl<F> Sub<RowVec<F>> for &RowVec<F>Sub102,1683
+    fn sub(self, other: RowVec<F>) -> Self::Output {sub108,1778
+impl<F> Sub for &RowVec<F>Sub113,1862
+    fn sub(self, other: Self) -> Self::Output {sub119,1946
+impl<F> SubAssign<RowVec<F>> for RowVec<F>SubAssign124,2038
+    fn sub_assign(&mut self, other: Self) {sub_assign128,2108
+impl<F> SubAssign<&RowVec<F>> for RowVec<F>SubAssign133,2186
+    fn sub_assign(&mut self, other: &Self) {sub_assign137,2257
+impl<F> Mul<Mat<F>> for RowVec<F>Mul142,2339
+    fn mul(self, other: Mat<F>) -> Self::Output {mul148,2425
+impl<F> Mul<&Mat<F>> for RowVec<F>Mul153,2507
+    fn mul(self, other: &Mat<F>) -> Self::Output {mul159,2594
+impl<F> Mul<Mat<F>> for &RowVec<F>Mul164,2676
+    fn mul(self, other: Mat<F>) -> Self::Output {mul170,2768
+impl<F> Mul<&Mat<F>> for &RowVec<F>Mul175,2849
+    fn mul(self, other: &Mat<F>) -> Self::Output {mul181,2942
+impl<F> MulAssign<Mat<F>> for RowVec<F>MulAssign186,3034
+    fn mul_assign(&mut self, other: Mat<F>) {mul_assign190,3101
+impl<F> MulAssign<&Mat<F>> for RowVec<F>MulAssign195,3181
+    fn mul_assign(&mut self, other: &Mat<F>) {mul_assign199,3249
+impl<F> Mul<Perm> for RowVec<F>RowVec204,3330
+    fn mul(self, other: Perm) -> Self::Output {mul210,3414
+impl<F> Mul<&Perm> for RowVec<F>RowVec215,3494
+    fn mul(self, other: &Perm) -> Self::Output {mul221,3579
+impl<F> Mul<Perm> for &RowVec<F>Mul226,3659
+    fn mul(self, other: Perm) -> Self::Output {mul232,3749
+impl<F> Mul<&Perm> for &RowVec<F>Mul237,3828
+    fn mul(self, other: &Perm) -> Self::Output {mul243,3919
+impl<F> Neg for RowVec<F>RowVec248,4017
+    fn neg(self) -> Self::Output {neg254,4095
+impl<F> Neg for &RowVec<F>Neg259,4154
+    fn neg(self) -> Self::Output {neg265,4238
+impl<F> Index<usize> for RowVec<F>RowVec270,4307
+    fn index(&self, index: usize) -> &Self::Output {index276,4405
+impl<F> IndexMut<usize> for RowVec<F>RowVec281,4495
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {index_mut285,4560
+impl<F> Debug for RowVec<F>RowVec290,4666
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {fmt294,4728
+impl<F> Display for RowVec<F>RowVec299,4824
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {fmt303,4882
 
-crypto.rs,1157
-type Result<T> = std::result::Result<T, Box<dyn Error>>;Result16,273
-pub struct PublicKey {PublicKey27,696
-pub struct SecretKey {SecretKey47,1461
-pub fn keygen(n: usize, t: usize) -> (PublicKey, SecretKey) {keygen54,1565
-impl PublicKey {PublicKey89,2512
-    pub fn sgp(&self) -> &Mat<F2> {sgp90,2529
-    pub fn t(&self) -> usize {t94,2590
-    pub fn encrypt(&self, m: &RowVec<F2>) -> RowVec<F2> {encrypt98,2643
-    pub fn write(&self, file_name: &str) -> Result<()> {write115,3245
-    pub fn read_public_key(file_name: &str) -> Result<Self> {read_public_key122,3468
-    pub fn read_code_dimension(file_name: &str) -> Result<usize> {read_code_dimension131,3801
-impl SecretKey {SecretKey140,4048
-    pub fn s(&self) -> &Mat<F2> {s141,4065
-    pub fn goppa(&self) -> &Goppa<F2m> {goppa145,4122
-    pub fn info_set(&self) -> &Vec<usize> {info_set149,4190
-    pub fn p(&self) -> &Perm {p153,4264
-    pub fn decrypt(&self, c: &RowVec<F2>) -> RowVec<F2> {decrypt157,4318
-    pub fn write(&self, file_name: &str) -> Result<()> {write189,5570
-    pub fn read_secret_key(file_name: &str) -> Result<Self> {read_secret_key207,6180
+matrix/rowvec/mod.rs,894
+pub struct RowVec<F>(Mat<F>)RowVec8,129
+impl<F> RowVec<F>RowVec12,184
+    pub fn new(field: Field<F>, data: Vec<F::FieldElement>) -> Self {new16,229
+    pub fn zero(field: Field<F>, cols: usize) -> Self {zero20,359
+    pub fn field(&self) -> &Rc<F> {field24,464
+    pub fn rows(&self) -> usize {rows28,530
+    pub fn cols(&self) -> usize {cols32,581
+    pub fn data(&self) -> &Vec<F::FieldElement> {data36,644
+    pub fn weight(&self) -> usize {weight40,723
+    pub fn random(field: Field<F>, n: usize) -> Self {random50,944
+    pub fn random_with_weight(field: Field<F>, n: usize, w: usize) -> Self {random_with_weight54,1047
+    pub fn transpose(&self) -> Mat<F> {transpose77,1710
+    pub fn is_zero(&self) -> bool {is_zero81,1784
+    pub fn extract_cols(&self, perm: &Vec<usize>) -> Self {extract_cols90,1976
+pub mod io;io95,2087
+pub mod traits;traits96,2099
+
+matrix/rowvec/byte_vector.rs,257
+type Result<T> = std::result::Result<T, Box<dyn Error>>;Result13,228
+impl RowVec<F2> {RowVec15,286
+    pub fn write(&self, file_name: &str) -> Result<()> {write16,304
+    pub fn read_vector(file_name: &str) -> Result<RowVec<F2>> {read_vector40,1018

@@ -263,5 +263,6 @@ where
     }
 }
 
+pub mod byte_vector;
 pub mod characteristic_two;
 pub mod traits;

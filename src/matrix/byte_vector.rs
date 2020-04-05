@@ -1,7 +1,9 @@
+//! Converts a matrix on F<sub>2</sub> into a byte vector and vice versa
+
 use std::{convert::TryInto, error::Error};
 
 use super::Mat;
-use crate::finite_field::{F2FiniteExtension, Field, F2};
+use crate::finite_field::{Field, F2};
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
@@ -59,28 +61,5 @@ impl Mat<F2> {
             read += 1;
         }
         Ok((read, mat))
-    }
-}
-
-impl<F> Mat<F>
-where
-    F: F2FiniteExtension,
-{
-    /// Takes a t * n matrix on F<sub>2<sup>m</sup></sub>
-    /// and outputs a mt * n matrix on F<sub>2</sub>
-    /// by decomposing each coefficient on the canonical basis
-    pub fn binary(&self, field: Field<F2>) -> Mat<F2> {
-        let f = self.field();
-        let m = f.characteristic_exponent() as usize;
-        let mut bin = Mat::zero(field, m * self.rows, self.cols);
-        for j in 0..self.cols {
-            for i in 0..self.rows {
-                let elt_as_u32 = f.elt_to_u32(self[(i, j)]);
-                for k in 0..m {
-                    bin[(m * i + k, j)] = (elt_as_u32 >> k) & 1;
-                }
-            }
-        }
-        bin
     }
 }

@@ -9,8 +9,9 @@ use mceliece::{
 };
 
 // TODO: remove commented code
-// TODO: check the use of generic F or F2m across the crate
-// TODO: Reorganise crate (use io files)
+// TODO: Rework Add trait and others using self consuming
+// TODO: useless line in test report
+// TODO: FieldTrait called Field and Field enum called ?
 
 // const GOPPA_N_MIN: usize = 3;
 // const GOPPA_N_MAX: usize = 1024;
