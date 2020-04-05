@@ -2,11 +2,7 @@
 
 use std::rc::Rc;
 
-use crate::finite_field::{
-    Field,
-    FieldOption::{self, *},
-    FiniteField, F2,
-};
+use crate::finite_field::{Field, FieldTrait, FiniteField, F2};
 
 pub use perm::Perm;
 pub use rowvec::RowVec;
@@ -15,7 +11,7 @@ pub use rowvec::RowVec;
 #[derive(Eq, PartialEq)]
 pub struct Mat<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     field: Rc<F>,
     rows: usize,
@@ -25,7 +21,7 @@ where
 
 impl<F> Mat<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     /// Creates a new matrix
     ///
@@ -35,7 +31,7 @@ where
     ///
     /// Panics if the matrix is empty or if there are not exactly rows * cols coefficients.
     pub fn new(
-        field_option: FieldOption<F>,
+        field: Field<F>,
         rows: usize,
         cols: usize,
         data: Vec<F::FieldElement>,
@@ -45,9 +41,9 @@ where
         } else if data.len() != rows * cols {
             panic!("Dimensions do not match the number of coefficients");
         }
-        let field = match field_option {
-            Field(f) => Rc::clone(f),
-            Parameters(p) => Rc::new(F::generate(p)),
+        let field = match field {
+            Field::Some(f) => Rc::clone(f),
+            Field::Parameters(p) => Rc::new(F::generate(p)),
         };
         Self {
             field,
@@ -62,13 +58,13 @@ where
     /// # Panics
     ///
     /// Panics if the number of either rows or columns is zero.
-    pub fn zero(field_option: FieldOption<F>, rows: usize, cols: usize) -> Self {
+    pub fn zero(field: Field<F>, rows: usize, cols: usize) -> Self {
         if rows == 0 || cols == 0 {
             panic!("Empty matrix");
         }
-        let field = match field_option {
-            Field(f) => Rc::clone(f),
-            Parameters(p) => Rc::new(F::generate(p)),
+        let field = match field {
+            Field::Some(f) => Rc::clone(f),
+            Field::Parameters(p) => Rc::new(F::generate(p)),
         };
         let data = vec![field.zero(); rows * cols];
         Self {
@@ -96,9 +92,9 @@ where
         &self.data
     }
 
-    pub fn random(field_option: FieldOption<F>, n: usize, m: usize) -> Self {
+    pub fn random(field: Field<F>, n: usize, m: usize) -> Self {
         let mut rng = rand::thread_rng();
-        let mut mat = Self::zero(field_option, n, m);
+        let mut mat = Self::zero(field, n, m);
         for i in 0..n {
             for j in 0..m {
                 mat[(i, j)] = mat.field.random_element(&mut rng);
@@ -120,7 +116,7 @@ where
 
     /// Creates a new matrix by taking the chosen columns in the given order
     pub fn extract_cols(&self, cols: &Vec<usize>) -> Self {
-        let mut res = Mat::zero(Field(self.field()), self.rows(), cols.len());
+        let mut res = Mat::zero(Field::Some(self.field()), self.rows(), cols.len());
         for j in 0..cols.len() {
             for i in 0..res.rows() {
                 res[(i, j)] = self[(i, cols[j])];
@@ -129,8 +125,8 @@ where
         res
     }
 
-    pub fn identity(field_option: FieldOption<F>, n: usize) -> Self {
-        let mut id = Self::zero(field_option, n, n);
+    pub fn identity(field: Field<F>, n: usize) -> Self {
+        let mut id = Self::zero(field, n, n);
         for i in 0..n {
             id[(i, i)] = id.field.one();
         }
@@ -138,7 +134,7 @@ where
     }
 
     pub fn transpose(&self) -> Self {
-        let mut t = Self::zero(Field(self.field()), self.cols, self.rows);
+        let mut t = Self::zero(Field::Some(self.field()), self.cols, self.rows);
         for i in 0..t.rows {
             for j in 0..t.cols {
                 t[(i, j)] = self[(j, i)];

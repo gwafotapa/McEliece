@@ -17,7 +17,7 @@ fn matrix_f7_permutation_random() {
 fn matrix_f7_is_invertible() {
     common::log_setup();
     let f7 = &Rc::new(F7::generate(()));
-    let id = Mat::identity(f7, 11);
+    let id = Mat::identity(Field::Some(f7), 11);
     info!("Identity matrix:{}", id);
     assert!(id.is_invertible());
 }
@@ -26,7 +26,7 @@ fn matrix_f7_is_invertible() {
 fn matrix_f7_inverse() {
     common::log_setup();
     let f7 = &Rc::new(F7::generate(()));
-    let id = Mat::identity(f7, 11);
+    let id = Mat::identity(Field::Some(f7), 11);
     assert!(id.inverse().as_ref() == Some(&id));
 
     let p = Perm::random(11);
@@ -37,7 +37,7 @@ fn matrix_f7_inverse() {
 fn matrix_f7_invertible_random() {
     common::log_setup();
     let f7 = &Rc::new(F7::generate(()));
-    let mat = Mat::invertible_random(f7, 15);
+    let mat = Mat::invertible_random(Field::Some(f7), 15);
     assert!(mat.is_invertible());
     assert!(
         mat.inverse()
@@ -48,7 +48,7 @@ fn matrix_f7_invertible_random() {
     );
 
     let prod = &mat * &mat.inverse().expect("Cannot inverse invertible matrix");
-    let id = Mat::identity(f7, 15);
+    let id = Mat::identity(Field::Some(f7), 15);
     assert!(prod == id);
 }
 
@@ -56,10 +56,10 @@ fn matrix_f7_invertible_random() {
 fn matrix_f7_add() {
     common::log_setup();
     let f7 = &Rc::new(F7::generate(()));
-    let a = &Mat::random(f7, 11, 11);
-    let b = &Mat::random(f7, 11, 11);
-    let c = &Mat::random(f7, 11, 11);
-    let z = &Mat::zero(f7, 11, 11);
+    let a = &Mat::random(Field::Some(f7), 11, 11);
+    let b = &Mat::random(Field::Some(f7), 11, 11);
+    let c = &Mat::random(Field::Some(f7), 11, 11);
+    let z = &Mat::zero(Field::Some(f7), 11, 11);
 
     // Associativity
     assert!((a + b) + c == a + (b + c));
@@ -71,7 +71,7 @@ fn matrix_f7_add() {
     assert!(a + z == *a);
 
     // Characteristic
-    let mut s = Mat::zero(f7, 11, 11);
+    let mut s = Mat::zero(Field::Some(f7), 11, 11);
     for _i in 0..7 {
         s += a;
     }
@@ -83,8 +83,8 @@ fn matrix_f7_add() {
 fn matrix_f7_mul_wrong_dimensions() {
     common::log_setup();
     let f7 = &Rc::new(F7::generate(()));
-    let a = Mat::zero(f7, 5, 4);
-    let b = Mat::zero(f7, 3, 5);
+    let a = Mat::zero(Field::Some(f7), 5, 4);
+    let b = Mat::zero(Field::Some(f7), 3, 5);
     let ab = a * b;
     assert!(ab.is_zero());
 }
@@ -93,31 +93,31 @@ fn matrix_f7_mul_wrong_dimensions() {
 fn matrix_f7_mul() {
     common::log_setup();
     let f7 = &Rc::new(F7::generate(()));
-    let a = &Mat::random(f7, 10, 8);
-    let b = &Mat::random(f7, 8, 13);
-    let c = &Mat::random(f7, 13, 4);
+    let a = &Mat::random(Field::Some(f7), 10, 8);
+    let b = &Mat::random(Field::Some(f7), 8, 13);
+    let c = &Mat::random(Field::Some(f7), 13, 4);
 
     // Associativity
     assert!((a * b) * c == a * (b * c));
 
     // Neutral element
-    let i8 = &Mat::identity(f7, 8);
-    let i10 = &Mat::identity(f7, 10);
+    let i8 = &Mat::identity(Field::Some(f7), 8);
+    let i10 = &Mat::identity(Field::Some(f7), 10);
     assert!(a * i8 == *a);
     assert!(i10 * a == *a);
 
     // Zero case
-    let z8 = &Mat::zero(f7, 8, 8);
-    let z10 = &Mat::zero(f7, 10, 10);
-    let z10_8 = &Mat::zero(f7, 10, 8);
+    let z8 = &Mat::zero(Field::Some(f7), 8, 8);
+    let z10 = &Mat::zero(Field::Some(f7), 10, 10);
+    let z10_8 = &Mat::zero(Field::Some(f7), 10, 8);
     assert!(a * z8 == *z10_8);
     assert!(z10 * a == *z10_8);
 
     // Distributivity
-    let a = &Mat::random(f7, 10, 12);
-    let b = &Mat::random(f7, 10, 12);
-    let c = &Mat::random(f7, 12, 9);
-    let d = &Mat::random(f7, 12, 9);
+    let a = &Mat::random(Field::Some(f7), 10, 12);
+    let b = &Mat::random(Field::Some(f7), 10, 12);
+    let c = &Mat::random(Field::Some(f7), 12, 9);
+    let d = &Mat::random(Field::Some(f7), 12, 9);
 
     // Left: (a + b)c = ac + bc
     assert!((a + b) * c == a * c + b * c);
@@ -130,10 +130,10 @@ fn matrix_f7_mul() {
 fn matrix_f7_rank() {
     common::log_setup();
     let f7 = &Rc::new(F7::generate(()));
-    let mat = Mat::zero(f7, 23, 4);
+    let mat = Mat::zero(Field::Some(f7), 23, 4);
     assert!(mat.rank() == 0);
 
-    let mat = Mat::identity(f7, 19);
+    let mat = Mat::identity(Field::Some(f7), 19);
     assert!(mat.rank() == 19);
 }
 
@@ -141,7 +141,7 @@ fn matrix_f7_rank() {
 fn matrix_f7_standard_form() {
     common::log_setup();
     let f7 = &Rc::new(F7::generate(()));
-    let id = Mat::identity(f7, 19);
+    let id = Mat::identity(Field::Some(f7), 19);
     assert!(id.is_standard_form());
 
     let (u, h, p) = id
@@ -151,8 +151,8 @@ fn matrix_f7_standard_form() {
     assert!(h == id);
     assert!(p.is_permutation());
 
-    let mut h = Mat::random(f7, 13, 31);
-    let inv = Mat::invertible_random(f7, 13);
+    let mut h = Mat::random(Field::Some(f7), 13, 31);
+    let inv = Mat::invertible_random(Field::Some(f7), 13);
     for i in 0..13 {
         for j in 0..13 {
             h[(i, j)] = inv[(i, j)];
@@ -177,7 +177,7 @@ fn matrix_f7_transpose() {
     let mut rng = rand::thread_rng();
     let rows = rng.gen_range(1, 100);
     let cols = rng.gen_range(1, 100);
-    let mat = Mat::random(f7, rows, cols);
+    let mat = Mat::random(Field::Some(f7), rows, cols);
     let tmat = mat.transpose();
     for i in 0..rows {
         for j in 0..cols {
@@ -190,9 +190,9 @@ fn matrix_f7_transpose() {
 fn matrix_f7_rowvec_weight() {
     common::log_setup();
     let f7 = &Rc::new(F7::generate(()));
-    let vec = RowVec::zero(f7, 4);
+    let vec = RowVec::zero(Field::Some(f7), 4);
     assert!(vec.weight() == 0);
 
-    let vec = RowVec::random_with_weight(f7, 35, 13);
+    let vec = RowVec::random_with_weight(Field::Some(f7), 35, 13);
     assert!(vec.weight() == 13);
 }

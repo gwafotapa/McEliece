@@ -2,14 +2,14 @@
 
 use rand::{rngs::ThreadRng, Rng};
 
-use super::{CharacteristicTwo, F2FiniteExtension, Field, FiniteField};
+use super::{CharacteristicTwo, F2FiniteExtension, FieldTrait, FiniteField};
 
 /// Finite field of order 2<sup>m</sup>
 #[derive(Eq)]
 pub struct F2m {
     order: usize,
     m: u32,
-    exp: Vec<<Self as Field>::FieldElement>,
+    exp: Vec<<Self as FieldTrait>::FieldElement>,
     log: Vec<u32>,
 }
 
@@ -19,7 +19,7 @@ impl PartialEq for F2m {
     }
 }
 
-impl Field for F2m {
+impl FieldTrait for F2m {
     /// Field Element
     type FieldElement = u32;
 
@@ -37,7 +37,7 @@ impl Field for F2m {
     /// # Examples
     ///
     /// ```
-    /// # use mceliece::finite_field::{Field, FiniteField, F2m};
+    /// # use mceliece::finite_field::{FieldTrait, FiniteField, F2m};
     /// let f16 = F2m::generate(16);
     /// assert_eq!(f16.order(), 16);
     /// ```
@@ -68,7 +68,7 @@ impl Field for F2m {
 
     /// Returns identity element of field addition
     /// ```
-    /// # use mceliece::finite_field::{Field, F2m};
+    /// # use mceliece::finite_field::{FieldTrait, F2m};
     /// let f2m = F2m::generate(4);
     /// assert_eq!(f2m.zero(), 0);
     /// ```
@@ -78,7 +78,7 @@ impl Field for F2m {
 
     /// Returns identity element of field multiplication
     /// ```
-    /// # use mceliece::finite_field::{Field, F2m};
+    /// # use mceliece::finite_field::{FieldTrait, F2m};
     /// let f2m = F2m::generate(8);
     /// assert_eq!(f2m.one(), 1);
     /// ```
@@ -88,7 +88,7 @@ impl Field for F2m {
 
     /// Returns field characteristic
     /// ```
-    /// # use mceliece::finite_field::{Field, F2m};
+    /// # use mceliece::finite_field::{FieldTrait, F2m};
     /// let f2m = F2m::generate(32);
     /// assert_eq!(f2m.characteristic(), 2);
     /// ```
@@ -106,7 +106,7 @@ impl Field for F2m {
 
     /// Multiplies two field elements
     /// ```
-    /// # use mceliece::finite_field::{Field, FiniteField, F2m};
+    /// # use mceliece::finite_field::{FieldTrait, FiniteField, F2m};
     /// let f64 = F2m::generate(64);
     /// let a = f64.exp(4);
     /// let b = f64.exp(11);
@@ -133,7 +133,7 @@ impl Field for F2m {
 
     /// Returns additive inverse of an element
     /// ```
-    /// # use mceliece::finite_field::{Field, F2m};
+    /// # use mceliece::finite_field::{FieldTrait, F2m};
     /// let f256 = F2m::generate(256);
     /// let x = f256.random_element(&mut rand::thread_rng());
     /// assert_eq!(f256.neg(x), x);
@@ -159,7 +159,7 @@ impl Field for F2m {
 impl FiniteField for F2m {
     /// Returns m where field order is p<sup>m</sup> with p prime
     /// ```
-    /// # use mceliece::finite_field::{Field, FiniteField, F2m};
+    /// # use mceliece::finite_field::{FieldTrait, FiniteField, F2m};
     /// let f128 = F2m::generate(128);
     /// assert_eq!(f128.characteristic_exponent(), 7);
     /// ```

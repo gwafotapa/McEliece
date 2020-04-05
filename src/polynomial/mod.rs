@@ -2,13 +2,13 @@
 
 use std::rc::Rc;
 
-use crate::finite_field::Field;
+use crate::finite_field::{Field, FieldTrait};
 
 /// Polynomial with coefficients in a field F
 #[derive(Eq)]
 pub struct Poly<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     field: Rc<F>,
     data: Vec<F::FieldElement>,
@@ -16,21 +16,22 @@ where
 
 impl<F> Poly<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     /// Creates a new polynomial
     ///
     /// # Panics
     ///
     /// Panics if the polynomial is empty i.e. if the vector data is empty.
-    pub fn new(field: &Rc<F>, data: Vec<F::FieldElement>) -> Self {
+    pub fn new(field: Field<F>, data: Vec<F::FieldElement>) -> Self {
         if data.is_empty() {
             panic!("Polynomial must have at least one coefficient");
         }
-        Self {
-            field: Rc::clone(field),
-            data,
-        }
+        let field = match field {
+            Field::Some(f) => Rc::clone(f),
+            Field::Parameters(p) => Rc::new(F::generate(p)),
+        };
+        Self { field, data }
     }
 
     /// Creates a zero polynomial
@@ -40,16 +41,27 @@ where
     /// # Panics
     ///
     /// Panics if len is zero.
-    pub fn zero(field: &Rc<F>, len: usize) -> Self {
+    pub fn zero(field: Field<F>, len: usize) -> Self {
+        if len == 0 {
+            panic!("Polynomial must have at least one coefficient");
+        }
+        let field = match field {
+            Field::Some(f) => Rc::clone(f),
+            Field::Parameters(p) => Rc::new(F::generate(p)),
+        };
         let data = vec![field.zero(); len];
-        Self::new(field, data)
+        Self { field, data }
     }
 
     /// Creates the monic monomial x<sup>n</sup>
-    pub fn x_n(field: &Rc<F>, n: usize) -> Self {
+    pub fn x_n(field: Field<F>, n: usize) -> Self {
+        let field = match field {
+            Field::Some(f) => Rc::clone(f),
+            Field::Parameters(p) => Rc::new(F::generate(p)),
+        };
         let mut data = vec![field.zero(); n + 1];
         data[n] = field.one();
-        Self::new(field, data)
+        Self { field, data }
     }
 
     /// Creates the polynomial that is the sum of the monic monomials
@@ -58,19 +70,23 @@ where
     /// # Panics
     ///
     /// Panics if support is empty.
-    pub fn support(f: &Rc<F>, support: &[usize]) -> Self {
+    pub fn support(field: Field<F>, support: &[usize]) -> Self {
         if support.is_empty() {
             panic!("Support cannot be empty");
         }
 
-        let mut data = vec![f.zero(); support[support.len() - 1]];
+        let field = match field {
+            Field::Some(f) => Rc::clone(f),
+            Field::Parameters(p) => Rc::new(F::generate(p)),
+        };
+        let mut data = vec![field.zero(); support[support.len() - 1]];
         for &i in support.iter() {
             if i >= data.len() {
-                data.resize(i + 1, f.zero());
+                data.resize(i + 1, field.zero());
             }
-            data[i] = f.one();
+            data[i] = field.one();
         }
-        Self::new(f, data)
+        Self { field, data }
     }
 
     pub fn field(&self) -> &Rc<F> {
@@ -95,14 +111,14 @@ where
     }
 
     /// Returns a random monic polynomial of the chosen degree
-    pub fn random(f: &Rc<F>, degree: usize) -> Self {
+    pub fn random(field: Field<F>, degree: usize) -> Self {
         let mut rng = rand::thread_rng();
-        let mut p = Self::zero(f, degree + 1);
+        let mut p = Self::zero(field, degree + 1);
         for i in 0..degree {
-            p[i] = f.random_element(&mut rng);
+            p[i] = p.field.random_element(&mut rng);
         }
-        while p[degree] == f.zero() {
-            p[degree] = f.random_element(&mut rng);
+        while p[degree] == p.field.zero() {
+            p[degree] = p.field.random_element(&mut rng);
         }
         p
     }
@@ -131,10 +147,10 @@ where
         }
         let f = a.field();
         if a.degree() < b.degree() {
-            return (Self::zero(f, 1), a.clone());
+            return (Self::zero(Field::Some(f), 1), a.clone());
         }
 
-        let mut q = Self::zero(f, a.degree() - b.degree() + 1);
+        let mut q = Self::zero(Field::Some(f), a.degree() - b.degree() + 1);
         let mut r = a.clone();
         let b_deg = b.degree();
         let b_lc_inv = f.inv(b[b_deg]).unwrap();
@@ -201,12 +217,12 @@ where
         let mut t = Vec::new();
         r.push(a.clone());
         r.push(b.clone());
-        let s0 = Self::x_n(f, 0);
-        let s1 = Self::zero(f, 1);
+        let s0 = Self::x_n(Field::Some(f), 0);
+        let s1 = Self::zero(Field::Some(f), 1);
         s.push(s0);
         s.push(s1);
-        let t0 = Self::zero(f, 1);
-        let t1 = Self::x_n(f, 0);
+        let t0 = Self::zero(Field::Some(f), 1);
+        let t1 = Self::x_n(Field::Some(f), 0);
         t.push(t0);
         t.push(t1);
         let mut i = 1;

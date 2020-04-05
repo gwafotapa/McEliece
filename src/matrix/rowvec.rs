@@ -10,22 +10,18 @@ use std::{
 };
 
 use super::{Mat, Perm};
-use crate::finite_field::{
-    F2FiniteExtension, Field,
-    FieldOption::{self, *},
-    FiniteField, F2,
-};
+use crate::finite_field::{F2FiniteExtension, Field, FieldTrait, FiniteField, F2};
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 #[derive(Eq, PartialEq)]
 pub struct RowVec<F>(Mat<F>)
 where
-    F: Eq + Field;
+    F: Eq + FieldTrait;
 
 impl<F> Clone for RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     fn clone(&self) -> Self {
         RowVec(self.0.clone())
@@ -34,7 +30,7 @@ where
 
 impl<F> Add for RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = Self;
 
@@ -45,7 +41,7 @@ where
 
 impl<F> Add<&RowVec<F>> for RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = Self;
 
@@ -56,7 +52,7 @@ where
 
 impl<F> Add<RowVec<F>> for &RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = RowVec<F>;
 
@@ -67,7 +63,7 @@ where
 
 impl<F> Add for &RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = RowVec<F>;
 
@@ -78,7 +74,7 @@ where
 
 impl<F> AddAssign<RowVec<F>> for RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     fn add_assign(&mut self, other: Self) {
         *self += &other;
@@ -87,7 +83,7 @@ where
 
 impl<F> AddAssign<&RowVec<F>> for RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     fn add_assign(&mut self, other: &Self) {
         self.0 += &other.0;
@@ -96,7 +92,7 @@ where
 
 impl<F> Sub for RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = Self;
 
@@ -107,7 +103,7 @@ where
 
 impl<F> Sub<&RowVec<F>> for RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = Self;
 
@@ -118,7 +114,7 @@ where
 
 impl<F> Sub<RowVec<F>> for &RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = RowVec<F>;
 
@@ -129,7 +125,7 @@ where
 
 impl<F> Sub for &RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = RowVec<F>;
 
@@ -140,7 +136,7 @@ where
 
 impl<F> SubAssign<RowVec<F>> for RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     fn sub_assign(&mut self, other: Self) {
         *self -= &other;
@@ -149,7 +145,7 @@ where
 
 impl<F> SubAssign<&RowVec<F>> for RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     fn sub_assign(&mut self, other: &Self) {
         self.0 -= &other.0;
@@ -158,7 +154,7 @@ where
 
 impl<F> Mul<Mat<F>> for RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = Self;
 
@@ -169,7 +165,7 @@ where
 
 impl<F> Mul<&Mat<F>> for RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = Self;
 
@@ -180,7 +176,7 @@ where
 
 impl<F> Mul<Mat<F>> for &RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = RowVec<F>;
 
@@ -191,7 +187,7 @@ where
 
 impl<F> Mul<&Mat<F>> for &RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = RowVec<F>;
 
@@ -202,7 +198,7 @@ where
 
 impl<F> MulAssign<Mat<F>> for RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     fn mul_assign(&mut self, other: Mat<F>) {
         *self *= &other;
@@ -211,7 +207,7 @@ where
 
 impl<F> MulAssign<&Mat<F>> for RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     fn mul_assign(&mut self, other: &Mat<F>) {
         self.0 *= other;
@@ -220,7 +216,7 @@ where
 
 impl<F> Mul<Perm> for RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = Self;
 
@@ -231,7 +227,7 @@ where
 
 impl<F> Mul<&Perm> for RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = Self;
 
@@ -242,7 +238,7 @@ where
 
 impl<F> Mul<Perm> for &RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = RowVec<F>;
 
@@ -253,7 +249,7 @@ where
 
 impl<F> Mul<&Perm> for &RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = RowVec<F>;
 
@@ -264,7 +260,7 @@ where
 
 impl<F> Neg for RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = Self;
 
@@ -275,7 +271,7 @@ where
 
 impl<F> Neg for &RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = RowVec<F>;
 
@@ -286,7 +282,7 @@ where
 
 impl<F> Index<usize> for RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = F::FieldElement;
 
@@ -297,7 +293,7 @@ where
 
 impl<F> IndexMut<usize> for RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.0[(0, index)]
@@ -324,17 +320,17 @@ where
 
 impl<F> RowVec<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
-    pub fn new(field_option: FieldOption<F>, data: Vec<F::FieldElement>) -> Self {
+    pub fn new(field: Field<F>, data: Vec<F::FieldElement>) -> Self {
         if data.len() == 0 {
             panic!("Empty row vector");
         }
-        RowVec(Mat::new(field_option, 1, data.len(), data))
+        RowVec(Mat::new(field, 1, data.len(), data))
     }
 
-    pub fn zero(field_option: FieldOption<F>, cols: usize) -> Self {
-        RowVec(Mat::zero(field_option, 1, cols))
+    pub fn zero(field: Field<F>, cols: usize) -> Self {
+        RowVec(Mat::zero(field, 1, cols))
     }
 
     pub fn field(&self) -> &Rc<F> {
@@ -363,17 +359,17 @@ where
         weight
     }
 
-    pub fn random(field_option: FieldOption<F>, n: usize) -> Self {
-        RowVec(Mat::random(field_option, 1, n))
+    pub fn random(field: Field<F>, n: usize) -> Self {
+        RowVec(Mat::random(field, 1, n))
     }
 
-    pub fn random_with_weight(field_option: FieldOption<F>, n: usize, w: usize) -> Self {
+    pub fn random_with_weight(field: Field<F>, n: usize, w: usize) -> Self {
         let mut rng = rand::thread_rng();
-        let f = match field_option {
-            Field(f) => Rc::clone(f),
-            Parameters(p) => Rc::new(F::generate(p)),
+        let f = match field {
+            Field::Some(f) => Rc::clone(f),
+            Field::Parameters(p) => Rc::new(F::generate(p)),
         };
-        let mut vec = RowVec::zero(Field(&f), n);
+        let mut vec = RowVec::zero(Field::Some(&f), n);
         let mut cols = Vec::with_capacity(n);
         for i in 0..n {
             cols.push(i);
@@ -413,7 +409,7 @@ impl RowVec<F2> {
     // TODO: !!!
     pub fn f2_random(n: usize) -> Self {
         let f2 = &Rc::new(F2::generate(()));
-        RowVec::random(Field(f2), n)
+        RowVec::random(Field::Some(f2), n)
     }
 
     pub fn write(&self, file_name: &str) -> Result<()> {
@@ -446,7 +442,7 @@ impl RowVec<F2> {
         f.read_to_end(&mut vec)?;
         let cols = u32::from_be_bytes(vec[0..4].try_into()?) as usize;
         let f2 = &Rc::new(F2 {});
-        let mut rowvec = RowVec::zero(Field(f2), cols);
+        let mut rowvec = RowVec::zero(Field::Some(f2), cols);
         let mut k = 4;
         let mut shift = 7;
         for i in 0..cols {

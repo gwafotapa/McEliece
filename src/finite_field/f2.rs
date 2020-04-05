@@ -2,17 +2,17 @@
 
 use rand::{rngs::ThreadRng, Rng};
 
-use super::{CharacteristicTwo, F2FiniteExtension, Field, FiniteField};
+use super::{CharacteristicTwo, F2FiniteExtension, FieldTrait, FiniteField};
 
 /// Finite field of order 2
 #[derive(Eq, PartialEq)]
 pub struct F2 {}
 
-impl Field for F2 {
+impl FieldTrait for F2 {
     /// Field Element
     type FieldElement = u32;
 
-    /// Field Parameters
+    /// FieldTrait Parameters
     type FieldParameters = ();
 
     /// Generates field
@@ -22,7 +22,7 @@ impl Field for F2 {
 
     /// Returns identity element of field addition
     /// ```
-    /// # use mceliece::finite_field::{Field, F2};
+    /// # use mceliece::finite_field::{FieldTrait, F2};
     /// let f2 = F2 {};
     /// assert_eq!(f2.zero(), 0);
     /// ```
@@ -32,7 +32,7 @@ impl Field for F2 {
 
     /// Returns identity element of field multiplication
     /// ```
-    /// # use mceliece::finite_field::{Field, F2};
+    /// # use mceliece::finite_field::{FieldTrait, F2};
     /// let f2 = F2 {};
     /// assert_eq!(f2.one(), 1);
     /// ```
@@ -42,7 +42,7 @@ impl Field for F2 {
 
     /// Returns field characteristic
     /// ```
-    /// # use mceliece::finite_field::{Field, F2};
+    /// # use mceliece::finite_field::{FieldTrait, F2};
     /// let f2 = F2 {};
     /// assert_eq!(f2.characteristic(), 2);
     /// ```
@@ -52,7 +52,7 @@ impl Field for F2 {
 
     /// Adds two field elements
     /// ```
-    /// # use mceliece::finite_field::{Field, F2};
+    /// # use mceliece::finite_field::{FieldTrait, F2};
     /// let f2 = F2 {};
     /// assert_eq!(f2.add(0, 0), 0);
     /// assert_eq!(f2.add(0, 1), 1);
@@ -65,7 +65,7 @@ impl Field for F2 {
 
     /// Substracts two field elements
     /// ```
-    /// # use mceliece::finite_field::{Field, F2};
+    /// # use mceliece::finite_field::{FieldTrait, F2};
     /// let f2 = F2 {};
     /// assert_eq!(f2.sub(0, 0), 0);
     /// assert_eq!(f2.sub(0, 1), 1);
@@ -78,7 +78,7 @@ impl Field for F2 {
 
     /// Multiplies two field elements
     /// ```
-    /// # use mceliece::finite_field::{Field, F2};
+    /// # use mceliece::finite_field::{FieldTrait, F2};
     /// let f2 = F2 {};
     /// assert_eq!(f2.mul(0, 0), 0);
     /// assert_eq!(f2.mul(0, 1), 0);
@@ -91,7 +91,7 @@ impl Field for F2 {
 
     /// Returns additive inverse of an element
     /// ```
-    /// # use mceliece::finite_field::{Field, F2};
+    /// # use mceliece::finite_field::{FieldTrait, F2};
     /// let f2 = F2 {};
     /// assert_eq!(f2.neg(0), 0);
     /// assert_eq!(f2.neg(1), 1);
@@ -102,7 +102,7 @@ impl Field for F2 {
 
     /// Returns multiplicative inverse of an element
     /// ```
-    /// # use mceliece::finite_field::{Field, F2};
+    /// # use mceliece::finite_field::{FieldTrait, F2};
     /// let f2 = F2 {};
     /// assert_eq!(f2.inv(0), None);
     /// assert_eq!(f2.inv(1), Some(1));

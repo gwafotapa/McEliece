@@ -2,7 +2,10 @@ use log::info;
 use rand::Rng;
 use std::rc::Rc;
 
-use mceliece::{finite_field::*, matrix::*};
+use mceliece::{
+    finite_field::*, // TODO: Why do I have to add FieldTrait if * is here ?
+    matrix::*,
+};
 
 pub mod common;
 
@@ -10,11 +13,16 @@ pub mod common;
 fn matrix_f2_new() {
     common::log_setup();
     let f2 = &Rc::new(F2::generate(()));
-    let mut a = Mat::zero(f2, 3, 4);
+    let mut a = Mat::zero(Field::Some(f2), 3, 4);
     a[(2, 2)] = 1;
     a[(1, 0)] = 1;
     a[(2, 3)] = 1;
-    let b = Mat::new(f2, 3, 4, [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1].to_vec());
+    let b = Mat::new(
+        Field::Some(f2),
+        3,
+        4,
+        [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1].to_vec(),
+    );
     assert_eq!(a.rows(), 3);
     assert_eq!(a.cols(), 4);
     assert_eq!(a.data(), b.data());
@@ -33,7 +41,7 @@ fn matrix_f2_permutation_random() {
 fn matrix_f2_is_invertible() {
     common::log_setup();
     let f2 = &Rc::new(F2::generate(()));
-    let id = Mat::identity(f2, 11);
+    let id = Mat::identity(Field::Some(f2), 11);
     info!("Matrix identity:{:?}", id);
     assert!(id.is_invertible());
 }
@@ -42,7 +50,7 @@ fn matrix_f2_is_invertible() {
 fn matrix_f2_inverse() {
     common::log_setup();
     let f2 = &Rc::new(F2::generate(()));
-    let id = Mat::identity(f2, 11);
+    let id = Mat::identity(Field::Some(f2), 11);
     assert_eq!(id.inverse(), Some(id));
 
     let p = Perm::random(11);
@@ -53,7 +61,7 @@ fn matrix_f2_inverse() {
 fn matrix_f2_invertible_random() {
     common::log_setup();
     let f2 = &Rc::new(F2::generate(()));
-    let mat = Mat::invertible_random(f2, 15);
+    let mat = Mat::invertible_random(Field::Some(f2), 15);
     assert!(mat.is_invertible());
     assert_eq!(
         mat.inverse()
@@ -64,7 +72,7 @@ fn matrix_f2_invertible_random() {
     );
 
     let prod = &mat * &mat.inverse().expect("Cannot inverse invertible matrix");
-    let id = Mat::identity(f2, 15);
+    let id = Mat::identity(Field::Some(f2), 15);
     assert_eq!(prod, id);
 }
 
@@ -72,10 +80,10 @@ fn matrix_f2_invertible_random() {
 fn matrix_f2_add() {
     common::log_setup();
     let f2 = &Rc::new(F2::generate(()));
-    let a = &Mat::random(f2, 11, 11);
-    let b = &Mat::random(f2, 11, 11);
-    let c = &Mat::random(f2, 11, 11);
-    let z = &Mat::zero(f2, 11, 11);
+    let a = &Mat::random(Field::Some(f2), 11, 11);
+    let b = &Mat::random(Field::Some(f2), 11, 11);
+    let c = &Mat::random(Field::Some(f2), 11, 11);
+    let z = &Mat::zero(Field::Some(f2), 11, 11);
 
     // Associativity
     assert_eq!((a + b) + c, a + (b + c));
@@ -95,8 +103,8 @@ fn matrix_f2_add() {
 fn matrix_f2_mul_wrong_dimensions() {
     common::log_setup();
     let f2 = &Rc::new(F2::generate(()));
-    let a = Mat::zero(f2, 5, 4);
-    let b = Mat::zero(f2, 3, 5);
+    let a = Mat::zero(Field::Some(f2), 5, 4);
+    let b = Mat::zero(Field::Some(f2), 3, 5);
     let ab = a * b;
     assert!(ab.is_zero());
 }
@@ -105,31 +113,31 @@ fn matrix_f2_mul_wrong_dimensions() {
 fn matrix_f2_mul() {
     common::log_setup();
     let f2 = &Rc::new(F2::generate(()));
-    let a = &Mat::random(f2, 10, 8);
-    let b = &Mat::random(f2, 8, 13);
-    let c = &Mat::random(f2, 13, 4);
+    let a = &Mat::random(Field::Some(f2), 10, 8);
+    let b = &Mat::random(Field::Some(f2), 8, 13);
+    let c = &Mat::random(Field::Some(f2), 13, 4);
 
     // Associativity
     assert_eq!((a * b) * c, a * (b * c));
 
     // Neutral element
-    let i8 = &Mat::identity(f2, 8);
-    let i10 = &Mat::identity(f2, 10);
+    let i8 = &Mat::identity(Field::Some(f2), 8);
+    let i10 = &Mat::identity(Field::Some(f2), 10);
     assert_eq!(a * i8, *a);
     assert_eq!(i10 * a, *a);
 
     // Zero case
-    let z8 = &Mat::zero(f2, 8, 8);
-    let z10 = &Mat::zero(f2, 10, 10);
-    let z10_8 = &Mat::zero(f2, 10, 8);
+    let z8 = &Mat::zero(Field::Some(f2), 8, 8);
+    let z10 = &Mat::zero(Field::Some(f2), 10, 10);
+    let z10_8 = &Mat::zero(Field::Some(f2), 10, 8);
     assert_eq!(a * z8, *z10_8);
     assert_eq!(z10 * a, *z10_8);
 
     // Distributivity
-    let a = &Mat::random(f2, 10, 12);
-    let b = &Mat::random(f2, 10, 12);
-    let c = &Mat::random(f2, 12, 9);
-    let d = &Mat::random(f2, 12, 9);
+    let a = &Mat::random(Field::Some(f2), 10, 12);
+    let b = &Mat::random(Field::Some(f2), 10, 12);
+    let c = &Mat::random(Field::Some(f2), 12, 9);
+    let d = &Mat::random(Field::Some(f2), 12, 9);
     assert_eq!((a + b) * c, a * c + b * c);
     assert_eq!(a * (c + d), a * c + a * d);
 }
@@ -138,10 +146,10 @@ fn matrix_f2_mul() {
 fn matrix_f2_rank() {
     common::log_setup();
     let f2 = &Rc::new(F2::generate(()));
-    let mat = Mat::zero(f2, 23, 4);
+    let mat = Mat::zero(Field::Some(f2), 23, 4);
     assert_eq!(mat.rank(), 0);
 
-    let mat = Mat::identity(f2, 19);
+    let mat = Mat::identity(Field::Some(f2), 19);
     assert_eq!(mat.rank(), 19);
 }
 
@@ -149,7 +157,7 @@ fn matrix_f2_rank() {
 fn matrix_f2_standard_form() {
     common::log_setup();
     let f2 = &Rc::new(F2::generate(()));
-    let mat = Mat::identity(f2, 19);
+    let mat = Mat::identity(Field::Some(f2), 19);
     assert!(mat.is_standard_form());
 
     let (u, h, p) = mat
@@ -159,8 +167,8 @@ fn matrix_f2_standard_form() {
     assert_eq!(h, mat);
     assert!(p.is_permutation());
 
-    let mut h = Mat::random(f2, 13, 31);
-    let inv = Mat::invertible_random(f2, 13);
+    let mut h = Mat::random(Field::Some(f2), 13, 31);
+    let inv = Mat::invertible_random(Field::Some(f2), 13);
     for i in 0..13 {
         for j in 0..13 {
             h[(i, j)] = inv[(i, j)];
@@ -185,7 +193,7 @@ fn matrix_f2_transpose() {
     let mut rng = rand::thread_rng();
     let rows = rng.gen_range(1, 100);
     let cols = rng.gen_range(1, 100);
-    let mat = Mat::random(f2, rows, cols);
+    let mat = Mat::random(Field::Some(f2), rows, cols);
     let tmat = mat.transpose();
     for i in 0..rows {
         for j in 0..cols {
@@ -198,10 +206,10 @@ fn matrix_f2_transpose() {
 fn matrix_f2_rowvec_weight() {
     common::log_setup();
     let f2 = &Rc::new(F2::generate(()));
-    let vec = RowVec::zero(f2, 4);
+    let vec = RowVec::zero(Field::Some(f2), 4);
     assert!(vec.weight() == 0);
 
-    let vec = RowVec::random_with_weight(f2, 35, 13);
+    let vec = RowVec::random_with_weight(Field::Some(f2), 35, 13);
     assert_eq!(vec.weight(), 13);
 }
 
@@ -211,7 +219,7 @@ fn rowvec_f2_write_read() {
     let f2 = &Rc::new(F2::generate(()));
     let mut rng = rand::thread_rng();
     let n = rng.gen_range(10, 1000);
-    let vec = RowVec::random(f2, n);
+    let vec = RowVec::random(Field::Some(f2), n);
     let file_name = "vec_write_read_test.mce";
     vec.write(file_name).unwrap();
     let vec_read = RowVec::read_vector(file_name).unwrap();
@@ -225,8 +233,8 @@ fn matrix_f2_remove_redundant_rows() {
     let v = vec![
         1, 0, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0,
     ];
-    let mut a = Mat::new(f2, 5, 5, v);
-    let b = Mat::new(f2, 2, 5, vec![1, 0, 1, 0, 0, 1, 1, 1, 0, 0]);
+    let mut a = Mat::new(Field::Some(f2), 5, 5, v);
+    let b = Mat::new(Field::Some(f2), 2, 5, vec![1, 0, 1, 0, 0, 1, 1, 1, 0, 0]);
     info!("Matrix A:{}", a);
 
     a.remove_redundant_rows();
@@ -239,8 +247,13 @@ fn matrix_f2_remove_redundant_rows() {
         1, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
         1, 1, 1, 1, 1,
     ];
-    let mut a = Mat::new(f2, 13, 5, v);
-    let b = Mat::new(f2, 3, 5, vec![0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0]);
+    let mut a = Mat::new(Field::Some(f2), 13, 5, v);
+    let b = Mat::new(
+        Field::Some(f2),
+        3,
+        5,
+        vec![0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0],
+    );
     info!("Matrix A:{}", a);
 
     a.remove_redundant_rows();
@@ -251,7 +264,7 @@ fn matrix_f2_remove_redundant_rows() {
     let v = vec![
         1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0,
     ];
-    let mut a = Mat::new(f2, 3, 7, v);
+    let mut a = Mat::new(Field::Some(f2), 3, 7, v);
     let b = a.clone();
     info!("Matrix A:{}", a);
 

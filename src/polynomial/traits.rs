@@ -6,11 +6,11 @@ use std::{
 };
 
 use super::Poly;
-use crate::finite_field::{F2FiniteExtension, Field, FiniteField};
+use crate::finite_field::{F2FiniteExtension, Field, FieldTrait, FiniteField};
 
 impl<F> PartialEq for Poly<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     fn eq(&self, other: &Self) -> bool {
         if self.field != other.field || self.degree() != other.degree() {
@@ -27,7 +27,7 @@ where
 
 impl<F> Clone for Poly<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     fn clone(&self) -> Self {
         Poly {
@@ -39,7 +39,7 @@ where
 
 impl<F> Add for Poly<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = Self;
 
@@ -50,7 +50,7 @@ where
 
 impl<F> Add<&Poly<F>> for Poly<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = Self;
 
@@ -61,7 +61,7 @@ where
 
 impl<F> Add<Poly<F>> for &Poly<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = Poly<F>;
 
@@ -72,7 +72,7 @@ where
 
 impl<F> Add for &Poly<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = Poly<F>;
 
@@ -85,7 +85,7 @@ where
 
 impl<F> AddAssign<Poly<F>> for Poly<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     fn add_assign(&mut self, other: Self) {
         *self += &other;
@@ -94,7 +94,7 @@ where
 
 impl<F> AddAssign<&Poly<F>> for Poly<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     fn add_assign(&mut self, other: &Self) {
         self.data.resize(
@@ -112,7 +112,7 @@ where
 
 impl<F> Sub for Poly<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = Self;
 
@@ -123,7 +123,7 @@ where
 
 impl<F> Sub<&Poly<F>> for Poly<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = Self;
 
@@ -134,7 +134,7 @@ where
 
 impl<F> Sub<Poly<F>> for &Poly<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = Poly<F>;
 
@@ -145,7 +145,7 @@ where
 
 impl<F> Sub for &Poly<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = Poly<F>;
 
@@ -158,7 +158,7 @@ where
 
 impl<F> SubAssign<Poly<F>> for Poly<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     fn sub_assign(&mut self, other: Self) {
         *self -= &other;
@@ -167,7 +167,7 @@ where
 
 impl<F> SubAssign<&Poly<F>> for Poly<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     fn sub_assign(&mut self, other: &Self) {
         self.data.resize(
@@ -185,7 +185,7 @@ where
 
 impl<F> Mul for Poly<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = Self;
 
@@ -196,7 +196,7 @@ where
 
 impl<F> Mul<&Poly<F>> for Poly<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = Self;
 
@@ -207,7 +207,7 @@ where
 
 impl<F> Mul<Poly<F>> for &Poly<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = Poly<F>;
 
@@ -218,13 +218,13 @@ where
 
 impl<F> Mul for &Poly<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = Poly<F>;
 
     fn mul(self, other: Self) -> Self::Output {
         let f = self.field();
-        let mut prod = Poly::zero(f, self.degree() + other.degree() + 1);
+        let mut prod = Poly::zero(Field::Some(f), self.degree() + other.degree() + 1);
 
         for i in 0..self.degree() + 1 {
             for j in 0..other.degree() + 1 {
@@ -239,7 +239,7 @@ where
 
 impl<F> MulAssign<Poly<F>> for Poly<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     fn mul_assign(&mut self, other: Self) {
         *self *= &other;
@@ -248,7 +248,7 @@ where
 
 impl<F> MulAssign<&Poly<F>> for Poly<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     fn mul_assign(&mut self, other: &Self) {
         let tmp = self.clone();
@@ -270,7 +270,7 @@ where
 
 impl<F> Neg for Poly<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = Self;
 
@@ -281,13 +281,13 @@ where
 
 impl<F> Neg for &Poly<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = Poly<F>;
 
     fn neg(self) -> Self::Output {
         let f = self.field();
-        let mut opp = Poly::zero(f, self.degree() + 1);
+        let mut opp = Poly::zero(Field::Some(f), self.degree() + 1);
 
         for i in 0..self.degree() + 1 {
             opp[i] = f.neg(self[i]);
@@ -298,7 +298,7 @@ where
 
 impl<F> Index<usize> for Poly<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     type Output = F::FieldElement;
 
@@ -309,7 +309,7 @@ where
 
 impl<F> IndexMut<usize> for Poly<F>
 where
-    F: Eq + Field,
+    F: Eq + FieldTrait,
 {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.data[index]

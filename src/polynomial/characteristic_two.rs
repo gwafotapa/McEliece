@@ -1,27 +1,29 @@
 use std::{convert::TryInto, error::Error, rc::Rc};
 
-use super::{Field, Poly};
-use crate::finite_field::{f2m, CharacteristicTwo, F2FiniteExtension, F2m, FiniteField};
+use super::{FieldTrait, Poly};
+use crate::finite_field::{
+    f2m, CharacteristicTwo, F2FiniteExtension, F2m, Field, FiniteField,
+};
 
 type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
 impl<F> Poly<F>
 where
-    F: CharacteristicTwo + Eq + Field,
+    F: CharacteristicTwo + Eq + FieldTrait,
 {
-    pub fn random_monic_irreducible(f: &Rc<F>, degree: usize) -> Self
+    pub fn random_monic_irreducible(field: Field<F>, degree: usize) -> Self
     where
         F: FiniteField,
     {
         let mut rng = rand::thread_rng();
-        let mut p = Self::zero(f, degree + 1);
-        p[degree] = f.one();
+        let mut p = Self::zero(field, degree + 1);
+        p[degree] = p.field.one();
         for i in 0..degree {
-            p[i] = f.random_element(&mut rng);
+            p[i] = p.field.random_element(&mut rng);
         }
         while !p.is_irreducible() {
             for i in 0..degree {
-                p[i] = f.random_element(&mut rng);
+                p[i] = p.field.random_element(&mut rng);
             }
         }
         p
@@ -118,21 +120,21 @@ where
         let n_div_primes: Vec<u32> = n_prime_factors.iter().map(|x| n / x).collect();
 
         for i in 0..n_prime_factors.len() {
-            let mut h = Self::x_n(f, 1);
+            let mut h = Self::x_n(Field::Some(f), 1);
             for _j in 0..n_div_primes[i] {
                 h.pow_modulo(q, self);
             }
-            h -= &Self::x_n(f, 1);
+            h -= &Self::x_n(Field::Some(f), 1);
             let g = Self::gcd(self, &h);
             if g.degree() != 0 {
                 return false;
             }
         }
-        let mut g = Self::x_n(f, 1);
+        let mut g = Self::x_n(Field::Some(f), 1);
         for _i in 0..n {
             g.pow_modulo(q, self);
         }
-        g -= &Self::x_n(f, 1);
+        g -= &Self::x_n(Field::Some(f), 1);
         g.modulo(self);
         g.is_zero()
     }
@@ -149,8 +151,8 @@ where
         let mut b = Vec::new();
         a.push(g.clone());
         a.push(t.clone());
-        let b0 = Self::zero(f, 1);
-        let b1 = Self::x_n(f, 0);
+        let b0 = Self::zero(Field::Some(f), 1);
+        let b1 = Self::x_n(Field::Some(f), 0);
         b.push(b0);
         b.push(b1);
 
@@ -186,7 +188,7 @@ impl Poly<F2m> {
         let order = u32::from_be_bytes(vec[0..4].try_into()?) as usize;
         let f = &Rc::new(F2m::generate(order));
         let t = u32::from_be_bytes(vec[4..8].try_into()?) as usize;
-        let mut poly = Self::zero(f, t + 1);
+        let mut poly = Self::zero(Field::Some(f), t + 1);
         for i in 0..t + 1 {
             let j = 8 + 4 * i;
             poly[i] = f.u32_to_elt(u32::from_be_bytes(vec[j..j + 4].try_into()?));

@@ -7,6 +7,8 @@ pub mod common;
 
 const REPEAT: u32 = 10;
 
+// TODO: Replace RowVec::f2_random
+
 #[test]
 fn crypto_keygen() {
     let (q, n, t) = common::goppa_setup();
@@ -14,7 +16,7 @@ fn crypto_keygen() {
 
     let f2 = &Rc::new(F2::generate(()));
     let (pk, sk) = keygen(n, t);
-    let g = sk.goppa().generator_matrix(f2);
+    let g = sk.goppa().generator_matrix(Field::Some(f2));
     assert!(sk.s().is_invertible());
     assert_eq!(g.rank(), g.rows());
     assert!(sk.p().is_permutation());
@@ -53,8 +55,8 @@ fn crypto_decrypt_null_ciphertext() {
     let f2 = &Rc::new(F2::generate(()));
     let (pk, sk) = keygen(n, t);
     let k = pk.sgp().rows();
-    let msg = RowVec::zero(f2, k);
-    let cpt = RowVec::zero(f2, n);
+    let msg = RowVec::zero(Field::Some(f2), k);
+    let cpt = RowVec::zero(Field::Some(f2), n);
     let dmsg = sk.decrypt(&cpt);
     assert_eq!(dmsg, msg);
 }
@@ -80,7 +82,7 @@ fn crypto_encrypt_decrypt_null_message() {
     let f2 = &Rc::new(F2::generate(()));
     let (pk, sk) = keygen(n, t);
     let k = pk.sgp().rows();
-    let msg = RowVec::zero(f2, k);
+    let msg = RowVec::zero(Field::Some(f2), k);
     let cpt = pk.encrypt(&msg);
     assert_eq!(cpt.weight(), t);
 
@@ -109,10 +111,7 @@ fn crypto_repeat() {
         let (q, n, t) = common::goppa_setup();
         warn!(
             "Encrypt - Decrypt #{:02}: F2m=F{:<4}, n={:<4}, t={:<4}",
-            _r,
-            q,
-            n,
-            t
+            _r, q, n, t
         );
         crypto_repeated(n, t);
     }

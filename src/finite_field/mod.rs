@@ -7,7 +7,7 @@ pub use f2::F2;
 pub use f2m::F2m;
 pub use f7::F7;
 
-pub trait Field {
+pub trait FieldTrait {
     /// Field Element
     type FieldElement: Copy + Eq;
 
@@ -45,7 +45,7 @@ pub trait Field {
     fn random_element(&self, rng: &mut ThreadRng) -> Self::FieldElement;
 }
 
-pub trait FiniteField: Field {
+pub trait FiniteField: FieldTrait {
     /// Returns m where field order is p<sup>m</sup> with p prime
     fn characteristic_exponent(&self) -> u32;
 
@@ -74,7 +74,7 @@ pub trait FiniteField: Field {
     }
 }
 
-pub trait CharacteristicTwo: Field {}
+pub trait CharacteristicTwo: FieldTrait {}
 
 pub trait F2FiniteExtension: CharacteristicTwo + FiniteField {
     /// Converts an element to an u32
@@ -94,11 +94,11 @@ pub trait F2FiniteExtension: CharacteristicTwo + FiniteField {
     fn u32_to_elt(&self, n: u32) -> Self::FieldElement;
 }
 
-pub enum FieldOption<'a, F>
+pub enum Field<'a, F>
 where
-    F: Field,
+    F: FieldTrait,
 {
-    Field(&'a Rc<F>),
+    Some(&'a Rc<F>),
     Parameters(F::FieldParameters),
 }
 
