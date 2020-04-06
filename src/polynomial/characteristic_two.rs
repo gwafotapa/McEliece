@@ -153,7 +153,7 @@ where
         while a[i].degree() > g.degree() / 2 {
             i += 1;
             let (q, r) = Self::euclidean_division(&a[i - 2], &a[i - 1]);
-            b.push(&b[i - 2] + &q * &b[i - 1]);
+            b.push(&b[i - 2] - &q * &b[i - 1]);
             a.push(r);
         }
 

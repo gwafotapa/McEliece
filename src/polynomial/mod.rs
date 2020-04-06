@@ -196,15 +196,6 @@ where
         Self::gcd(b, &r)
     }
 
-    pub fn neg_mut(&mut self) {
-        if self.field.characteristic() == 2 {
-            return;
-        }
-        for i in 0..self.degree() + 1 {
-            self[i] = self.field.neg(self[i]);
-        }
-    }
-
     /// <https://en.wikipedia.org/wiki/Polynomial_greatest_common_divisor>
     pub fn extended_gcd(a: &Self, b: &Self) -> (Self, Self, Self, Self, Self) {
         if a.field != b.field {
@@ -241,9 +232,9 @@ where
         let mut b1 = s.pop().unwrap();
         let u = s.pop().unwrap();
         if i % 2 == 0 {
-            a1.neg_mut();
+            a1 = -a1;
         } else {
-            b1.neg_mut();
+            b1 = -b1;
         }
 
         (g, u, v, a1, b1)
@@ -263,6 +254,6 @@ where
     }
 }
 
-pub mod byte_vector;
+pub mod io;
 pub mod characteristic_two;
 pub mod traits;

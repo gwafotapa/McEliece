@@ -27,8 +27,9 @@ where
 {
     type Output = Self;
 
-    fn add(self, other: Self) -> Self::Output {
-        &self + &other
+    fn add(mut self, other: Self) -> Self::Output {
+        self += &other;
+        self
     }
 }
 
@@ -38,8 +39,9 @@ where
 {
     type Output = Self;
 
-    fn add(self, other: &Self) -> Self::Output {
-        &self + other
+    fn add(mut self, other: &Self) -> Self::Output {
+        self += other;
+        self
     }
 }
 
@@ -49,8 +51,9 @@ where
 {
     type Output = Mat<F>;
 
-    fn add(self, other: Mat<F>) -> Self::Output {
-        self + &other
+    fn add(self, mut other: Mat<F>) -> Self::Output {
+        other += self;
+        other
     }
 }
 
@@ -61,17 +64,8 @@ where
     type Output = Mat<F>;
 
     fn add(self, other: Self) -> Self::Output {
-        if self.field != other.field {
-            panic!("Cannot add matrices: fields don't match");
-        } else if self.rows != other.rows || self.cols != other.cols {
-            panic!("Cannot add matrices: dimensions don't match");
-        }
-
-        let f = self.field();
-        let mut sum = Mat::zero(Field::Some(f), self.rows, self.cols);
-        for i in 0..self.rows * self.cols {
-            sum.data[i] = f.add(self.data[i], other.data[i]);
-        }
+        let mut sum = self.clone();
+        sum += other;
         sum
     }
 }
@@ -108,8 +102,9 @@ where
 {
     type Output = Self;
 
-    fn sub(self, other: Self) -> Self::Output {
-        &self - &other
+    fn sub(mut self, other: Self) -> Self::Output {
+        self -= &other;
+        self
     }
 }
 
@@ -119,8 +114,9 @@ where
 {
     type Output = Self;
 
-    fn sub(self, other: &Self) -> Self::Output {
-        &self - other
+    fn sub(mut self, other: &Self) -> Self::Output {
+        self -= other;
+        self
     }
 }
 
@@ -130,8 +126,9 @@ where
 {
     type Output = Mat<F>;
 
-    fn sub(self, other: Mat<F>) -> Self::Output {
-        self - &other
+    fn sub(self, mut other: Mat<F>) -> Self::Output {
+        other -= self;
+        other
     }
 }
 
@@ -142,17 +139,8 @@ where
     type Output = Mat<F>;
 
     fn sub(self, other: Self) -> Self::Output {
-        if self.field != other.field {
-            panic!("Cannot substract matrices: fields don't match");
-        } else if self.rows != other.rows || self.cols != other.cols {
-            panic!("Cannot substract matrices: dimensions don't match");
-        }
-
-        let f = self.field();
-        let mut diff = Mat::zero(Field::Some(f), self.rows, self.cols);
-        for i in 0..self.rows * self.cols {
-            diff.data[i] = f.sub(self.data[i], other.data[i]);
-        }
+        let mut diff = self.clone();
+        diff -= other;
         diff
     }
 }
@@ -328,8 +316,11 @@ where
 {
     type Output = Self;
 
-    fn neg(self) -> Self::Output {
-        -&self
+    fn neg(mut self) -> Self::Output {
+        for i in 0..self.rows * self.cols {
+            self.data[i] = self.field.neg(self.data[i]);
+        }
+        self
     }
 }
 

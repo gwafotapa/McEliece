@@ -19,17 +19,17 @@ use mceliece::{
 // const GOPPA_T: usize = 50; // Code correction capacity
 //                            // const GOPPA_K: usize = 524; // Code dimension
 
-// const GOPPA_N_MIN: usize = 3;
-// const GOPPA_N_MAX: usize = 2048;
-// const GOPPA_N: usize = 2048; // Code length
-// const GOPPA_T: usize = 70; // Code correction capacity
-//                            // const GOPPA_K: usize = 1278; // Code dimension
-
 const GOPPA_N_MIN: usize = 3;
-const GOPPA_N_MAX: usize = 4096;
-const GOPPA_N: usize = 4096; // Code length
-const GOPPA_T: usize = 170; // Code correction capacity
-                            // const GOPPA_K: usize = 2056; // Code dimension
+const GOPPA_N_MAX: usize = 2048;
+const GOPPA_N: usize = 2048; // Code length
+const GOPPA_T: usize = 70; // Code correction capacity
+                           // const GOPPA_K: usize = 1278; // Code dimension
+
+// const GOPPA_N_MIN: usize = 3;
+// const GOPPA_N_MAX: usize = 4096;
+// const GOPPA_N: usize = 4096; // Code length
+// const GOPPA_T: usize = 170; // Code correction capacity
+//                             // const GOPPA_K: usize = 2056; // Code dimension
 
 const PLAINTEXT: &str = "plaintext.mce";
 const CIPHERTEXT: &str = "ciphertext.mce";

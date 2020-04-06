@@ -37,16 +37,15 @@ where
     }
 }
 
-// TODO: Can I do this better since self is consumed ?
-// If so, check sub, mul, ... and other modules
 impl<F> Add for Poly<F>
 where
     F: FieldTrait,
 {
     type Output = Self;
 
-    fn add(self, other: Self) -> Self::Output {
-        &self + &other
+    fn add(mut self, other: Self) -> Self::Output {
+        self += &other;
+        self
     }
 }
 
@@ -56,8 +55,9 @@ where
 {
     type Output = Self;
 
-    fn add(self, other: &Self) -> Self::Output {
-        &self + other
+    fn add(mut self, other: &Self) -> Self::Output {
+        self += other;
+        self
     }
 }
 
@@ -67,8 +67,9 @@ where
 {
     type Output = Poly<F>;
 
-    fn add(self, other: Poly<F>) -> Self::Output {
-        self + &other
+    fn add(self, mut other: Poly<F>) -> Self::Output {
+        other += self;
+        other
     }
 }
 
@@ -118,8 +119,9 @@ where
 {
     type Output = Self;
 
-    fn sub(self, other: Self) -> Self::Output {
-        &self - &other
+    fn sub(mut self, other: Self) -> Self::Output {
+        self -= &other;
+        self
     }
 }
 
@@ -129,8 +131,9 @@ where
 {
     type Output = Self;
 
-    fn sub(self, other: &Self) -> Self::Output {
-        &self - other
+    fn sub(mut self, other: &Self) -> Self::Output {
+        self -= other;
+        self
     }
 }
 
@@ -141,7 +144,7 @@ where
     type Output = Poly<F>;
 
     fn sub(self, other: Poly<F>) -> Self::Output {
-        self - &other
+        self + -other
     }
 }
 
@@ -275,8 +278,14 @@ where
 {
     type Output = Self;
 
-    fn neg(self) -> Self::Output {
-        -&self
+    fn neg(mut self) -> Self::Output {
+        if self.field.characteristic() == 2 {
+            return self;
+        }
+        for i in 0..self.degree() + 1 {
+            self[i] = self.field.neg(self[i]);
+        }
+        self
     }
 }
 
@@ -287,13 +296,8 @@ where
     type Output = Poly<F>;
 
     fn neg(self) -> Self::Output {
-        let f = self.field();
-        let mut opp = Poly::zero(Field::Some(f), self.degree() + 1);
-
-        for i in 0..self.degree() + 1 {
-            opp[i] = f.neg(self[i]);
-        }
-        opp
+        let opp = self.clone();
+        -opp
     }
 }
 

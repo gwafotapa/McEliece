@@ -22,7 +22,7 @@ where
     type Output = Self;
 
     fn add(self, other: Self) -> Self::Output {
-        &self + &other
+        self + &other
     }
 }
 
@@ -33,7 +33,7 @@ where
     type Output = Self;
 
     fn add(self, other: &Self) -> Self::Output {
-        &self + other
+        RowVec(self.0 + &other.0)
     }
 }
 
@@ -84,7 +84,7 @@ where
     type Output = Self;
 
     fn sub(self, other: Self) -> Self::Output {
-        &self - &other
+        self - &other
     }
 }
 
@@ -95,7 +95,7 @@ where
     type Output = Self;
 
     fn sub(self, other: &Self) -> Self::Output {
-        &self - other
+        RowVec(self.0 - &other.0)
     }
 }
 
@@ -252,7 +252,7 @@ where
     type Output = Self;
 
     fn neg(self) -> Self::Output {
-        -&self
+        RowVec(-self.0)
     }
 }
 

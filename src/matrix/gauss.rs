@@ -439,9 +439,11 @@ where
             return;
         }
         for i in 0..self.rows {
-            let tmp = self[(i, col1)];
-            self[(i, col1)] = self[(i, col2)];
-            self[(i, col2)] = tmp;
+            // let tmp = self[(i, col1)];
+            // self[(i, col1)] = self[(i, col2)];
+            // self[(i, col2)] = tmp;
+
+            self.data.swap(i * self.cols + col1, i * self.cols + col2);
         }
     }
 
