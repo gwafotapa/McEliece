@@ -5,8 +5,8 @@ static INIT: Once = Once::new();
 const GOPPA_N_MIN: usize = 3;
 const GOPPA_N_MAX: usize = 256 + 1;
 
-const GOPPA_N: usize = 0;
-const GOPPA_T: usize = 0;
+const GOPPA_N: usize = 0; // Pick a nonzero value to set code length
+const GOPPA_T: usize = 0; // Pick a nonzero value to set code correction capacity
 
 // TODO: remove commented code
 
@@ -26,6 +26,8 @@ pub fn log_setup() {
     });
 }
 
+// Picks a random length between GOPPA_N_MIN and GOPPA_N_MAX.
+// Picks a random correction capacity which is valid for this length.
 pub fn goppa_setup() -> (usize, usize, usize) {
     log_setup();
     let mut rng = rand::thread_rng();

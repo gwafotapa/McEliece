@@ -8,28 +8,31 @@ use mceliece::{
     matrix::RowVec,
 };
 
-// TODO: remove commented code
-// TODO: Rework Add trait and others using self consuming
+// TODO: remove commented code (don't forget tests/common/mod.rs
 // TODO: useless line in test report
-// TODO: FieldTrait called Field and Field enum called ?
 
 // const GOPPA_N_MIN: usize = 3;
 // const GOPPA_N_MAX: usize = 1024;
-// const GOPPA_N: usize = 1024; // Code length
-// const GOPPA_T: usize = 50; // Code correction capacity
-//                            // const GOPPA_K: usize = 524; // Code dimension
+// const GOPPA_N: usize = 1024;
+// const GOPPA_T: usize = 50;
+// const GOPPA_K: usize = 524;
 
-const GOPPA_N_MIN: usize = 3;
-const GOPPA_N_MAX: usize = 2048;
-const GOPPA_N: usize = 2048; // Code length
-const GOPPA_T: usize = 70; // Code correction capacity
-                           // const GOPPA_K: usize = 1278; // Code dimension
+// const GOPPA_N_MIN: usize = 3;
+// const GOPPA_N_MAX: usize = 2048;
+// const GOPPA_N: usize = 2048;
+// const GOPPA_T: usize = 70;
+// const GOPPA_K: usize = 1278;
 
 // const GOPPA_N_MIN: usize = 3;
 // const GOPPA_N_MAX: usize = 4096;
-// const GOPPA_N: usize = 4096; // Code length
-// const GOPPA_T: usize = 170; // Code correction capacity
-//                             // const GOPPA_K: usize = 2056; // Code dimension
+// const GOPPA_N: usize = 4096;
+// const GOPPA_T: usize = 170;
+// const GOPPA_K: usize = 2056;
+
+const GOPPA_N_MIN: usize = 3;
+const GOPPA_N_MAX: usize = 2048;
+const GOPPA_N_DEFAULT: usize = 1024;
+const GOPPA_T_DEFAULT: usize = 50;
 
 const PLAINTEXT: &str = "plaintext.mce";
 const CIPHERTEXT: &str = "ciphertext.mce";
@@ -47,18 +50,18 @@ fn get_program(path: &str) -> &str {
 
 fn get_code_params(matches: &Matches) -> Result<(usize, usize), MainError> {
     let n = match matches.opt_str("n") {
-        None => GOPPA_N,
+        None => GOPPA_N_DEFAULT,
         Some(length) => u32::from_str_radix(&length, 10)? as usize,
     };
     if n < GOPPA_N_MIN || GOPPA_N_MAX < n {
         return Err(format!(
-            "Code length n must be greater than {} and less than {}",
+            "Code length n must be at least {} and at most {}",
             GOPPA_N_MIN, GOPPA_N_MAX,
         )
         .into());
     }
     let t = match matches.opt_str("t") {
-        None => GOPPA_T,
+        None => GOPPA_T_DEFAULT,
         Some(correction) => u32::from_str_radix(&correction, 10)? as usize,
     };
     let q = if t == 1 && n.is_power_of_two() {
@@ -75,7 +78,7 @@ fn get_code_params(matches: &Matches) -> Result<(usize, usize), MainError> {
 
 fn print_help(program: &str, opts: Options) {
     let brief = format!(
-        "Usage: {0} keygen [PK] [SK]\n\
+        "Usage: {0} keygen [-n N] [-t T] [PK] [SK]\n\
          {0} encrypt [PK] [PLAINTEXT] [CIPHERTEXT]\n\
          {0} decrypt [SK] [CIPHERTEXT] [DECRYPTED]\n\
          {0} plaintext [PK] [PLAINTEXT]\n\
@@ -91,8 +94,28 @@ fn main() -> Result<(), MainError> {
     let program = get_program(&args[0]);
     let mut opts = Options::new();
     opts.optflag("h", "help", "Display this help");
-    opts.optopt("n", "length", "Set Goppa code length", "N");
-    opts.optopt("t", "correction", "Set Goppa code correction capacity", "T");
+    opts.optopt(
+        "n",
+        "length",
+        format!(
+            "Set Goppa code length (default: {}),\n\
+             keygen command only",
+            GOPPA_N_DEFAULT
+        )
+        .as_str(),
+        "N",
+    );
+    opts.optopt(
+        "t",
+        "correction",
+        format!(
+            "Set Goppa code correction capacity (default: {}),\n\
+             keygen command only",
+            GOPPA_T_DEFAULT
+        )
+        .as_str(),
+        "T",
+    );
     opts.optflag("v", "verbose", "Detail created files");
     let matches = opts.parse(&args[1..]).map_err(|e| e.to_string())?;
     if matches.opt_present("h") {
@@ -100,7 +123,6 @@ fn main() -> Result<(), MainError> {
         return Ok(());
     }
     let verbose = matches.opt_present("v");
-    let (n, t) = get_code_params(&matches)?;
     let command = match matches.free.get(0) {
         Some(cmd) => cmd.as_str(),
         None => {
@@ -115,6 +137,7 @@ fn main() -> Result<(), MainError> {
     let files: Vec<&str> = matches.free.iter().skip(1).map(|s| s.as_str()).collect();
     match command {
         "keygen" => {
+            let (n, t) = get_code_params(&matches)?;
             let pk_file = files.get(0).unwrap_or(&PUBLIC_KEY);
             let sk_file = files.get(1).unwrap_or(&SECRET_KEY);
             let (pk, sk) = crypto::keygen(n, t);
@@ -122,7 +145,8 @@ fn main() -> Result<(), MainError> {
             sk.write(sk_file)?;
             if verbose {
                 println!(
-                    "Wrote public key to '{}'.\nWrote secret key to '{}'.",
+                    "Wrote public key to '{}'.\n\
+                     Wrote secret key to '{}'.",
                     pk_file, sk_file
                 );
             }

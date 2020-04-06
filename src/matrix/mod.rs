@@ -70,7 +70,7 @@ where
         }
     }
 
-    // TODO: Should I return a Rc instead of a &Rc now ?
+    // TODO: Should I use Rc<F> instead &Rc<F> ?
     pub fn field(&self) -> &Rc<F> {
         &self.field
     }
@@ -200,8 +200,8 @@ where
     }
 }
 
-pub mod io;
 pub mod gauss;
+pub mod io;
 pub mod perm;
 pub mod rowvec;
 pub mod traits;

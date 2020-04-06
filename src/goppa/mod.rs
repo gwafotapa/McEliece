@@ -338,7 +338,7 @@ where
         debug!("b(x)^2 = {}", b);
 
         b *= Poly::x_n(Field::Some(f), 1);
-        let sigma = &a + &b;
+        let sigma = a + b;
         debug!("sigma(x) = {}", sigma);
 
         let err = RowVec::new(

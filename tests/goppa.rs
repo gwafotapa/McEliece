@@ -31,10 +31,10 @@ fn goppa_f8() {
     );
 
     let h = c.parity_check_matrix(Field::Some(f2));
-    info!("h:{}", h);
+    info!("Parity-check matrix H:{}", h);
 
     let (g, _) = Goppa::<F2m>::generator_from_parity_check(&h);
-    info!("g:{}", g);
+    info!("Generator matrix G:{}", g);
 
     let z = &h * &g.transpose();
     assert!(z.is_zero());
@@ -43,16 +43,16 @@ fn goppa_f8() {
     info!("Message:{}", msg);
 
     let cdw = c.encode(&msg);
-    info!("cdw:{}", cdw);
+    info!("Codeword:{}", cdw);
 
     let err = RowVec::random_with_weight(Field::Some(f2), 8, 2);
-    info!("err:{}", err);
+    info!("Error:{}", err);
 
     let rcv = &cdw + err;
-    info!("rcv:{}", rcv);
+    info!("Received word:{}", rcv);
 
     let dcdw = c.decode(&rcv);
-    info!("dcdw:{}", dcdw);
+    info!("Decoded codeword:{}", dcdw);
 
     assert_eq!(cdw, dcdw);
 }
@@ -65,25 +65,25 @@ fn goppa_f1024() {
     info!("{}", c);
 
     let h = c.parity_check_matrix(Field::Some(f2));
-    info!("parity check matrix:{}", h);
+    info!("Parity-check matrix H:{}", h);
 
     let (g, _) = Goppa::<F2m>::generator_from_parity_check(&h);
     assert!((&h * &g.transpose()).is_zero());
 
     let cdw = RowVec::new(Field::Some(f2), g.data()[0..30].to_vec());
-    info!("codeword: {}", cdw);
+    info!("Codeword: {}", cdw);
     let syndrome = Goppa::syndrome_from_xyz(&h, &cdw);
 
     assert!(syndrome.is_zero());
 
     let err = RowVec::random_with_weight(Field::Some(f2), 30, 2);
-    info!("error:{}", err);
+    info!("Error:{}", err);
 
     let rcv = &cdw + &err;
-    info!("received word:{}", rcv);
+    info!("Received word:{}", rcv);
 
     let dcdw = c.decode(&rcv);
-    info!("decoded word:{}", dcdw);
+    info!("Decoded codeword:{}", dcdw);
 
     assert_eq!(cdw, dcdw);
 }
@@ -101,19 +101,19 @@ fn goppa_f256() {
     info!("{}", c);
 
     let msg = RowVec::random(Field::Some(f2), k);
-    info!("msg:{}", msg);
+    info!("Message:{}", msg);
 
     let cdw = c.encode(&msg);
-    info!("cdw:{}", cdw);
+    info!("Codeword:{}", cdw);
 
     let err = RowVec::random_with_weight(Field::Some(f2), n, t);
-    info!("err:{}", err);
+    info!("Error:{}", err);
 
     let rcv = &cdw + err;
-    info!("rcv:{}", rcv);
+    info!("Received word:{}", rcv);
 
     let dcdw = c.decode(&rcv);
-    info!("dcdw:{}", dcdw);
+    info!("Decoded codeword:{}", dcdw);
 
     assert_eq!(cdw, dcdw);
 }
@@ -127,19 +127,19 @@ fn goppa_f128() {
     info!("{}", goppa);
 
     let msg = RowVec::random(Field::Some(f2), k);
-    info!("msg:{}", msg);
+    info!("Message:{}", msg);
 
     let cdw = goppa.encode(&msg);
-    info!("cdw:{}", cdw);
+    info!("Codeword:{}", cdw);
 
     let err = RowVec::random_with_weight(Field::Some(f2), n, t);
-    info!("err:{}", err);
+    info!("Error:{}", err);
 
     let rcv = &cdw + err;
-    info!("rcv:{}", rcv);
+    info!("Received word:{}", rcv);
 
     let dcdw = goppa.decode(&rcv);
-    info!("dcdw:{}", dcdw);
+    info!("Decoded codeword:{}", dcdw);
 
     assert_eq!(cdw, dcdw);
 }
@@ -167,19 +167,19 @@ fn goppa_random() {
     info!("Code dimension k = {}", k);
 
     let msg = RowVec::random(Field::Some(f2), k);
-    info!("message:{}", msg);
+    info!("Message:{}", msg);
 
     let cdw = &msg * &g;
-    info!("codeword:{}", cdw);
+    info!("Codeword:{}", cdw);
 
     let err = RowVec::random_with_weight(Field::Some(f2), n, t);
-    info!("error:{}", err);
+    info!("Error:{}", err);
 
     let rcv = &cdw + &err;
-    info!("received word:{}", rcv);
+    info!("Received word:{}", rcv);
 
     let dcdw = goppa.xyz_decode(&xyz, &rcv);
-    info!("decoded codeword:{}", dcdw);
+    info!("Decoded codeword:{}", dcdw);
 
     assert_eq!(cdw, dcdw);
 }
@@ -217,19 +217,19 @@ fn goppa_repeated(q: usize, n: usize, t: usize) {
     info!("Code dimension k = {}", k);
 
     let msg = RowVec::random(Field::Some(f2), k);
-    info!("message:{}", msg);
+    info!("Message:{}", msg);
 
     let cdw = &msg * &g;
-    info!("codeword:{}", cdw);
+    info!("Codeword:{}", cdw);
 
     let err = RowVec::random_with_weight(Field::Some(f2), n, t);
-    info!("error:{}", err);
+    info!("Error:{}", err);
 
     let rcv = &cdw + &err;
-    info!("received word:{}", rcv);
+    info!("Received word:{}", rcv);
 
     let dcdw = goppa.xyz_decode(&xyz, &rcv);
-    info!("decoded codeword:{}", dcdw);
+    info!("Decoded codeword:{}", dcdw);
 
     assert_eq!(cdw, dcdw);
 }
