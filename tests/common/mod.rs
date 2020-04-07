@@ -8,14 +8,6 @@ const GOPPA_N_MAX: usize = 256 + 1;
 const GOPPA_N: usize = 0; // Pick a nonzero value to set code length
 const GOPPA_T: usize = 0; // Pick a nonzero value to set code correction capacity
 
-// TODO: remove commented code
-
-// const GOPPA_N: usize = 1024;
-// const GOPPA_T: usize = 50;
-
-// const GOPPA_N: usize = 97;
-// const GOPPA_T: usize = 11;
-
 pub fn div_ceil(n: usize, d: usize) -> usize {
     n / d + if n % d == 0 { 0 } else { 1 }
 }

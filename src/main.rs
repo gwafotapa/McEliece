@@ -8,27 +8,6 @@ use mceliece::{
     matrix::RowVec,
 };
 
-// TODO: remove commented code (don't forget tests/common/mod.rs
-// TODO: useless line in test report
-
-// const GOPPA_N_MIN: usize = 3;
-// const GOPPA_N_MAX: usize = 1024;
-// const GOPPA_N: usize = 1024;
-// const GOPPA_T: usize = 50;
-// const GOPPA_K: usize = 524;
-
-// const GOPPA_N_MIN: usize = 3;
-// const GOPPA_N_MAX: usize = 2048;
-// const GOPPA_N: usize = 2048;
-// const GOPPA_T: usize = 70;
-// const GOPPA_K: usize = 1278;
-
-// const GOPPA_N_MIN: usize = 3;
-// const GOPPA_N_MAX: usize = 4096;
-// const GOPPA_N: usize = 4096;
-// const GOPPA_T: usize = 170;
-// const GOPPA_K: usize = 2056;
-
 const GOPPA_N_MIN: usize = 3;
 const GOPPA_N_MAX: usize = 2048;
 const GOPPA_N_DEFAULT: usize = 1024;

@@ -2,6 +2,8 @@
 
 A straightforward implementation of the McEliece cryptosystem that I coded to get familiar with Rust.
 
+## Getting started
+
 ### Prerequisites
 
 You need Rust and Cargo installed. See:
@@ -47,27 +49,27 @@ Supports two switches:
 * `-n LENGTH` sets the Goppa code length (default: 1024).
 * `-t CORRECTION_CAPACITY` sets the Goppa code correction capacity (default: 50).
 
-#### plaintext
+#### `plaintext`
 
 Generates a random plaintext for the supplied public key.
 Takes two optional filename arguments, the public key and the generated plaintext.
 If none are given, default filenames `public_key.mce` and `plaintext.mce` are used.
 
-#### encrypt
+#### `encrypt`
 
 Encrypts the given plaintext with the supplied public key.
 Takes three optional filename arguments for the public key, the plaintext and the generated ciphertext.
 If none are given, filenames `public_key.mce`, `plaintext.mce` and `ciphertext.mce` are used.
 
-#### decrypt
+#### `decrypt`
 
 Decrypts the given ciphertext with the supplied secret key.
-Takes three optional filename arguments for the secret key, the ciphertext and the generated decrypted text.
+Takes three optional filename arguments for the secret key, the ciphertext and the decrypted text.
 If none are given, filenames `secret_key.mce`, `ciphertext.mce` and `decrypted.mce` are used.
 
 ##### A complete example
 
-To generate public key `pk.mce` and secret key `sk.mce`:
+To generate random public and secret keys `pk.mce` and `sk.mce`:
 
 `cargo run --release keygen pk.mce sk.mce`
 
@@ -79,7 +81,7 @@ To encrypt plaintext `m` with public key `pk.mce` and output ciphertext `c`:
 
 `cargo run --release encrypt pk.mce m c`
 
-To decrypt ciphertext `c` with secret key `sk.mce` and output the result in `d`:
+To decrypt ciphertext `c` with secret key `sk.mce` and output the resulting text in file `d`:
 
 `cargo run --release decrypt sk.mce c d`
 
@@ -99,17 +101,17 @@ RUST_LOG=info cargo test
 
 ## Generating the documentation
 
-Just run:
+Run
 
 ```
 cargo doc
 ```
 
-Then open `target/doc/mceliece/index.html` in any browser
+then open `target/doc/mceliece/index.html` in any browser.
 
 ## Author
 
-**Guillaume Wafo-Tapa** - [gwafotapa](https://github.com/gwafotapa)
+*Guillaume Wafo-Tapa* - [gwafotapa](https://github.com/gwafotapa)
 
 ## License
 
@@ -117,5 +119,9 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 ## Bibliography
 
-* Engelbert, Daniela, Raphael Overbeck, and Arthur Schmidt. "A summary of McEliece-type cryptosystems and their security." Journal of Mathematical Cryptology JMC 1.2 (2007): 151-199.
-* Gao, Shuhong, and Daniel Panario. "Tests and constructions of irreducible polynomials over finite fields." Foundations of computational mathematics. Springer, Berlin, Heidelberg, 1997. 346-361.
+* Engelbert, Daniela, Raphael Overbeck, and Arthur Schmidt.
+  "A summary of McEliece-type cryptosystems and their security."
+  Journal of Mathematical Cryptology JMC 1.2 (2007): 151-199.
+* Gao, Shuhong, and Daniel Panario.
+  "Tests and constructions of irreducible polynomials over finite fields."
+  Foundations of computational mathematics. Springer, Berlin, Heidelberg, 1997. 346-361.
