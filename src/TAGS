@@ -129,34 +129,34 @@ impl<F> Goppa<F>Goppa80,1877
 pub mod io;io364,10457
 
 main.rs,1531
-// const GOPPA_N_MIN: usize = 3;GOPPA_N_MIN14,251
-// const GOPPA_N_MAX: usize = 1024;GOPPA_N_MAX15,284
-// const GOPPA_N: usize = 1024;GOPPA_N16,320
-// const GOPPA_T: usize = 50;GOPPA_T17,352
-// const GOPPA_K: usize = 524;GOPPA_K18,382
-// const GOPPA_N_MIN: usize = 3;GOPPA_N_MIN20,414
-// const GOPPA_N_MAX: usize = 2048;GOPPA_N_MAX21,447
-// const GOPPA_N: usize = 2048;GOPPA_N22,483
-// const GOPPA_T: usize = 70;GOPPA_T23,515
-// const GOPPA_K: usize = 1278;GOPPA_K24,545
-// const GOPPA_N_MIN: usize = 3;GOPPA_N_MIN26,578
-// const GOPPA_N_MAX: usize = 4096;GOPPA_N_MAX27,611
-// const GOPPA_N: usize = 4096;GOPPA_N28,647
-// const GOPPA_T: usize = 170;GOPPA_T29,679
-// const GOPPA_K: usize = 2056;GOPPA_K30,710
-const GOPPA_N_MIN: usize = 3;GOPPA_N_MIN32,743
-const GOPPA_N_MAX: usize = 2048;GOPPA_N_MAX33,773
-const GOPPA_N_DEFAULT: usize = 1024;GOPPA_N_DEFAULT34,806
-const GOPPA_T_DEFAULT: usize = 50;GOPPA_T_DEFAULT35,843
-const PLAINTEXT: &str = "plaintext.mce";PLAINTEXT37,879
-const CIPHERTEXT: &str = "ciphertext.mce";CIPHERTEXT38,920
-const DECRYPTED: &str = "decrypted.mce";DECRYPTED39,963
-const PUBLIC_KEY: &str = "public_key.mce";PUBLIC_KEY40,1004
-const SECRET_KEY: &str = "secret_key.mce";SECRET_KEY41,1047
-fn get_program(path: &str) -> &str {get_program43,1091
-fn get_code_params(matches: &Matches) -> Result<(usize, usize), MainError> {get_code_params51,1242
-fn print_help(program: &str, opts: Options) {print_help79,2126
-fn main() -> Result<(), MainError> {main91,2531
+// const GOPPA_N_MIN: usize = 3;GOPPA_N_MIN14,285
+// const GOPPA_N_MAX: usize = 1024;GOPPA_N_MAX15,318
+// const GOPPA_N: usize = 1024;GOPPA_N16,354
+// const GOPPA_T: usize = 50;GOPPA_T17,386
+// const GOPPA_K: usize = 524;GOPPA_K18,416
+// const GOPPA_N_MIN: usize = 3;GOPPA_N_MIN20,448
+// const GOPPA_N_MAX: usize = 2048;GOPPA_N_MAX21,481
+// const GOPPA_N: usize = 2048;GOPPA_N22,517
+// const GOPPA_T: usize = 70;GOPPA_T23,549
+// const GOPPA_K: usize = 1278;GOPPA_K24,579
+// const GOPPA_N_MIN: usize = 3;GOPPA_N_MIN26,612
+// const GOPPA_N_MAX: usize = 4096;GOPPA_N_MAX27,645
+// const GOPPA_N: usize = 4096;GOPPA_N28,681
+// const GOPPA_T: usize = 170;GOPPA_T29,713
+// const GOPPA_K: usize = 2056;GOPPA_K30,744
+const GOPPA_N_MIN: usize = 3;GOPPA_N_MIN32,777
+const GOPPA_N_MAX: usize = 2048;GOPPA_N_MAX33,807
+const GOPPA_N_DEFAULT: usize = 1024;GOPPA_N_DEFAULT34,840
+const GOPPA_T_DEFAULT: usize = 50;GOPPA_T_DEFAULT35,877
+const PLAINTEXT: &str = "plaintext.mce";PLAINTEXT37,913
+const CIPHERTEXT: &str = "ciphertext.mce";CIPHERTEXT38,954
+const DECRYPTED: &str = "decrypted.mce";DECRYPTED39,997
+const PUBLIC_KEY: &str = "public_key.mce";PUBLIC_KEY40,1038
+const SECRET_KEY: &str = "secret_key.mce";SECRET_KEY41,1081
+fn get_program(path: &str) -> &str {get_program43,1125
+fn get_code_params(matches: &Matches) -> Result<(usize, usize), MainError> {get_code_params51,1276
+fn print_help(program: &str, opts: Options) {print_help79,2160
+fn main() -> Result<(), MainError> {main91,2565
 
 finite_field/f7.rs,1632
 const ORDER: usize = 7;ORDER8,128
@@ -319,8 +319,8 @@ impl<F> Mat<F>Mat7,104
     pub fn is_standard_form(&self) -> bool {is_standard_form401,13448
     pub fn swap_rows(&mut self, row1: usize, row2: usize) {swap_rows424,14030
     pub fn swap_cols(&mut self, col1: usize, col2: usize) {swap_cols437,14537
-    pub fn mul_row(&mut self, row: usize, lambda: F::FieldElement) {mul_row450,14905
-    pub fn combine_rows(&mut self, row1: usize, lambda: F::FieldElement, row2: usize) {combine_rows457,15152
+    pub fn mul_row(&mut self, row: usize, lambda: F::FieldElement) {mul_row446,14774
+    pub fn combine_rows(&mut self, row1: usize, lambda: F::FieldElement, row2: usize) {combine_rows453,15021
 
 matrix/io.rs,232
 type Result<T> = std::result::Result<T, Box<dyn Error>>;Result8,173
@@ -409,23 +409,23 @@ pub struct Mat<F>Mat12,225
 impl<F> Mat<F>Mat22,357
     pub fn new(field: Field<F>, rows: usize, cols: usize, data: Vec<F::FieldElement>) -> Self {new33,628
     pub fn zero(field: Field<F>, rows: usize, cols: usize) -> Self {zero56,1358
-    pub fn field(&self) -> &Rc<F> {field74,1865
-    pub fn rows(&self) -> usize {rows78,1928
-    pub fn cols(&self) -> usize {cols82,1987
-    pub fn data(&self) -> &Vec<F::FieldElement> {data86,2046
-    pub fn random(field: Field<F>, n: usize, m: usize) -> Self {random90,2122
-    pub fn is_zero(&self) -> bool {is_zero101,2437
-    pub fn extract_cols(&self, cols: &Vec<usize>) -> Self {extract_cols113,2769
-    pub fn identity(field: Field<F>, n: usize) -> Self {identity123,3077
-    pub fn transpose(&self) -> Self {transpose131,3273
-    pub fn keep_rows(&mut self, rows: &Vec<usize>) {keep_rows146,3688
-    pub fn remove_rows(&mut self, rows: &Vec<usize>) {remove_rows169,4468
-    pub fn binary(&self, field: Field<F2>) -> Mat<F2>binary184,5028
-pub mod gauss;gauss203,5567
-pub mod io;io204,5582
-pub mod perm;perm205,5594
-pub mod rowvec;rowvec206,5608
-pub mod traits;traits207,5624
+    pub fn field(&self) -> &Rc<F> {field73,1816
+    pub fn rows(&self) -> usize {rows77,1879
+    pub fn cols(&self) -> usize {cols81,1938
+    pub fn data(&self) -> &Vec<F::FieldElement> {data85,1997
+    pub fn random(field: Field<F>, n: usize, m: usize) -> Self {random89,2073
+    pub fn is_zero(&self) -> bool {is_zero100,2388
+    pub fn extract_cols(&self, cols: &Vec<usize>) -> Self {extract_cols112,2720
+    pub fn identity(field: Field<F>, n: usize) -> Self {identity122,3028
+    pub fn transpose(&self) -> Self {transpose130,3224
+    pub fn keep_rows(&mut self, rows: &Vec<usize>) {keep_rows145,3639
+    pub fn remove_rows(&mut self, rows: &Vec<usize>) {remove_rows168,4419
+    pub fn binary(&self, field: Field<F2>) -> Mat<F2>binary183,4979
+pub mod gauss;gauss202,5518
+pub mod io;io203,5533
+pub mod perm;perm204,5545
+pub mod rowvec;rowvec205,5559
+pub mod traits;traits206,5575
 
 matrix/rowvec/io.rs,257
 type Result<T> = std::result::Result<T, Box<dyn Error>>;Result13,228

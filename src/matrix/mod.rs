@@ -70,7 +70,6 @@ where
         }
     }
 
-    // TODO: Should I use Rc<F> instead &Rc<F> ?
     pub fn field(&self) -> &Rc<F> {
         &self.field
     }
