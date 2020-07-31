@@ -6,6 +6,15 @@ use std::{
 use super::{Mat, Perm, RowVec};
 use crate::finite_field::{F2FiniteExtension, FieldTrait, FiniteField};
 
+impl<F> From<Mat<F>> for RowVec<F>
+where
+    F: FieldTrait,
+{
+    fn from(mat: Mat<F>) -> Self {
+        RowVec(mat)
+    }
+}
+
 impl<F> Clone for RowVec<F>
 where
     F: FieldTrait,

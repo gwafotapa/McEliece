@@ -416,23 +416,23 @@ where
     }
 }
 
-// impl<F> From<RowVec<F>> for Mat<F>
-// where
-//     F: FieldTrait,
-// {
-//     fn from(vec: RowVec<F>) -> Self {
-//         vec.0
-//     }
-// }
+impl<F> From<RowVec<F>> for Mat<F>
+where
+    F: FieldTrait,
+{
+    fn from(vec: RowVec<F>) -> Self {
+        vec.0
+    }
+}
 
-// impl<F> From<ColVec<F>> for Mat<F>
-// where
-//     F: FieldTrait,
-// {
-//     fn from(vec: ColVec<F>) -> Self {
-//         vec.0
-//     }
-// }
+impl<F> From<ColVec<F>> for Mat<F>
+where
+    F: FieldTrait,
+{
+    fn from(vec: ColVec<F>) -> Self {
+        vec.0
+    }
+}
 
 impl<F> Mul<ColVec<F>> for Mat<F>
 where

@@ -3,8 +3,17 @@ use std::{
     ops::{Add, AddAssign, Index, IndexMut, Neg, Sub, SubAssign},
 };
 
-use super::ColVec;
+use super::{ColVec, Mat};
 use crate::finite_field::{F2FiniteExtension, FieldTrait, FiniteField};
+
+impl<F> From<Mat<F>> for ColVec<F>
+where
+    F: FieldTrait,
+{
+    fn from(mat: Mat<F>) -> Self {
+        ColVec(mat)
+    }
+}
 
 impl<F> Clone for ColVec<F>
 where
