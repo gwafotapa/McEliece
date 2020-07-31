@@ -164,7 +164,81 @@ where
         Some((u, h, p))
     }
 
-    /// Takes a parity-check matrix H possibly with redundant rows.  
+    /// Like standard_form, except the information set is picked at random
+    pub fn random_standard_form(&self) -> Option<(Self, Self, Perm)> {
+        let f = self.field();
+        let m = self.rows;
+        let n = self.cols;
+        if m > n {
+            return None;
+        }
+        let mut rng = rand::thread_rng();
+        let mut u = Mat::identity(Field::Some(f), m);
+        let mut h = self.clone();
+        let mut p = Perm::identity(n);
+        let mut pivots = n; // number of pivots left to find
+
+        // j is the index of the column to "standardize":
+        // The first iteration sets a 1 at the last position (m-1) of column n-1.
+        // The second iteration sets a 1 at position m-2 of column n-2.
+        // ...
+        // The last iteration sets a 1 at position 0 of column n-m.
+        for j in (n - m..n).rev() {
+            // Among the remaining columns, select one with a pivot
+            let mut pivot = false;
+            let mut row_pivot = 0;
+            let mut col_pivot = 0;
+            while !pivot && pivots != 0 {
+                let col = rng.gen_range(0, pivots); // index of the column to check for a pivot
+                pivots -= 1;
+
+                // Check column 'col' for a pivot
+                for row in (0..j + m - n + 1).rev() {
+                    if h[(row, col)] != f.zero() {
+                        pivot = true;
+                        row_pivot = row;
+                        col_pivot = col;
+                        break;
+                    }
+                }
+            }
+
+            if !pivot {
+                return None;
+            }
+
+            // Put pivot column in the adequate position and update P
+            h.swap_cols(j, col_pivot);
+            p.swap(j, col_pivot);
+
+            // Put pivot row in the adequate position and update U
+            h.swap_rows(j + m - n, row_pivot);
+            u.swap_rows(j + m - n, row_pivot);
+
+            // Pivot is now at (j+m-n, j)
+
+            // Multiply pivot row by pivot^-1 and update U
+            let pivot_inv = f.inv(h[(j + m - n, j)]).unwrap();
+            for k in 0..n {
+                h[(j + m - n, k)] = f.mul(pivot_inv, h[(j + m - n, k)]);
+            }
+            for k in 0..m {
+                u[(j + m - n, k)] = f.mul(pivot_inv, u[(j + m - n, k)]);
+            }
+
+            // Nullify the rest of the column and update matrix U accordingly
+            for i in 0..m {
+                if h[(i, j)] != f.zero() && i != j + m - n {
+                    let lambda = f.neg(h[(i, j)]);
+                    h.combine_rows(i, lambda, j + m - n);
+                    u.combine_rows(i, lambda, j + m - n);
+                }
+            }
+        }
+        Some((u, h, p))
+    }
+
+    /// Takes a parity-check matrix H possibly with redundant rows.
     /// Returns (S, P) with S standard form and P permutation such that
     /// SP<sup>-1</sup> is a (full rank) parity-check matrix of the code  
     /// (S defines an equivalent code).
