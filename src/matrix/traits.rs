@@ -4,7 +4,7 @@ use std::{
     rc::Rc,
 };
 
-use super::{Mat, Perm};
+use super::{ColVec, Mat, Perm, RowVec};
 use crate::finite_field::{F2FiniteExtension, Field, FieldTrait, FiniteField};
 
 impl<F> Clone for Mat<F>
@@ -415,3 +415,127 @@ where
         Ok(())
     }
 }
+
+// impl<F> From<RowVec<F>> for Mat<F>
+// where
+//     F: FieldTrait,
+// {
+//     fn from(vec: RowVec<F>) -> Self {
+//         vec.0
+//     }
+// }
+
+// impl<F> From<ColVec<F>> for Mat<F>
+// where
+//     F: FieldTrait,
+// {
+//     fn from(vec: ColVec<F>) -> Self {
+//         vec.0
+//     }
+// }
+
+impl<F> Mul<ColVec<F>> for Mat<F>
+where
+    F: FieldTrait,
+{
+    type Output = ColVec<F>;
+
+    fn mul(self, other: ColVec<F>) -> Self::Output {
+        &self * &other
+    }
+}
+
+impl<F> Mul<&ColVec<F>> for Mat<F>
+where
+    F: FieldTrait,
+{
+    type Output = ColVec<F>;
+
+    fn mul(self, other: &ColVec<F>) -> Self::Output {
+        &self * other
+    }
+}
+
+impl<F> Mul<ColVec<F>> for &Mat<F>
+where
+    F: FieldTrait,
+{
+    type Output = ColVec<F>;
+
+    fn mul(self, other: ColVec<F>) -> Self::Output {
+        self * &other
+    }
+}
+
+impl<F> Mul<&ColVec<F>> for &Mat<F>
+where
+    F: FieldTrait,
+{
+    type Output = ColVec<F>;
+
+    fn mul(self, other: &ColVec<F>) -> Self::Output {
+        ColVec(self * &other.0)
+    }
+}
+
+impl<F> MulAssign<ColVec<F>> for Mat<F>
+where
+    F: FieldTrait,
+{
+    fn mul_assign(&mut self, other: ColVec<F>) {
+        *self *= &other.0;
+    }
+}
+
+impl<F> MulAssign<&ColVec<F>> for Mat<F>
+where
+    F: FieldTrait,
+{
+    fn mul_assign(&mut self, other: &ColVec<F>) {
+        *self *= &other.0;
+    }
+}
+
+// impl<F> Mul<Perm> for ColVec<F>
+// where
+//     F: FieldTrait,
+// {
+//     type Output = Self;
+
+//     fn mul(self, other: Perm) -> Self::Output {
+//         &self * &other
+//     }
+// }
+
+// impl<F> Mul<&Perm> for ColVec<F>
+// where
+//     F: FieldTrait,
+// {
+//     type Output = Self;
+
+//     fn mul(self, other: &Perm) -> Self::Output {
+//         &self * other
+//     }
+// }
+
+// impl<F> Mul<Perm> for &ColVec<F>
+// where
+//     F: FieldTrait,
+// {
+//     type Output = ColVec<F>;
+
+//     fn mul(self, other: Perm) -> Self::Output {
+//         self * &other
+//     }
+// }
+
+// impl<F> Mul<&Perm> for &ColVec<F>
+// where
+//     F: FieldTrait,
+// {
+//     type Output = ColVec<F>;
+
+//     fn mul(self, other: &Perm) -> Self::Output {
+//         self.extract_cols(other.data())
+//     }
+// }

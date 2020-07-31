@@ -1,24 +1,24 @@
 use rand::Rng;
 use std::rc::Rc;
 
-use super::{Mat, Perm};
+use super::Mat;
 use crate::finite_field::{Field, FieldTrait};
 
 #[derive(Eq, PartialEq)]
-pub struct RowVec<F>(pub Mat<F>)
+pub struct ColVec<F>(pub Mat<F>)
 where
     F: FieldTrait;
 
-impl<F> RowVec<F>
+impl<F> ColVec<F>
 where
     F: FieldTrait,
 {
     pub fn new(field: Field<F>, data: Vec<F::FieldElement>) -> Self {
-        RowVec(Mat::new(field, 1, data.len(), data))
+        ColVec(Mat::new(field, data.len(), 1, data))
     }
 
-    pub fn zero(field: Field<F>, cols: usize) -> Self {
-        RowVec(Mat::zero(field, 1, cols))
+    pub fn zero(field: Field<F>, rows: usize) -> Self {
+        ColVec(Mat::zero(field, rows, 1))
     }
 
     pub fn field(&self) -> &Rc<F> {
@@ -26,11 +26,11 @@ where
     }
 
     pub fn rows(&self) -> usize {
-        1
+        self.0.rows()
     }
 
     pub fn cols(&self) -> usize {
-        self.0.cols()
+        1
     }
 
     pub fn data(&self) -> &Vec<F::FieldElement> {
@@ -39,8 +39,8 @@ where
 
     pub fn weight(&self) -> usize {
         let mut weight = 0;
-        for j in 0..self.cols() {
-            if self[j] != self.0.field.zero() {
+        for i in 0..self.rows() {
+            if self[i] != self.0.field.zero() {
                 weight += 1;
             }
         }
@@ -48,15 +48,15 @@ where
     }
 
     pub fn random(field: Field<F>, n: usize) -> Self {
-        RowVec(Mat::random(field, 1, n))
+        ColVec(Mat::random(field, n, 1))
     }
 
     pub fn random_with_weight(field: Field<F>, n: usize, w: usize) -> Self {
         let mut rng = rand::thread_rng();
-        let mut vec = RowVec::zero(field, n);
-        let mut cols = Vec::with_capacity(n);
+        let mut vec = ColVec::zero(field, n);
+        let mut rows = Vec::with_capacity(n);
         for i in 0..n {
-            cols.push(i);
+            rows.push(i);
         }
 
         for _i in 0..w {
@@ -67,9 +67,9 @@ where
                     break;
                 }
             }
-            let index = rng.gen_range(0, cols.len());
-            vec[cols[index]] = elt;
-            cols.swap_remove(index);
+            let index = rng.gen_range(0, rows.len());
+            vec[rows[index]] = elt;
+            rows.swap_remove(index);
         }
         vec
     }
@@ -79,7 +79,7 @@ where
     }
 
     pub fn is_zero(&self) -> bool {
-        for i in 0..self.cols() {
+        for i in 0..self.rows() {
             if self[i] != self.field().zero() {
                 return false;
             }
@@ -87,10 +87,10 @@ where
         true
     }
 
-    pub fn extract_cols(&self, perm: &Vec<usize>) -> Self {
-        RowVec(self.0.extract_cols(perm))
-    }
+    // pub fn extract_rows(&self, perm: &Vec<usize>) -> Self {
+    //     ColVec(self.0.extract_rows(perm))
+    // }
 }
 
-pub mod io;
+// pub mod io;
 pub mod traits;

@@ -4,6 +4,7 @@ use std::rc::Rc;
 
 use crate::finite_field::{F2FiniteExtension, Field, FieldTrait, F2};
 
+pub use colvec::ColVec;
 pub use perm::Perm;
 pub use rowvec::RowVec;
 
@@ -197,8 +198,25 @@ where
         }
         bin
     }
+
+    pub fn hconcat(a: &Mat<F>, b: &Mat<F>) -> Mat<F> {
+        if a.rows() != b.rows() {
+            panic!("number of rows do no match");
+        }
+        let mut ab = Mat::zero(Field::Some(a.field()), a.rows(), a.cols() + b.cols());
+        for i in 0..ab.rows() {
+            for j in 0..a.cols() {
+                ab[(i, j)] = a[(i, j)];
+            }
+            for j in 0..b.cols() {
+                ab[(i, a.cols() + j)] = b[(i, j)];
+            }
+        }
+        ab
+    }
 }
 
+pub mod colvec;
 pub mod gauss;
 pub mod io;
 pub mod perm;
