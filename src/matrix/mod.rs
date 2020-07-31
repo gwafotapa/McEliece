@@ -109,11 +109,22 @@ where
         true
     }
 
+    /// Creates a new matrix by taking the chosen rows in the given order
+    pub fn extract_rows(&self, rows: &Vec<usize>) -> Self {
+        let mut res = Mat::zero(Field::Some(self.field()), rows.len(), self.cols);
+        for i in 0..rows.len() {
+            for j in 0..self.cols {
+                res[(i, j)] = self[(rows[i], j)];
+            }
+        }
+        res
+    }
+
     /// Creates a new matrix by taking the chosen columns in the given order
     pub fn extract_cols(&self, cols: &Vec<usize>) -> Self {
-        let mut res = Mat::zero(Field::Some(self.field()), self.rows(), cols.len());
+        let mut res = Mat::zero(Field::Some(self.field()), self.rows, cols.len());
         for j in 0..cols.len() {
-            for i in 0..res.rows() {
+            for i in 0..res.rows {
                 res[(i, j)] = self[(i, cols[j])];
             }
         }
@@ -200,16 +211,32 @@ where
     }
 
     pub fn hconcat(a: &Mat<F>, b: &Mat<F>) -> Mat<F> {
-        if a.rows() != b.rows() {
+        if a.rows != b.rows {
             panic!("number of rows do no match");
         }
-        let mut ab = Mat::zero(Field::Some(a.field()), a.rows(), a.cols() + b.cols());
-        for i in 0..ab.rows() {
-            for j in 0..a.cols() {
+        let mut ab = Mat::zero(Field::Some(a.field()), a.rows, a.cols + b.cols);
+        for i in 0..ab.rows {
+            for j in 0..a.cols {
                 ab[(i, j)] = a[(i, j)];
             }
-            for j in 0..b.cols() {
-                ab[(i, a.cols() + j)] = b[(i, j)];
+            for j in 0..b.cols {
+                ab[(i, a.cols + j)] = b[(i, j)];
+            }
+        }
+        ab
+    }
+
+    pub fn vconcat(a: &Mat<F>, b: &Mat<F>) -> Mat<F> {
+        if a.cols != b.cols {
+            panic!("number of columns do not match");
+        }
+        let mut ab = Mat::zero(Field::Some(a.field()), a.rows + b.rows, a.cols);
+        for j in 0..ab.cols {
+            for i in 0..a.rows {
+                ab[(i, j)] = a[(i, j)];
+            }
+            for i in 0..b.rows {
+                ab[(a.rows + i, j)] = b[(i, j)];
             }
         }
         ab

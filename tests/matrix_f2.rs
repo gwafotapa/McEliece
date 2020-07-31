@@ -1,6 +1,10 @@
 //TODO: add test for random_standard_form
 //TODO: add test for hconcat
 //TODO: add test for colvec
+//TODO: add test for hconcat
+//TODO: add test for vconcat
+//TODO: add test for extract_rows
+//TODO: add test for perm * colvec
 use log::info;
 use rand::Rng;
 use std::rc::Rc;
