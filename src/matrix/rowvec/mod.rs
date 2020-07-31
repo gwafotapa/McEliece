@@ -1,7 +1,7 @@
 use rand::Rng;
 use std::rc::Rc;
 
-use super::{Mat, Perm};
+use super::{ColVec, Mat, Perm};
 use crate::finite_field::{Field, FieldTrait};
 
 #[derive(Eq, PartialEq)]
@@ -74,8 +74,8 @@ where
         vec
     }
 
-    pub fn transpose(&self) -> Mat<F> {
-        self.0.transpose()
+    pub fn transpose(&self) -> ColVec<F> {
+        ColVec(self.0.transpose())
     }
 
     pub fn is_zero(&self) -> bool {

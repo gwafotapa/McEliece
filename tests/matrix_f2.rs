@@ -5,6 +5,7 @@
 //TODO: add test for vconcat
 //TODO: add test for extract_rows
 //TODO: add test for perm * colvec
+//TODO: add test for vector transpose (both row and col)
 use log::info;
 use rand::Rng;
 use std::rc::Rc;
