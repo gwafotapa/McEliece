@@ -149,7 +149,7 @@ where
     fn mul(self, vec: &ColVec<F>) -> Self::Output {
         let mut res = ColVec::zero(Field::Some(vec.field()), vec.rows());
         for i in 0..self.len() {
-            res[i] = vec[self[i]];
+            res[self[i]] = vec[i];
         }
         res
     }

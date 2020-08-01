@@ -288,3 +288,12 @@ fn matrix_f2_remove_redundant_rows() {
 
     assert_eq!(a, b);
 }
+
+#[test]
+fn perm_mul_colvec() {
+    let f2 = &Rc::new(F2::generate(()));
+    let p = Perm::new(vec![1, 2, 0]);
+    let v = ColVec::new(Field::Some(f2), vec![1, 0, 0]);
+    let res = ColVec::new(Field::Some(f2), vec![0, 1, 0]);
+    assert_eq!(p * v, res);
+}
