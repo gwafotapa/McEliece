@@ -165,6 +165,28 @@ fn matrix_f1024_standard_form() {
 }
 
 #[test]
+fn matrix_f1024_random_standard_form() {
+    common::log_setup();
+    let mut rng = rand::thread_rng();
+    let f1024 = &Rc::new(F2m::generate(1024));
+    let n = rng.gen_range(2, 50);
+    let k = rng.gen_range(1, n);
+    let h = Mat::random(Field::Some(f1024), n - k, n);
+    if let Some((u, s, p)) = h.random_standard_form() {
+        info!("Invertible matrix U:{:?}", u);
+        info!("Standard form matrix S:{:?}", s);
+        info!("Permutation P:{:?}", p);
+        assert!(u.is_invertible());
+        assert!(s.is_standard_form());
+        assert!(p.is_permutation());
+        assert_eq!(s, u * h * p);
+    } else {
+        info!("Matrix H:{:?}", h);
+        assert!(h.rank() < h.rows());
+    }
+}
+
+#[test]
 fn matrix_f1024_transpose() {
     common::log_setup();
     let f1024 = &Rc::new(F2m::generate(1024));

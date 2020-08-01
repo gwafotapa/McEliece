@@ -171,6 +171,28 @@ fn matrix_f7_standard_form() {
 }
 
 #[test]
+fn matrix_f7_random_standard_form() {
+    common::log_setup();
+    let mut rng = rand::thread_rng();
+    let f7 = &Rc::new(F7::generate(()));
+    let n = rng.gen_range(2, 50);
+    let k = rng.gen_range(1, n);
+    let h = Mat::random(Field::Some(f7), n - k, n);
+    if let Some((u, s, p)) = h.random_standard_form() {
+        info!("Invertible matrix U:{}", u);
+        info!("Standard form matrix S:{}", s);
+        info!("Permutation P:{:?}", p);
+        assert!(u.is_invertible());
+        assert!(s.is_standard_form());
+        assert!(p.is_permutation());
+        assert!(s == u * h * p);
+    } else {
+        info!("Matrix H:{}", h);
+        assert!(h.rank() < h.rows());
+    }
+}
+
+#[test]
 fn matrix_f7_transpose() {
     common::log_setup();
     let f7 = &Rc::new(F7::generate(()));

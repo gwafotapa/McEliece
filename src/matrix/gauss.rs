@@ -164,6 +164,7 @@ where
         Some((u, h, p))
     }
 
+    //TODO: can the random drawing of the information set be optimized ? Right now the same column can be picked and discarded multiple times.
     /// Like standard_form, except the information set is picked at random
     pub fn random_standard_form(&self) -> Option<(Self, Self, Perm)> {
         let f = self.field();
@@ -176,7 +177,6 @@ where
         let mut u = Mat::identity(Field::Some(f), m);
         let mut h = self.clone();
         let mut p = Perm::identity(n);
-        let mut pivots = n; // number of pivots left to find
 
         // j is the index of the column to "standardize":
         // The first iteration sets a 1 at the last position (m-1) of column n-1.
@@ -188,9 +188,11 @@ where
             let mut pivot = false;
             let mut row_pivot = 0;
             let mut col_pivot = 0;
-            while !pivot && pivots != 0 {
-                let col = rng.gen_range(0, pivots); // index of the column to check for a pivot
-                pivots -= 1;
+            let mut pivot_candidates: Vec<_> = (0..j + 1).collect();
+
+            while !pivot && !pivot_candidates.is_empty() {
+                let index = rng.gen_range(0, pivot_candidates.len()); // index of the column to check for a pivot
+                let col = pivot_candidates.swap_remove(index);
 
                 // Check column 'col' for a pivot
                 for row in (0..j + m - n + 1).rev() {

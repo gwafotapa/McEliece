@@ -1,11 +1,3 @@
-//TODO: add test for random_standard_form
-//TODO: add test for hconcat
-//TODO: add test for colvec
-//TODO: add test for hconcat
-//TODO: add test for vconcat
-//TODO: add test for extract_rows
-//TODO: add test for perm * colvec
-//TODO: add test for vector transpose (both row and col)
 use log::info;
 use rand::Rng;
 use std::rc::Rc;
@@ -187,6 +179,28 @@ fn matrix_f2_standard_form() {
     assert!(s.is_standard_form());
     assert!(p.is_permutation());
     assert_eq!(s, u * h * p);
+}
+
+#[test]
+fn matrix_f2_random_standard_form() {
+    common::log_setup();
+    let mut rng = rand::thread_rng();
+    let f2 = &Rc::new(F2::generate(()));
+    let n = rng.gen_range(2, 50);
+    let k = rng.gen_range(1, n);
+    let h = Mat::random(Field::Some(f2), n - k, n);
+    if let Some((u, s, p)) = h.random_standard_form() {
+        info!("Invertible matrix U:{:?}", u);
+        info!("Standard form matrix S:{:?}", s);
+        info!("Permutation P:{:?}", p);
+        assert!(u.is_invertible());
+        assert!(s.is_standard_form());
+        assert!(p.is_permutation());
+        assert_eq!(s, u * h * p);
+    } else {
+        info!("Matrix H:{:?}", h);
+        assert!(h.rank() < h.rows());
+    }
 }
 
 #[test]
