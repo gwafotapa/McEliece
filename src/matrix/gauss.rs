@@ -177,6 +177,7 @@ where
         let mut u = Mat::identity(Field::Some(f), m);
         let mut h = self.clone();
         let mut p = Perm::identity(n);
+        let mut pivot_candidates = Vec::with_capacity(n);
 
         // j is the index of the column to "standardize":
         // The first iteration sets a 1 at the last position (m-1) of column n-1.
@@ -188,7 +189,11 @@ where
             let mut pivot = false;
             let mut row_pivot = 0;
             let mut col_pivot = 0;
-            let mut pivot_candidates: Vec<_> = (0..j + 1).collect();
+            let mut i: i32 = -1;
+            pivot_candidates.resize_with(j + 1, || {
+                i += 1;
+                i as usize
+            });
 
             while !pivot && !pivot_candidates.is_empty() {
                 let index = rng.gen_range(0, pivot_candidates.len()); // index of the column to check for a pivot
@@ -238,6 +243,74 @@ where
             }
         }
         Some((u, h, p))
+    }
+
+    pub fn parity_check_random_standard_form(&self) -> (Self, Self, Perm) {
+        let f = self.field();
+        let m = self.rows;
+        let n = self.cols;
+        if m > n {
+            panic!("Parity-check matrix must have at least as many columns as rows")
+        }
+        let mut rng = rand::thread_rng();
+        let mut u = Mat::identity(Field::Some(f), m);
+        let mut h = self.clone();
+        let mut p = Perm::identity(n);
+
+        // j is the index of the column to "standardize":
+        // The first iteration sets a 1 at the last position (m-1) of column n-1.
+        // The second iteration sets a 1 at position m-2 of column n-2.
+        // ...
+        // The last iteration sets a 1 at position 0 of column n-m.
+        for j in (n - m..n).rev() {
+            // Among the remaining columns, select one with a pivot
+            let mut pivot = false;
+            let mut row_pivot = 0;
+            let mut col_pivot = 0;
+
+            while !pivot {
+                let col = rng.gen_range(0, j + 1); // index of the column to check for a pivot
+
+                // Check column 'col' for a pivot
+                for row in (0..j + m - n + 1).rev() {
+                    if h[(row, col)] != f.zero() {
+                        pivot = true;
+                        row_pivot = row;
+                        col_pivot = col;
+                        break;
+                    }
+                }
+            }
+
+            // Put pivot column in the adequate position and update P
+            h.swap_cols(j, col_pivot);
+            p.swap(j, col_pivot);
+
+            // Put pivot row in the adequate position and update U
+            h.swap_rows(j + m - n, row_pivot);
+            u.swap_rows(j + m - n, row_pivot);
+
+            // Pivot is now at (j+m-n, j)
+
+            // Multiply pivot row by pivot^-1 and update U
+            let pivot_inv = f.inv(h[(j + m - n, j)]).unwrap();
+            for k in 0..n {
+                h[(j + m - n, k)] = f.mul(pivot_inv, h[(j + m - n, k)]);
+            }
+            for k in 0..m {
+                u[(j + m - n, k)] = f.mul(pivot_inv, u[(j + m - n, k)]);
+            }
+
+            // Nullify the rest of the column and update matrix U accordingly
+            for i in 0..m {
+                if h[(i, j)] != f.zero() && i != j + m - n {
+                    let lambda = f.neg(h[(i, j)]);
+                    h.combine_rows(i, lambda, j + m - n);
+                    u.combine_rows(i, lambda, j + m - n);
+                }
+            }
+        }
+        (u, h, p)
     }
 
     /// Takes a parity-check matrix H possibly with redundant rows.
