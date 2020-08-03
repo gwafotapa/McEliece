@@ -72,6 +72,12 @@ impl Perm {
         Perm(vec)
     }
 
+    pub fn copy_identity(&mut self) {
+        for i in 0..self.len() {
+            self[i] = i;
+        }
+    }
+
     pub fn len(&self) -> usize {
         self.0.len()
     }

@@ -71,6 +71,23 @@ where
         }
     }
 
+    pub fn copy(&mut self, original: &Self) {
+        self.data.copy_from_slice(original.data.as_slice());
+    }
+
+    pub fn copy_identity(&mut self) {
+        self.fill(self.field.zero());
+        for i in 0..self.rows {
+            self[(i, i)] = self.field.one();
+        }
+    }
+
+    pub fn fill(&mut self, x: F::FieldElement) {
+        for i in &mut self.data {
+            *i = x;
+        }
+    }
+
     pub fn field(&self) -> &Rc<F> {
         &self.field
     }

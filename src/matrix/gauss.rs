@@ -245,7 +245,7 @@ where
         Some((u, h, p))
     }
 
-    pub fn parity_check_random_standard_form(&self) -> (Self, Self, Perm) {
+    pub fn parity_check_random_standard_form(&self, u: &mut Self, h: &mut Self, p: &mut Perm) {
         let f = self.field();
         let m = self.rows;
         let n = self.cols;
@@ -253,9 +253,9 @@ where
             panic!("Parity-check matrix must have at least as many columns as rows")
         }
         let mut rng = rand::thread_rng();
-        let mut u = Mat::identity(Field::Some(f), m);
-        let mut h = self.clone();
-        let mut p = Perm::identity(n);
+        u.copy_identity();
+        h.copy(self);
+        p.copy_identity();
 
         // j is the index of the column to "standardize":
         // The first iteration sets a 1 at the last position (m-1) of column n-1.
@@ -310,7 +310,6 @@ where
                 }
             }
         }
-        (u, h, p)
     }
 
     /// Takes a parity-check matrix H possibly with redundant rows.
