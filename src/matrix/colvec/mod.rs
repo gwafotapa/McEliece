@@ -87,6 +87,22 @@ where
         true
     }
 
+    pub fn mul(&mut self, a: &Mat<F>, b: &Self) {
+        if self.field() != a.field() || a.field() != b.field() {
+            panic!("Cannot multiply matrices: fields don't match");
+        } else if self.rows() != a.rows() || a.cols() != b.rows() {
+            panic!("Cannot multiply matrices: dimensions don't match");
+        }
+
+        let f = a.field();
+        for i in 0..self.rows() {
+            self[i] = f.zero();
+            for k in 0..a.cols {
+                self[i] = f.add(self[i], f.mul(a[(i, k)], b[k]));
+            }
+        }
+    }
+
     // pub fn extract_rows(&self, perm: &Vec<usize>) -> Self {
     //     ColVec(self.0.extract_rows(perm))
     // }

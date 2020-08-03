@@ -206,6 +206,24 @@ where
         }
     }
 
+    pub fn mul(&mut self, a: &Self, b: &Self) {
+        if self.field != a.field || a.field != b.field {
+            panic!("Cannot multiply matrices: fields don't match");
+        } else if self.rows != a.rows || a.cols != b.rows || b.cols != self.cols {
+            panic!("Cannot multiply matrices: dimensions don't match");
+        }
+
+        let f = a.field();
+        for i in 0..self.rows {
+            for j in 0..self.cols {
+                self[(i, j)] = f.zero();
+                for k in 0..a.cols {
+                    self[(i, j)] = f.add(self[(i, j)], f.mul(a[(i, k)], b[(k, j)]));
+                }
+            }
+        }
+    }
+
     /// Takes a t * n matrix on F<sub>2<sup>m</sup></sub>
     /// and outputs a mt * n matrix on F<sub>2</sub>
     /// by decomposing each coefficient on the canonical basis
