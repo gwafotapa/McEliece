@@ -7,6 +7,7 @@ use crate::finite_field::{F2FiniteExtension, Field, FieldTrait, F2};
 pub use colvec::ColVec;
 pub use perm::Perm;
 pub use rowvec::RowVec;
+pub use submat::SubMat;
 
 /// Matrix with coefficients in a field F
 #[derive(Eq, PartialEq)]
@@ -283,4 +284,5 @@ pub mod gauss;
 pub mod io;
 pub mod perm;
 pub mod rowvec;
+pub mod submat;
 pub mod traits;

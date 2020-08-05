@@ -1,7 +1,7 @@
 use rand::Rng;
 use std::rc::Rc;
 
-use super::{Mat, RowVec};
+use super::{Mat, RowVec, SubMat};
 use crate::finite_field::{Field, FieldTrait};
 
 #[derive(Eq, PartialEq)]
@@ -98,6 +98,22 @@ where
         for i in 0..self.rows() {
             self[i] = f.zero();
             for k in 0..a.cols {
+                self[i] = f.add(self[i], f.mul(a[(i, k)], b[k]));
+            }
+        }
+    }
+
+    pub fn mul_submat_colvec(&mut self, a: &SubMat<F>, b: &Self) {
+        if self.field() != a.field() || a.field() != b.field() {
+            panic!("Cannot multiply matrices: fields don't match");
+        } else if self.rows() != a.rows() || a.cols() != b.rows() {
+            panic!("Cannot multiply matrices: dimensions don't match");
+        }
+
+        let f = a.field();
+        for i in 0..self.rows() {
+            self[i] = f.zero();
+            for k in 0..a.cols() {
                 self[i] = f.add(self[i], f.mul(a[(i, k)], b[k]));
             }
         }
