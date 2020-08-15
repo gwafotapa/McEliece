@@ -29,6 +29,9 @@ pub trait Field: Eq {
     /// Adds two field elements
     fn add(&self, a: Self::FieldElement, b: Self::FieldElement) -> Self::FieldElement;
 
+    /// Adds element b to element a
+    fn add_assign(&self, a: &mut Self::FieldElement, b: &Self::FieldElement);
+
     /// Substracts two field elements
     fn sub(&self, a: Self::FieldElement, b: Self::FieldElement) -> Self::FieldElement;
 

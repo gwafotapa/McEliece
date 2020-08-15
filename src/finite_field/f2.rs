@@ -63,6 +63,18 @@ impl Field for F2 {
         a ^ b
     }
 
+    /// Adds element b to element a
+    /// ```
+    /// # use mceliece::finite_field::{Field, F2};
+    /// let f2 = F2 {};
+    /// let mut a = 1;
+    /// f2.add_assign(&mut a, &1);
+    /// assert_eq!(a, 0);
+    /// ````
+    fn add_assign(&self, a: &mut Self::FieldElement, b: &Self::FieldElement) {
+        *a = self.add(*a, *b);
+    }
+
     /// Substracts two field elements
     /// ```
     /// # use mceliece::finite_field::{Field, F2};

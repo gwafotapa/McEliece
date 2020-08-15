@@ -79,6 +79,19 @@ impl Field for F7 {
         (a + b) % (ORDER as u32)
     }
 
+    /// Adds element b to element a
+    /// ```
+    /// # use mceliece::finite_field::{Field, F7};
+    /// let f7 = F7 {};
+    /// let mut a = 5;
+    /// let b = 4;
+    /// f7.add_assign(&mut a, &b);
+    /// assert_eq!(a, 2);
+    /// ````
+    fn add_assign(&self, a: &mut Self::FieldElement, b: &Self::FieldElement) {
+        *a = self.add(*a, *b);
+    }
+
     /// Substracts two field elements
     /// ```
     /// # use mceliece::finite_field::{Field, F7};

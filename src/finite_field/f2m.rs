@@ -100,6 +100,19 @@ impl Field for F2m {
         a ^ b
     }
 
+    /// Adds element b to element a
+    /// ```
+    /// # use mceliece::finite_field::{Field, F2FiniteExtension, F2m};
+    /// let f2m = F2m::generate(32);
+    /// let mut a = f2m.u32_to_elt(27);
+    /// let b = f2m.u32_to_elt(26);
+    /// f2m.add_assign(&mut a, &b);
+    /// assert_eq!(a, f2m.one());
+    /// ````
+    fn add_assign(&self, a: &mut Self::FieldElement, b: &Self::FieldElement) {
+        *a = self.add(*a, *b);
+    }
+
     fn sub(&self, a: Self::FieldElement, b: Self::FieldElement) -> Self::FieldElement {
         self.add(a, b)
     }
