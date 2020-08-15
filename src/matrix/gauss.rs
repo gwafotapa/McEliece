@@ -177,7 +177,7 @@ where
         let mut u = Mat::identity(Rc::clone(&f), m);
         let mut h = self.clone();
         let mut p = Perm::identity(n);
-        let mut pivot_candidates = Vec::with_capacity(n);
+        let mut pivot_candidates = vec![0; n];
 
         // j is the index of the column to "standardize":
         // The first iteration sets a 1 at the last position (m-1) of column n-1.
@@ -189,11 +189,10 @@ where
             let mut pivot = false;
             let mut row_pivot = 0;
             let mut col_pivot = 0;
-            let mut i: i32 = -1;
-            pivot_candidates.resize_with(j + 1, || {
-                i += 1;
-                i as usize
-            });
+            pivot_candidates.resize(j + 1, 0);
+            for i in 0..j + 1 {
+                pivot_candidates[i] = i;
+            }
 
             while !pivot && !pivot_candidates.is_empty() {
                 let index = rng.gen_range(0, pivot_candidates.len()); // index of the column to check for a pivot

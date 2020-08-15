@@ -188,7 +188,27 @@ fn matrix_f7_random_standard_form() {
         assert!(s == u * h * p);
     } else {
         info!("Matrix H:{}", h);
+        info!("rank of H: {}\n", h.rank());
         assert!(h.rank() < h.rows());
+    }
+}
+
+#[test]
+fn matrix_f7_random_standard_form_0() {
+    common::log_setup();
+    let f7 = Rc::new(F7::generate(()));
+    let h = Mat::new(f7, 2, 3, vec![3, 1, 6, 3, 1, 5]);
+    if let Some((u, s, p)) = h.random_standard_form() {
+        info!("Invertible matrix U:{}", u);
+        info!("Standard form matrix S:{}", s);
+        info!("Permutation P:{:?}", p);
+        assert!(u.is_invertible());
+        assert!(s.is_standard_form());
+        assert!(p.is_permutation());
+        assert!(s == u * h * p);
+    } else {
+        info!("Matrix H:{}", h);
+        panic!();
     }
 }
 
