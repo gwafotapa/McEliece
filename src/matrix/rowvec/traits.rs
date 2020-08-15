@@ -4,11 +4,11 @@ use std::{
 };
 
 use super::{Mat, Perm, RowVec};
-use crate::finite_field::{F2FiniteExtension, FieldTrait, FiniteField};
+use crate::finite_field::{F2FiniteExtension, Field, FiniteField};
 
 impl<F> From<Mat<F>> for RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn from(mat: Mat<F>) -> Self {
         RowVec(mat)
@@ -17,7 +17,7 @@ where
 
 impl<F> Clone for RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn clone(&self) -> Self {
         RowVec(self.0.clone())
@@ -26,7 +26,7 @@ where
 
 impl<F> Add for RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Self;
 
@@ -37,7 +37,7 @@ where
 
 impl<F> Add<&RowVec<F>> for RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Self;
 
@@ -48,7 +48,7 @@ where
 
 impl<F> Add<RowVec<F>> for &RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = RowVec<F>;
 
@@ -59,7 +59,7 @@ where
 
 impl<F> Add for &RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = RowVec<F>;
 
@@ -70,7 +70,7 @@ where
 
 impl<F> AddAssign<RowVec<F>> for RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn add_assign(&mut self, other: Self) {
         *self += &other;
@@ -79,7 +79,7 @@ where
 
 impl<F> AddAssign<&RowVec<F>> for RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn add_assign(&mut self, other: &Self) {
         self.0 += &other.0;
@@ -88,7 +88,7 @@ where
 
 impl<F> Sub for RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Self;
 
@@ -99,7 +99,7 @@ where
 
 impl<F> Sub<&RowVec<F>> for RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Self;
 
@@ -110,7 +110,7 @@ where
 
 impl<F> Sub<RowVec<F>> for &RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = RowVec<F>;
 
@@ -121,7 +121,7 @@ where
 
 impl<F> Sub for &RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = RowVec<F>;
 
@@ -132,7 +132,7 @@ where
 
 impl<F> SubAssign<RowVec<F>> for RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn sub_assign(&mut self, other: Self) {
         *self -= &other;
@@ -141,7 +141,7 @@ where
 
 impl<F> SubAssign<&RowVec<F>> for RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn sub_assign(&mut self, other: &Self) {
         self.0 -= &other.0;
@@ -150,7 +150,7 @@ where
 
 impl<F> Mul<Mat<F>> for RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Self;
 
@@ -161,7 +161,7 @@ where
 
 impl<F> Mul<&Mat<F>> for RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Self;
 
@@ -172,7 +172,7 @@ where
 
 impl<F> Mul<Mat<F>> for &RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = RowVec<F>;
 
@@ -183,7 +183,7 @@ where
 
 impl<F> Mul<&Mat<F>> for &RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = RowVec<F>;
 
@@ -194,7 +194,7 @@ where
 
 impl<F> MulAssign<Mat<F>> for RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn mul_assign(&mut self, other: Mat<F>) {
         *self *= &other;
@@ -203,7 +203,7 @@ where
 
 impl<F> MulAssign<&Mat<F>> for RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn mul_assign(&mut self, other: &Mat<F>) {
         self.0 *= other;
@@ -212,7 +212,7 @@ where
 
 impl<F> Mul<Perm> for RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Self;
 
@@ -223,7 +223,7 @@ where
 
 impl<F> Mul<&Perm> for RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Self;
 
@@ -234,7 +234,7 @@ where
 
 impl<F> Mul<Perm> for &RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = RowVec<F>;
 
@@ -245,7 +245,7 @@ where
 
 impl<F> Mul<&Perm> for &RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = RowVec<F>;
 
@@ -256,7 +256,7 @@ where
 
 impl<F> Neg for RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Self;
 
@@ -267,7 +267,7 @@ where
 
 impl<F> Neg for &RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = RowVec<F>;
 
@@ -278,7 +278,7 @@ where
 
 impl<F> Index<usize> for RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = F::FieldElement;
 
@@ -289,7 +289,7 @@ where
 
 impl<F> IndexMut<usize> for RowVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.0[(0, index)]

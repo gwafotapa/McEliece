@@ -2,26 +2,26 @@ use rand::Rng;
 use std::rc::Rc;
 
 use super::{Mat, RowVec, SubMat};
-use crate::finite_field::{Field, FieldTrait};
+use crate::finite_field::{Field};
 
 #[derive(Eq, PartialEq)]
 pub struct ColVec<F>(pub Mat<F>)
 where
-    F: FieldTrait;
+    F: Field;
 
 impl<F> ColVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
-    pub fn new(field: Field<F>, data: Vec<F::FieldElement>) -> Self {
+    pub fn new(field: Rc<F>, data: Vec<F::FieldElement>) -> Self {
         ColVec(Mat::new(field, data.len(), 1, data))
     }
 
-    pub fn zero(field: Field<F>, rows: usize) -> Self {
+    pub fn zero(field: Rc<F>, rows: usize) -> Self {
         ColVec(Mat::zero(field, rows, 1))
     }
 
-    pub fn field(&self) -> &Rc<F> {
+    pub fn field(&self) -> Rc<F> {
         self.0.field()
     }
 
@@ -47,11 +47,11 @@ where
         weight
     }
 
-    pub fn random(field: Field<F>, n: usize) -> Self {
+    pub fn random(field: Rc<F>, n: usize) -> Self {
         ColVec(Mat::random(field, n, 1))
     }
 
-    pub fn random_with_weight(field: Field<F>, n: usize, w: usize) -> Self {
+    pub fn random_with_weight(field: Rc<F>, n: usize, w: usize) -> Self {
         let mut rng = rand::thread_rng();
         let mut vec = ColVec::zero(field, n);
         let mut rows = Vec::with_capacity(n);

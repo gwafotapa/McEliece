@@ -1,15 +1,15 @@
 use super::Mat;
 use std::{
     fmt::{Display, Formatter, Result},
-    ops::{Index, IndexMut},
+    ops::Index,
     rc::Rc,
 };
 
-use crate::finite_field::{FieldTrait, FiniteField};
+use crate::finite_field::{Field, FiniteField};
 
 pub struct SubMat<'a, F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     mat: &'a Mat<F>,
     row0: usize,
@@ -20,7 +20,7 @@ where
 
 impl<'a, F> SubMat<'a, F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     pub fn new(mat: &'a Mat<F>, row0: usize, row1: usize, col0: usize, col1: usize) -> Self {
         assert!(row0 < row1 && row1 <= mat.rows());
@@ -34,7 +34,7 @@ where
         }
     }
 
-    pub fn field(&self) -> &Rc<F> {
+    pub fn field(&self) -> Rc<F> {
         self.mat.field()
     }
 
@@ -49,7 +49,7 @@ where
 
 impl<'a, F> Index<(usize, usize)> for SubMat<'a, F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = F::FieldElement;
 
@@ -62,7 +62,7 @@ where
 
 // impl<'a, F> IndexMut<(usize, usize)> for SubMat<'a, F>
 // where
-//     F: FieldTrait,
+//     F: Field,
 // {
 //     fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {
 //         let row = self.row0 + index.0;

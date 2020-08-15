@@ -5,6 +5,7 @@ use std::{
     error::Error,
     fs::File,
     io::{Read, Write},
+    rc::Rc,
 };
 
 use super::RowVec;
@@ -42,7 +43,8 @@ impl RowVec<F2> {
         let mut vec = Vec::new();
         f.read_to_end(&mut vec)?;
         let cols = u32::from_be_bytes(vec[0..4].try_into()?) as usize;
-        let mut rowvec = RowVec::zero(Field::Parameters(()), cols);
+        let f2 = Rc::new(F2::generate(()));
+        let mut rowvec = RowVec::zero(f2, cols);
         let mut k = 4;
         let mut shift = 7;
         for i in 0..cols {

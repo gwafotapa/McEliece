@@ -2,11 +2,11 @@ use rand::Rng;
 use std::rc::Rc;
 
 use super::{Mat, Perm};
-use crate::finite_field::{Field, FieldTrait};
+use crate::finite_field::Field;
 
 impl<F> Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     pub fn row_echelon_form(&mut self) -> Vec<usize> {
         let f = Rc::clone(&self.field);
@@ -100,7 +100,7 @@ where
         if m > n {
             return None;
         }
-        let mut u = Mat::identity(Field::Some(f), m);
+        let mut u = Mat::identity(Rc::clone(&f), m);
         let mut h = self.clone();
         let mut p = Perm::identity(n);
         let mut col = n; // index of the column to check for a pivot
@@ -174,7 +174,7 @@ where
             return None;
         }
         let mut rng = rand::thread_rng();
-        let mut u = Mat::identity(Field::Some(f), m);
+        let mut u = Mat::identity(Rc::clone(&f), m);
         let mut h = self.clone();
         let mut p = Perm::identity(n);
         let mut pivot_candidates = Vec::with_capacity(n);
@@ -395,7 +395,7 @@ where
         let f = self.field();
         let n = self.rows;
         let mut mat = self.clone();
-        let mut inv: Self = Mat::identity(Field::Some(f), n);
+        let mut inv: Self = Mat::identity(Rc::clone(&f), n);
         let mut p = 0; // pivot's row and pivot's column
 
         while p < n {
@@ -473,14 +473,10 @@ where
     /// First generates a random matrix then applies to it the standard form algorithm.
     /// Keeps track of the applied transformations via an invertible matrix u.
     /// Returns u as our random invertible matrix.
-    pub fn invertible_random(field: Field<F>, n: usize) -> Self {
+    pub fn invertible_random(f: Rc<F>, n: usize) -> Self {
         let mut rng = rand::thread_rng();
-        let f = match field {
-            Field::Some(f) => Rc::clone(f),
-            Field::Parameters(p) => Rc::new(F::generate(p)),
-        };
-        let mut mat = Mat::random(Field::Some(&f), n, n);
-        let mut u = Mat::identity(Field::Some(&f), n);
+        let mut mat = Mat::random(Rc::clone(&f), n, n);
+        let mut u = Mat::identity(Rc::clone(&f), n);
 
         // Loop on columns
         for j in 0..n {

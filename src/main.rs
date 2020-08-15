@@ -1,10 +1,10 @@
 use getopts::{Matches, Options};
 use main_error::MainError;
-use std::env;
+use std::{env, rc::Rc};
 
 use mceliece::{
     crypto::{self, PublicKey, SecretKey},
-    finite_field::Field,
+    finite_field::{Field, F2},
     matrix::RowVec,
 };
 
@@ -169,7 +169,8 @@ fn main() -> Result<(), MainError> {
             let pk_file = files.get(0).unwrap_or(&PUBLIC_KEY);
             let ptxt_file = files.get(1).unwrap_or(&PLAINTEXT);
             let k = PublicKey::read_code_dimension(pk_file)?;
-            let m = RowVec::random(Field::Parameters(()), k);
+            let f2 = Rc::new(F2::generate(()));
+            let m = RowVec::random(f2, k);
             m.write(ptxt_file)?;
             if verbose {
                 println!("Wrote plaintext to '{}'.", ptxt_file);

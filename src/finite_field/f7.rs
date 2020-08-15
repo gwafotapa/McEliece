@@ -2,9 +2,9 @@
 
 use rand::{rngs::ThreadRng, Rng};
 
-use super::{FieldTrait, FiniteField};
+use super::{Field, FiniteField};
 
-/// FieldTrait order
+/// Field order
 const ORDER: usize = 7;
 
 const EXP: [F7Element; ORDER] = [1, 3, 2, 6, 4, 5, 1];
@@ -24,7 +24,7 @@ impl PartialEq for F7 {
     }
 }
 
-impl FieldTrait for F7 {
+impl Field for F7 {
     /// Field Element
     type FieldElement = F7Element;
 
@@ -38,7 +38,7 @@ impl FieldTrait for F7 {
 
     /// Returns identity element of field addition
     /// ```
-    /// # use mceliece::finite_field::{FieldTrait, F7};
+    /// # use mceliece::finite_field::{Field, F7};
     /// let f7 = F7 {};
     /// assert_eq!(f7.zero(), 0);
     /// ```
@@ -48,7 +48,7 @@ impl FieldTrait for F7 {
 
     /// Returns identity element of field multiplication
     /// ```
-    /// # use mceliece::finite_field::{FieldTrait, F7};
+    /// # use mceliece::finite_field::{Field, F7};
     /// let f7 = F7 {};
     /// assert_eq!(f7.one(), 1);
     /// ```
@@ -58,7 +58,7 @@ impl FieldTrait for F7 {
 
     /// Returns field characteristic
     /// ```
-    /// # use mceliece::finite_field::{FieldTrait, F7};
+    /// # use mceliece::finite_field::{Field, F7};
     /// let f7 = F7 {};
     /// assert_eq!(f7.characteristic(), 7);
     /// ```
@@ -68,7 +68,7 @@ impl FieldTrait for F7 {
 
     /// Adds two field elements
     /// ```
-    /// # use mceliece::finite_field::{FieldTrait, F7};
+    /// # use mceliece::finite_field::{Field, F7};
     /// let f7 = F7 {};
     /// assert_eq!(f7.add(0, 3), 3);
     /// assert_eq!(f7.add(5, 1), 6);
@@ -81,7 +81,7 @@ impl FieldTrait for F7 {
 
     /// Substracts two field elements
     /// ```
-    /// # use mceliece::finite_field::{FieldTrait, F7};
+    /// # use mceliece::finite_field::{Field, F7};
     /// let f7 = F7 {};
     /// assert_eq!(f7.sub(6, 4), 2);
     /// assert_eq!(f7.sub(5, 0), 5);
@@ -112,7 +112,7 @@ impl FieldTrait for F7 {
 
     /// Returns additive inverse of an element
     /// ```
-    /// # use mceliece::finite_field::{FieldTrait, F7};
+    /// # use mceliece::finite_field::{Field, F7};
     /// let f7 = F7 {};
     /// assert_eq!(f7.neg(0), 0);
     /// assert_eq!(f7.neg(1), 6);

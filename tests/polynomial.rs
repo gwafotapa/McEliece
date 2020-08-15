@@ -9,11 +9,11 @@ pub mod common;
 #[test]
 fn polynomial_f2_division() {
     common::log_setup();
-    let f = &Rc::new(F2::generate(()));
-    let a = Poly::support(Field::Some(f), &[0, 2, 4]);
+    let f = Rc::new(F2::generate(()));
+    let a = Poly::support(Rc::clone(&f), &[0, 2, 4]);
     info!("a(x) = {:?}\n", a);
 
-    let b = Poly::support(Field::Some(f), &[0, 1, 2]);
+    let b = Poly::support(Rc::clone(&f), &[0, 1, 2]);
     info!("b(x) = {:?}\n", b);
 
     let (q, r) = Poly::euclidean_division(&a, &b);
@@ -27,14 +27,14 @@ fn polynomial_f2_division() {
 #[test]
 fn polynomial_f2_gcd() {
     common::log_setup();
-    let f = &Rc::new(F2::generate(()));
-    let a = Poly::support(Field::Some(f), &[0, 1, 4]);
+    let f = Rc::new(F2::generate(()));
+    let a = Poly::support(Rc::clone(&f), &[0, 1, 4]);
     info!("a(x) = {:?}\n", a);
 
-    let b = Poly::support(Field::Some(f), &[0, 1, 2]);
+    let b = Poly::support(Rc::clone(&f), &[0, 1, 2]);
     info!("b(x) = {:?}\n", b);
 
-    let c = Poly::support(Field::Some(f), &[0, 1]);
+    let c = Poly::support(Rc::clone(&f), &[0, 1]);
     info!("c(x) = {:?}\n", c);
 
     let ac = &a * &c;
@@ -52,14 +52,14 @@ fn polynomial_f2_gcd() {
 #[test]
 fn polynomial_f2_extended_gcd() {
     common::log_setup();
-    let f = &Rc::new(F2::generate(()));
+    let f = Rc::new(F2::generate(()));
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(1, 100);
-    let a = Poly::random(Field::Some(f), deg_a);
+    let a = Poly::random(Rc::clone(&f), deg_a);
     info!("a(x) = {:?}\n", a);
 
     let deg_b = rng.gen_range(0, deg_a);
-    let b = Poly::random(Field::Some(f), deg_b);
+    let b = Poly::random(Rc::clone(&f), deg_b);
     info!("b(x) = {:?}\n", b);
 
     let (d, u, v, a1, b1) = Poly::extended_gcd(&a, &b);
@@ -77,14 +77,14 @@ fn polynomial_f2_extended_gcd() {
 #[test]
 fn polynomial_f7_extended_gcd() {
     common::log_setup();
-    let f = &Rc::new(F7::generate(()));
+    let f = Rc::new(F7::generate(()));
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(1, 100);
-    let a = Poly::random(Field::Some(f), deg_a);
+    let a = Poly::random(Rc::clone(&f), deg_a);
     info!("a(x) = {}\n", a);
 
     let deg_b = rng.gen_range(0, deg_a);
-    let b = Poly::random(Field::Some(f), deg_b);
+    let b = Poly::random(Rc::clone(&f), deg_b);
     info!("b(x) = {}\n", b);
 
     let (d, u, v, a1, b1) = Poly::extended_gcd(&a, &b);
@@ -102,14 +102,14 @@ fn polynomial_f7_extended_gcd() {
 #[test]
 fn polynomial_f1024_extended_gcd() {
     common::log_setup();
-    let f = &Rc::new(F2m::generate(1024));
+    let f = Rc::new(F2m::generate(1024));
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(1, 100);
-    let a = Poly::random(Field::Some(f), deg_a);
+    let a = Poly::random(Rc::clone(&f), deg_a);
     info!("a(x) = {:?}\n", a);
 
     let deg_b = rng.gen_range(0, deg_a);
-    let b = Poly::random(Field::Some(f), deg_b);
+    let b = Poly::random(Rc::clone(&f), deg_b);
     info!("b(x) = {:?}\n", b);
 
     let (d, u, v, a1, b1) = Poly::extended_gcd(&a, &b);
@@ -129,7 +129,8 @@ fn polynomial_f1024_square() {
     common::log_setup();
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(0, 100);
-    let mut a = Poly::<F2m>::random(Field::Parameters(1024), deg_a);
+    let f1024 = Rc::new(F2m::generate(1024));
+    let mut a = Poly::<F2m>::random(f1024, deg_a);
     info!("a(x) = {:?}\n", a);
 
     let b = a.clone();
@@ -140,14 +141,14 @@ fn polynomial_f1024_square() {
 #[test]
 fn polynomial_f1024_modulo() {
     common::log_setup();
-    let f = &Rc::new(F2m::generate(1024));
+    let f = Rc::new(F2m::generate(1024));
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(0, 100);
-    let mut a = Poly::random(Field::Some(f), deg_a);
+    let mut a = Poly::random(Rc::clone(&f), deg_a);
     info!("a(x) = {:?}\n", a);
 
     let deg_g = rng.gen_range(0, 100);
-    let g = Poly::random(Field::Some(f), deg_g);
+    let g = Poly::random(Rc::clone(&f), deg_g);
     info!("g(x) = {:?}\n", g);
 
     let (_q, r) = Poly::euclidean_division(&a, &g);
@@ -158,16 +159,16 @@ fn polynomial_f1024_modulo() {
 #[test]
 fn polynomial_f1024_sq_root_mod() {
     common::log_setup();
-    let f = &Rc::new(F2m::generate(1024));
+    let f = Rc::new(F2m::generate(1024));
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(0, 11);
-    let a = Poly::random(Field::Some(f), deg_a);
+    let a = Poly::random(Rc::clone(&f), deg_a);
     info!("a(x) = {:?}\n", a);
 
     let mut b = &a * &a;
     info!("a^2(x) = {:?}\n", b);
 
-    let g = Poly::support(Field::Some(f), &[0, 2, 11]);
+    let g = Poly::support(Rc::clone(&f), &[0, 2, 11]);
     b.square_root_modulo(&g);
     info!("b(x) = {:?}\n", b);
 
@@ -177,11 +178,11 @@ fn polynomial_f1024_sq_root_mod() {
 #[test]
 fn polynomial_f1024_inverse_mod() {
     common::log_setup();
-    let f = &Rc::new(F2m::generate(1024));
-    let g = Poly::support(Field::Some(f), &[0, 2, 11]);
+    let f = Rc::new(F2m::generate(1024));
+    let g = Poly::support(Rc::clone(&f), &[0, 2, 11]);
     let mut rng = rand::thread_rng();
     let deg_a = rng.gen_range(0, 11);
-    let a = Poly::random(Field::Some(f), deg_a);
+    let a = Poly::random(Rc::clone(&f), deg_a);
     info!("a(x) = {:?}\n", a);
 
     let inv = a.inverse_modulo(&g);
@@ -189,35 +190,35 @@ fn polynomial_f1024_inverse_mod() {
 
     let mut p = &a * &inv;
     p.modulo(&g);
-    let id = Poly::x_n(Field::Some(f), 0);
+    let id = Poly::x_n(Rc::clone(&f), 0);
     assert_eq!(p, id);
 }
 
 #[test]
 fn polynomial_is_irreducible() {
     common::log_setup();
-    let f2 = &Rc::new(F2::generate(()));
-    let f1024 = &Rc::new(F2m::generate(1024));
+    let f2 = Rc::new(F2::generate(()));
+    let f1024 = Rc::new(F2m::generate(1024));
 
-    let zero = Poly::zero(Field::Some(f2), 1);
+    let zero = Poly::zero(Rc::clone(&f2), 1);
     assert!(!zero.is_irreducible());
 
-    let mut constant_poly = Poly::zero(Field::Some(f1024), 1);
+    let mut constant_poly = Poly::zero(Rc::clone(&f1024), 1);
     constant_poly[0] = f1024.exp(533);
     assert!(!constant_poly.is_irreducible());
 
-    let p = Poly::support(Field::Some(f2), &[0, 1, 2]);
+    let p = Poly::support(Rc::clone(&f2), &[0, 1, 2]);
     assert!(p.is_irreducible());
 
-    let p = Poly::support(Field::Some(f2), &[0, 2]);
+    let p = Poly::support(Rc::clone(&f2), &[0, 2]);
     assert!(!p.is_irreducible());
 
-    let p = Poly::support(Field::Some(f1024), &[0, 2, 11]);
+    let p = Poly::support(Rc::clone(&f1024), &[0, 2, 11]);
     assert!(p.is_irreducible());
 
-    let p = Poly::support(Field::Some(f2), &[0, 3, 10]);
+    let p = Poly::support(Rc::clone(&f2), &[0, 3, 10]);
     assert!(p.is_irreducible());
 
-    let p = Poly::support(Field::Some(f1024), &[0, 3, 10]);
+    let p = Poly::support(Rc::clone(&f1024), &[0, 3, 10]);
     assert!(!p.is_irreducible());
 }

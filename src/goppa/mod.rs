@@ -8,7 +8,7 @@ use std::{
 };
 
 use crate::{
-    finite_field::{F2FiniteExtension, Field, FieldTrait, F2},
+    finite_field::{F2FiniteExtension, Field, F2},
     matrix::{Mat, RowVec},
     polynomial::Poly,
 };
@@ -17,7 +17,7 @@ use crate::{
 #[derive(Eq, PartialEq)]
 pub struct Goppa<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     poly: Poly<F>,
     set: Vec<F::FieldElement>,
@@ -123,7 +123,7 @@ where
     /// - n is greater than the order of F
     /// - n &le; t * log<sub>2</sub>|F| (Goppa code dimension would be 0)
     /// - n = log<sub>2</sub>|F| and t = 1 (a Goppa code set cannot contain one of its roots)
-    pub fn random(field: Field<F>, n: usize, t: usize) -> Self {
+    pub fn random(field: Rc<F>, n: usize, t: usize) -> Self {
         let poly = Poly::random_monic_irreducible(field, t);
         let f = poly.field();
         let q = f.order();
@@ -171,14 +171,14 @@ where
         &self.set
     }
 
-    pub fn field(&self) -> &Rc<F> {
-        self.poly.field()
+    pub fn field(&self) -> Rc<F> {
+        Rc::clone(&self.poly.field())
     }
 
     pub fn parity_check_x(&self) -> Mat<F> {
         let f = self.field();
         let t = self.poly.degree();
-        let mut x = Mat::zero(Field::Some(f), t, t);
+        let mut x = Mat::zero(f, t, t);
         for i in 0..t {
             for j in 0..i + 1 {
                 x[(i, j)] = self.poly[t - i + j];
@@ -192,7 +192,7 @@ where
         let n = self.len();
         let t = self.poly.degree();
 
-        let mut y = Mat::zero(Field::Some(f), t, n);
+        let mut y = Mat::zero(Rc::clone(&f), t, n);
         for i in 0..n {
             y[(0, i)] = f.one();
         }
@@ -209,7 +209,7 @@ where
         let f = self.field();
         let n = self.len();
 
-        let mut z = Mat::zero(Field::Some(f), n, n);
+        let mut z = Mat::zero(Rc::clone(&f), n, n);
         for i in 0..n {
             z[(i, i)] = f.inv(self.poly.eval(self.set[i])).unwrap();
         }
@@ -223,18 +223,18 @@ where
         x * y * z
     }
 
-    pub fn parity_check_from_xyz(xyz: &Mat<F>, f2: Field<F2>) -> Mat<F2> {
+    pub fn parity_check_from_xyz(xyz: &Mat<F>, f2: Rc<F2>) -> Mat<F2> {
         let mut h = xyz.binary(f2);
         h.remove_redundant_rows();
         h
     }
 
-    pub fn parity_check_matrix(&self, f2: Field<F2>) -> Mat<F2> {
+    pub fn parity_check_matrix(&self, f2: Rc<F2>) -> Mat<F2> {
         let xyz = self.parity_check_xyz();
         Self::parity_check_from_xyz(&xyz, f2)
     }
 
-    pub fn generator_from_xyz(xyz: &Mat<F>, f2: Field<F2>) -> (Mat<F2>, Vec<usize>) {
+    pub fn generator_from_xyz(xyz: &Mat<F>, f2: Rc<F2>) -> (Mat<F2>, Vec<usize>) {
         let xyz2 = xyz.binary(f2);
         let (hs, p) = xyz2.standard_parity_check_equivalent();
         let gs = Self::generator_from_parity_check_standard(&hs);
@@ -247,7 +247,7 @@ where
         let f2 = h.field();
         let n = h.cols();
         let k = n - h.rows();
-        let mut g = Mat::zero(Field::Some(f2), k, n);
+        let mut g = Mat::zero(Rc::clone(&f2), k, n);
         for i in 0..k {
             g[(i, i)] = f2.one();
             for j in k..n {
@@ -266,7 +266,7 @@ where
         (gs * p.inverse(), information_set)
     }
 
-    pub fn generator_matrix(&self, f2: Field<F2>) -> Mat<F2> {
+    pub fn generator_matrix(&self, f2: Rc<F2>) -> Mat<F2> {
         let xyz = self.parity_check_xyz();
         Self::generator_from_xyz(&xyz, f2).0
     }
@@ -279,7 +279,7 @@ where
     pub fn syndrome_from_xyz(xyz: &Mat<F>, rcv: &RowVec<F2>) -> Mat<F> {
         let f2 = rcv.field();
         let f = xyz.field();
-        let mut s = Mat::zero(Field::Some(f), xyz.rows(), 1);
+        let mut s = Mat::zero(Rc::clone(&f), xyz.rows(), 1);
         for i in 0..xyz.rows() {
             for j in 0..rcv.cols() {
                 if rcv[j] == f2.one() {
@@ -292,7 +292,7 @@ where
 
     pub fn encode(&self, msg: &RowVec<F2>) -> RowVec<F2> {
         let f2 = msg.field();
-        let g = self.generator_matrix(Field::Some(f2));
+        let g = self.generator_matrix(f2);
         Self::g_encode(&g, msg)
     }
 
@@ -312,7 +312,7 @@ where
         debug!("syndrome:{}", syndrome);
 
         let s_x = Poly::new(
-            Field::Some(f),
+            Rc::clone(&f),
             syndrome.data().iter().rev().cloned().collect(),
         );
         debug!("S(x) = {}", s_x);
@@ -324,7 +324,7 @@ where
         let mut t_x = s_x.inverse_modulo(&self.poly);
         debug!("T(x) = s(x)^-1 = {}", s_x);
 
-        t_x += Poly::x_n(Field::Some(f), 1);
+        t_x += Poly::x_n(Rc::clone(&f), 1);
         t_x.square_root_modulo(&self.poly);
         debug!("(T(x) + x)^(1/2) = {}", t_x);
 
@@ -337,12 +337,12 @@ where
         debug!("a(x)^2 = {}", a);
         debug!("b(x)^2 = {}", b);
 
-        b *= Poly::x_n(Field::Some(f), 1);
+        b *= Poly::x_n(Rc::clone(&f), 1);
         let sigma = a + b;
         debug!("sigma(x) = {}", sigma);
 
         let err = RowVec::new(
-            Field::Some(f2),
+            Rc::clone(&f2),
             self.set
                 .iter()
                 .map(|x| {

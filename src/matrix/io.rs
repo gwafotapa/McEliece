@@ -1,6 +1,6 @@
 //! Converts a matrix on F<sub>2</sub> into a byte vector and vice versa
 
-use std::{convert::TryInto, error::Error};
+use std::{convert::TryInto, error::Error, rc::Rc};
 
 use super::Mat;
 use crate::finite_field::{Field, F2};
@@ -43,7 +43,8 @@ impl Mat<F2> {
     pub fn from_bytes(vec: &[u8]) -> Result<(usize, Self)> {
         let rows = u32::from_be_bytes(vec[0..4].try_into()?) as usize;
         let cols = u32::from_be_bytes(vec[4..8].try_into()?) as usize;
-        let mut mat = Mat::zero(Field::Parameters(()), rows, cols);
+        let f2 = Rc::new(F2::generate(()));
+        let mut mat = Mat::zero(f2, rows, cols);
         let mut read = 8;
         let mut shift = 7;
         for i in 0..rows {

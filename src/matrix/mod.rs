@@ -2,7 +2,7 @@
 
 use std::rc::Rc;
 
-use crate::finite_field::{F2FiniteExtension, Field, FieldTrait, F2};
+use crate::finite_field::{F2FiniteExtension, Field, F2};
 
 pub use colvec::ColVec;
 pub use perm::Perm;
@@ -13,7 +13,7 @@ pub use submat::SubMat;
 #[derive(Eq, PartialEq)]
 pub struct Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     field: Rc<F>,
     rows: usize,
@@ -23,7 +23,7 @@ where
 
 impl<F> Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     /// Creates a new matrix
     ///
@@ -32,16 +32,12 @@ where
     /// # Panics
     ///
     /// Panics if the matrix is empty or if there are not exactly rows * cols coefficients.
-    pub fn new(field: Field<F>, rows: usize, cols: usize, data: Vec<F::FieldElement>) -> Self {
+    pub fn new(field: Rc<F>, rows: usize, cols: usize, data: Vec<F::FieldElement>) -> Self {
         if rows == 0 || cols == 0 || data.is_empty() {
             panic!("Empty matrix");
         } else if data.len() != rows * cols {
             panic!("Dimensions do not match the number of coefficients");
         }
-        let field = match field {
-            Field::Some(f) => Rc::clone(f),
-            Field::Parameters(p) => Rc::new(F::generate(p)),
-        };
         Self {
             field,
             rows,
@@ -55,14 +51,10 @@ where
     /// # Panics
     ///
     /// Panics if the number of either rows or columns is zero.
-    pub fn zero(field: Field<F>, rows: usize, cols: usize) -> Self {
+    pub fn zero(field: Rc<F>, rows: usize, cols: usize) -> Self {
         if rows == 0 || cols == 0 {
             panic!("Empty matrix");
         }
-        let field = match field {
-            Field::Some(f) => Rc::clone(f),
-            Field::Parameters(p) => Rc::new(F::generate(p)),
-        };
         let data = vec![field.zero(); rows * cols];
         Self {
             field,
@@ -89,8 +81,8 @@ where
         }
     }
 
-    pub fn field(&self) -> &Rc<F> {
-        &self.field
+    pub fn field(&self) -> Rc<F> {
+        Rc::clone(&self.field)
     }
 
     pub fn rows(&self) -> usize {
@@ -105,7 +97,7 @@ where
         &self.data
     }
 
-    pub fn random(field: Field<F>, n: usize, m: usize) -> Self {
+    pub fn random(field: Rc<F>, n: usize, m: usize) -> Self {
         let mut rng = rand::thread_rng();
         let mut mat = Self::zero(field, n, m);
         for i in 0..n {
@@ -129,7 +121,7 @@ where
 
     /// Creates a new matrix by taking the chosen rows in the given order
     pub fn extract_rows(&self, rows: &Vec<usize>) -> Self {
-        let mut res = Mat::zero(Field::Some(self.field()), rows.len(), self.cols);
+        let mut res = Mat::zero(self.field(), rows.len(), self.cols);
         for i in 0..rows.len() {
             for j in 0..self.cols {
                 res[(i, j)] = self[(rows[i], j)];
@@ -140,7 +132,7 @@ where
 
     /// Creates a new matrix by taking the chosen columns in the given order
     pub fn extract_cols(&self, cols: &Vec<usize>) -> Self {
-        let mut res = Mat::zero(Field::Some(self.field()), self.rows, cols.len());
+        let mut res = Mat::zero(self.field(), self.rows, cols.len());
         for j in 0..cols.len() {
             for i in 0..res.rows {
                 res[(i, j)] = self[(i, cols[j])];
@@ -149,7 +141,7 @@ where
         res
     }
 
-    pub fn identity(field: Field<F>, n: usize) -> Self {
+    pub fn identity(field: Rc<F>, n: usize) -> Self {
         let mut id = Self::zero(field, n, n);
         for i in 0..n {
             id[(i, i)] = id.field.one();
@@ -158,7 +150,7 @@ where
     }
 
     pub fn transpose(&self) -> Self {
-        let mut t = Self::zero(Field::Some(self.field()), self.cols, self.rows);
+        let mut t = Self::zero(self.field(), self.cols, self.rows);
         for i in 0..t.rows {
             for j in 0..t.cols {
                 t[(i, j)] = self[(j, i)];
@@ -228,7 +220,7 @@ where
     /// Takes a t * n matrix on F<sub>2<sup>m</sup></sub>
     /// and outputs a mt * n matrix on F<sub>2</sub>
     /// by decomposing each coefficient on the canonical basis
-    pub fn binary(&self, field: Field<F2>) -> Mat<F2>
+    pub fn binary(&self, field: Rc<F2>) -> Mat<F2>
     where
         F: F2FiniteExtension,
     {
@@ -250,7 +242,7 @@ where
         if a.rows != b.rows {
             panic!("number of rows do no match");
         }
-        let mut ab = Mat::zero(Field::Some(a.field()), a.rows, a.cols + b.cols);
+        let mut ab = Mat::zero(a.field(), a.rows, a.cols + b.cols);
         for i in 0..ab.rows {
             for j in 0..a.cols {
                 ab[(i, j)] = a[(i, j)];
@@ -266,7 +258,7 @@ where
         if a.cols != b.cols {
             panic!("number of columns do not match");
         }
-        let mut ab = Mat::zero(Field::Some(a.field()), a.rows + b.rows, a.cols);
+        let mut ab = Mat::zero(a.field(), a.rows + b.rows, a.cols);
         for j in 0..ab.cols {
             for i in 0..a.rows {
                 ab[(i, j)] = a[(i, j)];
@@ -276,6 +268,19 @@ where
             }
         }
         ab
+    }
+
+    pub fn random_standard_form_parity_check_matrix(field: Rc<F>, n: usize, k: usize) -> Self {
+        assert!(k <= n, "k must be at most n");
+        let mut rng = rand::thread_rng();
+        let mut h = Self::zero(field, n - k, n);
+        for i in 0..n - k {
+            h[(i, k + i)] = h.field.one();
+            for j in 0..k {
+                h[(i, j)] = h.field.random_element(&mut rng);
+            }
+        }
+        h
     }
 }
 

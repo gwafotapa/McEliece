@@ -1,11 +1,13 @@
+use std::rc::Rc;
+
 use super::Poly;
-use crate::finite_field::{f2m, CharacteristicTwo, F2FiniteExtension, Field, FieldTrait};
+use crate::finite_field::{f2m, CharacteristicTwo, F2FiniteExtension, Field};
 
 impl<F> Poly<F>
 where
-    F: CharacteristicTwo + FieldTrait,
+    F: CharacteristicTwo + Field,
 {
-    pub fn random_monic_irreducible(field: Field<F>, degree: usize) -> Self
+    pub fn random_monic_irreducible(field: Rc<F>, degree: usize) -> Self
     where
         F: F2FiniteExtension,
     {
@@ -42,21 +44,21 @@ where
         let n_div_primes: Vec<u32> = n_prime_factors.iter().map(|x| n / x).collect();
 
         for i in 0..n_prime_factors.len() {
-            let mut h = Self::x_n(Field::Some(f), 1);
+            let mut h = Self::x_n(Rc::clone(&f), 1);
             for _j in 0..n_div_primes[i] {
                 h.pow_modulo(q, self);
             }
-            h -= &Self::x_n(Field::Some(f), 1);
+            h -= &Self::x_n(Rc::clone(&f), 1);
             let g = Self::gcd(self, &h);
             if g.degree() != 0 {
                 return false;
             }
         }
-        let mut g = Self::x_n(Field::Some(f), 1);
+        let mut g = Self::x_n(Rc::clone(&f), 1);
         for _i in 0..n {
             g.pow_modulo(q, self);
         }
-        g -= &Self::x_n(Field::Some(f), 1);
+        g -= &Self::x_n(Rc::clone(&f), 1);
         g.modulo(self);
         g.is_zero()
     }
@@ -145,8 +147,8 @@ where
         let mut b = Vec::new();
         a.push(g.clone());
         a.push(t.clone());
-        let b0 = Self::zero(Field::Some(f), 1);
-        let b1 = Self::x_n(Field::Some(f), 0);
+        let b0 = Self::zero(Rc::clone(&f), 1);
+        let b1 = Self::x_n(Rc::clone(&f), 0);
         b.push(b0);
         b.push(b1);
 

@@ -1,14 +1,13 @@
 //! Finite fields of characteristic 2
 
 use rand::rngs::ThreadRng;
-use std::rc::Rc;
 
 pub use f2::F2;
 pub use f2m::F2m;
 pub use f7::F7;
 
-/// FieldTrait requires implementing Eq as field isomorphism
-pub trait FieldTrait: Eq {
+/// Field requires implementing Eq as field isomorphism
+pub trait Field: Eq {
     /// Field Element
     type FieldElement: Copy + Eq;
 
@@ -46,7 +45,7 @@ pub trait FieldTrait: Eq {
     fn random_element(&self, rng: &mut ThreadRng) -> Self::FieldElement;
 }
 
-pub trait FiniteField: FieldTrait {
+pub trait FiniteField: Field {
     /// Returns m where field order is p<sup>m</sup> with p prime
     fn characteristic_exponent(&self) -> u32;
 
@@ -75,7 +74,7 @@ pub trait FiniteField: FieldTrait {
     }
 }
 
-pub trait CharacteristicTwo: FieldTrait {}
+pub trait CharacteristicTwo: Field {}
 
 pub trait F2FiniteExtension: CharacteristicTwo + FiniteField {
     /// Converts an element to an u32
@@ -108,14 +107,6 @@ pub trait F2FiniteExtension: CharacteristicTwo + FiniteField {
         }
         vec
     }
-}
-
-pub enum Field<'a, F>
-where
-    F: FieldTrait,
-{
-    Some(&'a Rc<F>),
-    Parameters(F::FieldParameters),
 }
 
 pub mod f2;

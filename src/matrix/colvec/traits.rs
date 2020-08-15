@@ -4,11 +4,11 @@ use std::{
 };
 
 use super::{ColVec, Mat};
-use crate::finite_field::{F2FiniteExtension, FieldTrait, FiniteField};
+use crate::finite_field::{F2FiniteExtension, Field, FiniteField};
 
 impl<F> From<Mat<F>> for ColVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn from(mat: Mat<F>) -> Self {
         ColVec(mat)
@@ -17,7 +17,7 @@ where
 
 impl<F> Clone for ColVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn clone(&self) -> Self {
         ColVec(self.0.clone())
@@ -26,7 +26,7 @@ where
 
 impl<F> Add for ColVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Self;
 
@@ -37,7 +37,7 @@ where
 
 impl<F> Add<&ColVec<F>> for ColVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Self;
 
@@ -48,7 +48,7 @@ where
 
 impl<F> Add<ColVec<F>> for &ColVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = ColVec<F>;
 
@@ -59,7 +59,7 @@ where
 
 impl<F> Add for &ColVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = ColVec<F>;
 
@@ -70,7 +70,7 @@ where
 
 impl<F> AddAssign<ColVec<F>> for ColVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn add_assign(&mut self, other: Self) {
         *self += &other;
@@ -79,7 +79,7 @@ where
 
 impl<F> AddAssign<&ColVec<F>> for ColVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn add_assign(&mut self, other: &Self) {
         self.0 += &other.0;
@@ -88,7 +88,7 @@ where
 
 impl<F> Sub for ColVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Self;
 
@@ -99,7 +99,7 @@ where
 
 impl<F> Sub<&ColVec<F>> for ColVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Self;
 
@@ -110,7 +110,7 @@ where
 
 impl<F> Sub<ColVec<F>> for &ColVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = ColVec<F>;
 
@@ -121,7 +121,7 @@ where
 
 impl<F> Sub for &ColVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = ColVec<F>;
 
@@ -132,7 +132,7 @@ where
 
 impl<F> SubAssign<ColVec<F>> for ColVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn sub_assign(&mut self, other: Self) {
         *self -= &other;
@@ -141,7 +141,7 @@ where
 
 impl<F> SubAssign<&ColVec<F>> for ColVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn sub_assign(&mut self, other: &Self) {
         self.0 -= &other.0;
@@ -150,7 +150,7 @@ where
 
 impl<F> Neg for ColVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Self;
 
@@ -161,7 +161,7 @@ where
 
 impl<F> Neg for &ColVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = ColVec<F>;
 
@@ -172,7 +172,7 @@ where
 
 impl<F> Index<usize> for ColVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = F::FieldElement;
 
@@ -183,7 +183,7 @@ where
 
 impl<F> IndexMut<usize> for ColVec<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.0[(index, 0)]

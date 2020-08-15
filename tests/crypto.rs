@@ -13,7 +13,8 @@ fn crypto_keygen() {
     info!("F2m=F{}, n={}, t={}", q, n, t);
 
     let (pk, sk) = keygen(n, t);
-    let g = sk.goppa().generator_matrix(Field::Parameters(()));
+    let f2 = Rc::new(F2::generate(()));
+    let g = sk.goppa().generator_matrix(f2);
     assert!(sk.s().is_invertible());
     assert_eq!(g.rank(), g.rows());
     assert!(sk.p().is_permutation());
@@ -49,11 +50,11 @@ fn crypto_decrypt_null_ciphertext() {
     let (q, n, t) = common::goppa_setup();
     info!("F2m=F{}, n={}, t={}", q, n, t);
 
-    let f2 = &Rc::new(F2::generate(()));
+    let f2 = Rc::new(F2::generate(()));
     let (pk, sk) = keygen(n, t);
     let k = pk.sgp().rows();
-    let msg = RowVec::zero(Field::Some(f2), k);
-    let cpt = RowVec::zero(Field::Some(f2), n);
+    let msg = RowVec::zero(Rc::clone(&f2), k);
+    let cpt = RowVec::zero(Rc::clone(&f2), n);
     let dmsg = sk.decrypt(&cpt);
     assert_eq!(dmsg, msg);
 }
@@ -63,9 +64,10 @@ fn crypto_decrypt_codeword() {
     let (q, n, t) = common::goppa_setup();
     info!("F2m=F{}, n={}, t={}", q, n, t);
 
+    let f2 = Rc::new(F2::generate(()));
     let (pk, sk) = keygen(n, t);
     let k = pk.sgp().rows();
-    let msg = RowVec::random(Field::Parameters(()), k);
+    let msg = RowVec::random(f2, k);
     let cpt = &msg * pk.sgp();
     let dmsg = sk.decrypt(&cpt);
     assert_eq!(dmsg, msg);
@@ -76,9 +78,10 @@ fn crypto_encrypt_decrypt_null_message() {
     let (q, n, t) = common::goppa_setup();
     info!("F2m=F{}, n={}, t={}", q, n, t);
 
+    let f2 = Rc::new(F2::generate(()));
     let (pk, sk) = keygen(n, t);
     let k = pk.sgp().rows();
-    let msg = RowVec::zero(Field::Parameters(()), k);
+    let msg = RowVec::zero(f2, k);
     let cpt = pk.encrypt(&msg);
     assert_eq!(cpt.weight(), t);
 
@@ -90,9 +93,11 @@ fn crypto_encrypt_decrypt_null_message() {
 fn crypto_encrypt_decrypt_random_message() {
     let (q, n, t) = common::goppa_setup();
     info!("F2m=F{}, n={}, t={}", q, n, t);
+
+    let f2 = Rc::new(F2::generate(()));
     let (pk, sk) = keygen(n, t);
     let k = pk.sgp().rows();
-    let msg = RowVec::random(Field::Parameters(()), k);
+    let msg = RowVec::random(f2, k);
     let cpt = pk.encrypt(&msg);
     let dmsg = sk.decrypt(&cpt);
     assert_eq!(dmsg, msg);
@@ -114,9 +119,10 @@ fn crypto_repeat() {
 }
 
 fn crypto_repeated(n: usize, t: usize) {
+    let f2 = Rc::new(F2::generate(()));
     let (pk, sk) = keygen(n, t);
     let k = pk.sgp().rows();
-    let msg = RowVec::random(Field::Parameters(()), k);
+    let msg = RowVec::random(f2, k);
     let cpt = pk.encrypt(&msg);
     let dmsg = sk.decrypt(&cpt);
     assert_eq!(dmsg, msg);

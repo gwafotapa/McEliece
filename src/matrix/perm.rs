@@ -2,7 +2,7 @@ use rand::Rng;
 use std::ops::{Index, IndexMut, Mul};
 
 use super::ColVec;
-use crate::finite_field::{Field, FieldTrait};
+use crate::finite_field::Field;
 
 #[derive(Debug, Eq, PartialEq)]
 pub struct Perm(Vec<usize>);
@@ -115,7 +115,7 @@ impl Perm {
 
 impl<F> Mul<ColVec<F>> for Perm
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = ColVec<F>;
 
@@ -126,7 +126,7 @@ where
 
 impl<F> Mul<&ColVec<F>> for Perm
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = ColVec<F>;
 
@@ -137,7 +137,7 @@ where
 
 impl<F> Mul<ColVec<F>> for &Perm
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = ColVec<F>;
 
@@ -148,12 +148,12 @@ where
 
 impl<F> Mul<&ColVec<F>> for &Perm
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = ColVec<F>;
 
     fn mul(self, vec: &ColVec<F>) -> Self::Output {
-        let mut res = ColVec::zero(Field::Some(vec.field()), vec.rows());
+        let mut res = ColVec::zero(vec.field(), vec.rows());
         for i in 0..self.len() {
             res[self[i]] = vec[i];
         }

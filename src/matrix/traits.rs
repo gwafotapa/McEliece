@@ -5,11 +5,11 @@ use std::{
 };
 
 use super::{ColVec, Mat, Perm, RowVec};
-use crate::finite_field::{F2FiniteExtension, Field, FieldTrait, FiniteField};
+use crate::finite_field::{F2FiniteExtension, Field, FiniteField};
 
 impl<F> Clone for Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn clone(&self) -> Self {
         Mat {
@@ -23,7 +23,7 @@ where
 
 impl<F> Add for Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Self;
 
@@ -35,7 +35,7 @@ where
 
 impl<F> Add<&Mat<F>> for Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Self;
 
@@ -47,7 +47,7 @@ where
 
 impl<F> Add<Mat<F>> for &Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Mat<F>;
 
@@ -59,7 +59,7 @@ where
 
 impl<F> Add for &Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Mat<F>;
 
@@ -72,7 +72,7 @@ where
 
 impl<F> AddAssign<Mat<F>> for Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn add_assign(&mut self, other: Self) {
         *self += &other;
@@ -81,7 +81,7 @@ where
 
 impl<F> AddAssign<&Mat<F>> for Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn add_assign(&mut self, other: &Self) {
         if self.field != other.field {
@@ -98,7 +98,7 @@ where
 
 impl<F> Sub for Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Self;
 
@@ -110,7 +110,7 @@ where
 
 impl<F> Sub<&Mat<F>> for Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Self;
 
@@ -122,7 +122,7 @@ where
 
 impl<F> Sub<Mat<F>> for &Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Mat<F>;
 
@@ -134,7 +134,7 @@ where
 
 impl<F> Sub for &Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Mat<F>;
 
@@ -147,7 +147,7 @@ where
 
 impl<F> SubAssign<Mat<F>> for Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn sub_assign(&mut self, other: Self) {
         *self -= &other;
@@ -156,7 +156,7 @@ where
 
 impl<F> SubAssign<&Mat<F>> for Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn sub_assign(&mut self, other: &Self) {
         if self.field != other.field {
@@ -173,7 +173,7 @@ where
 
 impl<F> Mul for Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Self;
 
@@ -184,7 +184,7 @@ where
 
 impl<F> Mul<&Mat<F>> for Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Self;
 
@@ -195,7 +195,7 @@ where
 
 impl<F> Mul<Mat<F>> for &Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Mat<F>;
 
@@ -206,7 +206,7 @@ where
 
 impl<F> Mul for &Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Mat<F>;
 
@@ -218,7 +218,7 @@ where
         }
 
         let f = self.field();
-        let mut prod = Mat::zero(Field::Some(f), self.rows, other.cols);
+        let mut prod = Mat::zero(Rc::clone(&f), self.rows, other.cols);
         for i in 0..prod.rows {
             for j in 0..prod.cols {
                 for k in 0..self.cols {
@@ -232,7 +232,7 @@ where
 
 impl<F> MulAssign<Mat<F>> for Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn mul_assign(&mut self, other: Self) {
         *self *= &other;
@@ -241,7 +241,7 @@ where
 
 impl<F> MulAssign<&Mat<F>> for Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn mul_assign(&mut self, other: &Self) {
         if self.field != other.field {
@@ -265,7 +265,7 @@ where
 
 impl<F> Mul<Perm> for Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Self;
 
@@ -276,7 +276,7 @@ where
 
 impl<F> Mul<&Perm> for Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Self;
 
@@ -287,7 +287,7 @@ where
 
 impl<F> Mul<Perm> for &Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Mat<F>;
 
@@ -298,7 +298,7 @@ where
 
 impl<F> Mul<&Perm> for &Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Mat<F>;
 
@@ -312,7 +312,7 @@ where
 
 impl<F> Neg for Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Self;
 
@@ -326,12 +326,12 @@ where
 
 impl<F> Neg for &Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = Mat<F>;
 
     fn neg(self) -> Self::Output {
-        let mut opp = Mat::zero(Field::Some(self.field()), self.rows, self.cols);
+        let mut opp = Mat::zero(self.field(), self.rows, self.cols);
 
         for i in 0..self.rows * self.cols {
             opp.data[i] = opp.field.neg(self.data[i]);
@@ -342,7 +342,7 @@ where
 
 impl<F> Index<(usize, usize)> for Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = F::FieldElement;
 
@@ -353,7 +353,7 @@ where
 
 impl<F> IndexMut<(usize, usize)> for Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {
         &mut self.data[index.0 * self.cols + index.1]
@@ -418,7 +418,7 @@ where
 
 impl<F> From<RowVec<F>> for Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn from(vec: RowVec<F>) -> Self {
         vec.0
@@ -427,7 +427,7 @@ where
 
 impl<F> From<ColVec<F>> for Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn from(vec: ColVec<F>) -> Self {
         vec.0
@@ -436,7 +436,7 @@ where
 
 impl<F> Mul<ColVec<F>> for Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = ColVec<F>;
 
@@ -447,7 +447,7 @@ where
 
 impl<F> Mul<&ColVec<F>> for Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = ColVec<F>;
 
@@ -458,7 +458,7 @@ where
 
 impl<F> Mul<ColVec<F>> for &Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = ColVec<F>;
 
@@ -469,7 +469,7 @@ where
 
 impl<F> Mul<&ColVec<F>> for &Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     type Output = ColVec<F>;
 
@@ -480,7 +480,7 @@ where
 
 impl<F> MulAssign<ColVec<F>> for Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn mul_assign(&mut self, other: ColVec<F>) {
         *self *= &other.0;
@@ -489,7 +489,7 @@ where
 
 impl<F> MulAssign<&ColVec<F>> for Mat<F>
 where
-    F: FieldTrait,
+    F: Field,
 {
     fn mul_assign(&mut self, other: &ColVec<F>) {
         *self *= &other.0;
@@ -498,7 +498,7 @@ where
 
 // impl<F> Mul<Perm> for ColVec<F>
 // where
-//     F: FieldTrait,
+//     F: Field,
 // {
 //     type Output = Self;
 
@@ -509,7 +509,7 @@ where
 
 // impl<F> Mul<&Perm> for ColVec<F>
 // where
-//     F: FieldTrait,
+//     F: Field,
 // {
 //     type Output = Self;
 
@@ -520,7 +520,7 @@ where
 
 // impl<F> Mul<Perm> for &ColVec<F>
 // where
-//     F: FieldTrait,
+//     F: Field,
 // {
 //     type Output = ColVec<F>;
 
@@ -531,7 +531,7 @@ where
 
 // impl<F> Mul<&Perm> for &ColVec<F>
 // where
-//     F: FieldTrait,
+//     F: Field,
 // {
 //     type Output = ColVec<F>;
 
